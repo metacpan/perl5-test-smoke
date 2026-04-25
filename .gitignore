@@ -1,0 +1,6 @@
+/local/
+/data/
+/log/
+/.cpanm/
+/cover_db/
+*.swp

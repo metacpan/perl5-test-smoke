@@ -1,0 +1,6 @@
+severity = 5
+verbose  = %f:%l:%c %m (%p)\n
+
+# Allow the new built-in `class` and feature pragmas
+[-TestingAndDebugging::ProhibitNoStrict]
+[-TestingAndDebugging::ProhibitNoWarnings]
