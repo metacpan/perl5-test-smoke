@@ -12,3 +12,7 @@ data/*.pid
 /t/test.db-wal
 /t/test.db-shm
 /t/data/reports-tmp/
+
+# Vendored at build time -- real htmx is fetched by `make` (or by the
+# Dockerfile.base builder stage). Don't commit a stale copy.
+/public/htmx.min.js

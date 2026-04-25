@@ -28,6 +28,12 @@ REPORTS_DIR ?= data/reports
 PID_FILE    ?= data/hypnotoad.pid
 SRC         ?=
 
+# Vendored client-side libraries.
+HTMX_VERSION  ?= 2.0.4
+HTMX_FILE     := public/htmx.min.js
+HTMX_URL      := https://unpkg.com/htmx.org@$(HTMX_VERSION)/dist/htmx.min.js
+VENDORED_JS   := $(HTMX_FILE)
+
 # Every target in this Makefile is for local-dev use (developer machine,
 # repo checkout). The Docker image runs script/smoke prefork directly
 # from CMD and is unaffected. Tests override MOJO_MODE=test inside
@@ -36,7 +42,7 @@ export MOJO_MODE := development
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build deps brew-deps cpan-deps \
+.PHONY: help build deps brew-deps cpan-deps vendor \
         test critic cover \
         dev start stop restart reload \
         migrate \
@@ -50,10 +56,11 @@ export MOJO_MODE := development
 help:
 	@echo "CoreSmoke 2.0 — make targets"
 	@echo ""
-	@echo "  build         Install brew packages (macOS) and cpan modules from cpanfile"
+	@echo "  build         Install brew packages (macOS), cpan modules, vendored JS"
 	@echo "  deps          Alias for build"
 	@echo "  brew-deps     Install only the macOS brew packages"
 	@echo "  cpan-deps     Install only the cpan modules from cpanfile"
+	@echo "  vendor        Fetch vendored client-side JS (htmx) into public/"
 	@echo ""
 	@echo "  dev           Run the app under morbo (auto-reload, dev mode)"
 	@echo "  start         Start hypnotoad (production-like, port 3000)"
@@ -80,10 +87,29 @@ help:
 # Dependency installation
 # ---------------------------------------------------------------------------
 
-build: brew-deps cpan-deps
+build: brew-deps cpan-deps vendor
 	@echo "[build] complete"
 
 deps: build
+
+# ---------------------------------------------------------------------------
+# Vendored client-side assets
+# ---------------------------------------------------------------------------
+#
+# htmx is fetched on demand. The committed repo intentionally has no
+# placeholder file, so the FIRST `make dev` / `make start` / `make build`
+# downloads the real release into public/. Subsequent runs are no-ops
+# because the file already exists. To upgrade, bump HTMX_VERSION at the
+# top of this Makefile and `make vendor` (or rm public/htmx.min.js).
+#
+# The Dockerfile.base builder stage fetches its own copy into the base
+# image -- this target is purely for local dev work.
+vendor: $(VENDORED_JS)
+
+$(HTMX_FILE):
+	@mkdir -p $(@D)
+	@echo "[vendor] fetching htmx $(HTMX_VERSION) -> $@"
+	@curl -fsSL $(HTMX_URL) -o $@
 
 brew-deps:
 ifeq ($(UNAME_S),Darwin)
@@ -108,10 +134,10 @@ cpan-deps:
 # Run targets
 # ---------------------------------------------------------------------------
 
-dev:
+dev: $(VENDORED_JS)
 	exec $(MORBO) $(APP)
 
-start:
+start: $(VENDORED_JS)
 	$(HYPNOTOAD) $(APP)
 
 stop:
