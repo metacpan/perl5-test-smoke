@@ -1,0 +1,8 @@
+% # count => integer (default 3)
+% # cols  => integer (number of columns to span)
+% my $n = stash('count') // 3;
+% for (1 .. $n) {
+<tr class="skeleton-row" aria-hidden="true">
+  <td colspan="<%= $cols %>"><span class="skeleton"></span></td>
+</tr>
+% }

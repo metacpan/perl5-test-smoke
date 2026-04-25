@@ -1,11 +1,9 @@
-<div id="search-region">
-% # `available` is computed against the OTHER active filters, so
-% # picking arch=aarch64 narrows perl_version and branch to only what
-% # exists in aarch64 reports. We always render the available values
-% # as options, and if the user's current selection isn't in the
-% # available list (e.g. the combination matches zero rows) we pin it
-% # as an extra <option> so the active filter stays visible and can
-% # be cleared.
+% # `available` is computed against the OTHER active filters, so picking
+% # arch=aarch64 narrows perl_version, branch, etc. to only what exists in
+% # the matching reports. We render the available values as <option>s, and
+% # if the user's current selection isn't in the available list (zero
+% # matches for that combination), we pin it as an extra <option> so the
+% # active filter stays visible and can be cleared.
 % my $arch_opts    = $available->{architectures}     // [];
 % my $osnm_opts    = $available->{osnames}           // [];
 % my $osvs_opts    = $available->{osversions}        // [];
@@ -14,7 +12,7 @@
 % my $host_opts    = $available->{hostnames}         // [];
 % my $comp_opts    = $available->{compilers}         // [];
 % my $cver_opts    = $available->{compiler_versions} // [];
-% my $smkv_opts    = $available->{smoker_versions}    // [];
+% my $smkv_opts    = $available->{smoker_versions}   // [];
 % my $summary_opts = $available->{summaries}         // [];
 % my $sel_arch     = $filter->{selected_arch}    // '';
 % my $sel_osnm     = $filter->{selected_osnm}    // '';
@@ -36,8 +34,38 @@
 % my %cver_have    = map { $_ => 1 } @$cver_opts;
 % my %smkv_have    = map { $_ => 1 } @$smkv_opts;
 % my %summary_have = map { $_ => 1 } @$summary_opts;
+%
+% my $mk_options = sub {
+%   my ($values, $sel, $extras) = @_;
+%   $extras //= [];
+%   my @opts = ({ value => 'all', label => 'all', selected => ($sel eq '' || $sel eq 'all') });
+%   push @opts, @$extras;
+%   for my $v (@$values) {
+%     push @opts, { value => $v, label => $v, selected => ($sel eq $v) };
+%   }
+%   return \@opts;
+% };
+% my $perl_extras   = [{ value => 'latest', label => 'latest', selected => ($sel_perl eq 'latest') }];
+% my $arch_options    = $mk_options->($arch_opts,    $sel_arch);
+% my $osnm_options    = $mk_options->($osnm_opts,    $sel_osnm);
+% my $osvs_options    = $mk_options->($osvs_opts,    $sel_osvs);
+% my $perl_options    = $mk_options->($perl_opts,    $sel_perl,   $perl_extras);
+% my $branch_options  = $mk_options->($branch_opts,  $sel_branch);
+% my $host_options    = $mk_options->($host_opts,    $sel_host);
+% my $comp_options    = $mk_options->($comp_opts,    $sel_comp);
+% my $cver_options    = $mk_options->($cver_opts,    $sel_cver);
+% my $smkv_options    = $mk_options->($smkv_opts,    $sel_smkv);
+% my $summary_options = $mk_options->($summary_opts, $sel_summary);
+%
+% my $pinned = sub {
+%   my ($sel, $have) = @_;
+%   ($sel ne '' && $sel ne 'all' && !$have->{$sel})
+%     ? [{ value => $sel, label => $sel, selected => 1 }] : [];
+% };
 
+<div id="search-region">
   <form id="search-form"
+        class="search-form"
         hx-get="/search"
         hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox]"
         hx-target="#search-region"
@@ -50,148 +78,38 @@
             if (v === 'all' || v === '') delete event.detail.parameters[k];
           }
         ">
-    <fieldset>
-      <legend>Filters</legend>
-
-      <label>Architecture
-        <select name="selected_arch">
-          <option value="all" <%= selected_if($sel_arch eq '' || $sel_arch eq 'all') %>>all</option>
-% for my $v (@$arch_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_arch eq $v) %>><%= $v %></option>
-% }
-% if ($sel_arch ne '' && $sel_arch ne 'all' && !$arch_have{$sel_arch}) {
-          <option value="<%= $sel_arch %>" selected><%= $sel_arch %></option>
-% }
-        </select>
-      </label>
-
-      <label>OS name
-        <select name="selected_osnm">
-          <option value="all" <%= selected_if($sel_osnm eq '' || $sel_osnm eq 'all') %>>all</option>
-% for my $v (@$osnm_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_osnm eq $v) %>><%= $v %></option>
-% }
-% if ($sel_osnm ne '' && $sel_osnm ne 'all' && !$osnm_have{$sel_osnm}) {
-          <option value="<%= $sel_osnm %>" selected><%= $sel_osnm %></option>
-% }
-        </select>
-      </label>
-
-      <label>OS version
-        <select name="selected_osvs">
-          <option value="all" <%= selected_if($sel_osvs eq '' || $sel_osvs eq 'all') %>>all</option>
-% for my $v (@$osvs_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_osvs eq $v) %>><%= $v %></option>
-% }
-% if ($sel_osvs ne '' && $sel_osvs ne 'all' && !$osvs_have{$sel_osvs}) {
-          <option value="<%= $sel_osvs %>" selected><%= $sel_osvs %></option>
-% }
-        </select>
-      </label>
-
-      <label>Perl version
-        <select name="selected_perl">
-          <option value="all" <%= selected_if($sel_perl eq '' || $sel_perl eq 'all') %>>all</option>
-          <option value="latest" <%= selected_if($sel_perl eq 'latest') %>>latest</option>
-% for my $v (@$perl_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_perl eq $v) %>><%= $v %></option>
-% }
-% if ($sel_perl ne '' && $sel_perl ne 'all' && $sel_perl ne 'latest' && !$perl_have{$sel_perl}) {
-          <option value="<%= $sel_perl %>" selected><%= $sel_perl %></option>
-% }
-        </select>
-      </label>
-
-      <label>Branch
-        <select name="selected_branch">
-          <option value="all" <%= selected_if($sel_branch eq '' || $sel_branch eq 'all') %>>all</option>
-% for my $v (@$branch_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_branch eq $v) %>><%= $v %></option>
-% }
-% if ($sel_branch ne '' && $sel_branch ne 'all' && !$branch_have{$sel_branch}) {
-          <option value="<%= $sel_branch %>" selected><%= $sel_branch %></option>
-% }
-        </select>
-      </label>
-
-      <label>Hostname
-        <select name="selected_host">
-          <option value="all" <%= selected_if($sel_host eq '' || $sel_host eq 'all') %>>all</option>
-% for my $v (@$host_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_host eq $v) %>><%= $v %></option>
-% }
-% if ($sel_host ne '' && $sel_host ne 'all' && !$host_have{$sel_host}) {
-          <option value="<%= $sel_host %>" selected><%= $sel_host %></option>
-% }
-        </select>
-      </label>
-
-      <label>Compiler
-        <select name="selected_comp">
-          <option value="all" <%= selected_if($sel_comp eq '' || $sel_comp eq 'all') %>>all</option>
-% for my $v (@$comp_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_comp eq $v) %>><%= $v %></option>
-% }
-% if ($sel_comp ne '' && $sel_comp ne 'all' && !$comp_have{$sel_comp}) {
-          <option value="<%= $sel_comp %>" selected><%= $sel_comp %></option>
-% }
-        </select>
-      </label>
-
-      <label>Compiler version
-        <select name="selected_cver">
-          <option value="all" <%= selected_if($sel_cver eq '' || $sel_cver eq 'all') %>>all</option>
-% for my $v (@$cver_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_cver eq $v) %>><%= $v %></option>
-% }
-% if ($sel_cver ne '' && $sel_cver ne 'all' && !$cver_have{$sel_cver}) {
-          <option value="<%= $sel_cver %>" selected><%= $sel_cver %></option>
-% }
-        </select>
-      </label>
-
-      <label>Smoker
-        <select name="selected_smkv">
-          <option value="all" <%= selected_if($sel_smkv eq '' || $sel_smkv eq 'all') %>>all</option>
-% for my $v (@$smkv_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_smkv eq $v) %>><%= $v %></option>
-% }
-% if ($sel_smkv ne '' && $sel_smkv ne 'all' && !$smkv_have{$sel_smkv}) {
-          <option value="<%= $sel_smkv %>" selected><%= $sel_smkv %></option>
-% }
-        </select>
-      </label>
-
-      <label>Summary
-        <select name="selected_summary">
-          <option value="all" <%= selected_if($sel_summary eq '' || $sel_summary eq 'all') %>>all</option>
-% for my $v (@$summary_opts) {
-          <option value="<%= $v %>" <%= selected_if($sel_summary eq $v) %>><%= $v %></option>
-% }
-% if ($sel_summary ne '' && $sel_summary ne 'all' && !$summary_have{$sel_summary}) {
-          <option value="<%= $sel_summary %>" selected><%= $sel_summary %></option>
-% }
-        </select>
-      </label>
-    </fieldset>
+    <div class="filter-grid">
+      %= include 'components/form_field', label => 'Architecture',     name => 'selected_arch',    type => 'select', options => $arch_options,    extra => $pinned->($sel_arch,    \%arch_have)
+      %= include 'components/form_field', label => 'OS name',          name => 'selected_osnm',    type => 'select', options => $osnm_options,    extra => $pinned->($sel_osnm,    \%osnm_have)
+      %= include 'components/form_field', label => 'OS version',       name => 'selected_osvs',    type => 'select', options => $osvs_options,    extra => $pinned->($sel_osvs,    \%osvs_have)
+      %= include 'components/form_field', label => 'Perl version',     name => 'selected_perl',    type => 'select', options => $perl_options,    extra => $pinned->($sel_perl,    \%perl_have)
+      %= include 'components/form_field', label => 'Branch',           name => 'selected_branch',  type => 'select', options => $branch_options,  extra => $pinned->($sel_branch,  \%branch_have)
+      %= include 'components/form_field', label => 'Hostname',         name => 'selected_host',    type => 'select', options => $host_options,    extra => $pinned->($sel_host,    \%host_have)
+      %= include 'components/form_field', label => 'Compiler',         name => 'selected_comp',    type => 'select', options => $comp_options,    extra => $pinned->($sel_comp,    \%comp_have)
+      %= include 'components/form_field', label => 'Compiler version', name => 'selected_cver',    type => 'select', options => $cver_options,    extra => $pinned->($sel_cver,    \%cver_have)
+      %= include 'components/form_field', label => 'Smoker',           name => 'selected_smkv',    type => 'select', options => $smkv_options,    extra => $pinned->($sel_smkv,    \%smkv_have)
+      %= include 'components/form_field', label => 'Summary',          name => 'selected_summary', type => 'select', options => $summary_options, extra => $pinned->($sel_summary, \%summary_have)
+    </div>
   </form>
 
-  <div class="table-wrap">
-  <table class="reports">
-    <thead>
-      <tr>
-        <th>Host</th>
-        <th>Architecture</th>
-        <th>OS</th>
-        <th>Perl</th>
-        <th>Summary</th>
-        <th>Smoker</th>
-        <th>Smoke date</th>
-      </tr>
-    </thead>
-    <tbody id="report-rows">
-%= include 'web/_reports_rows', path => '/search', reports => $results->{reports}, report_count => $results->{report_count}, page => $page, reports_per_page => $reports_per_page, filter => $filter
-    </tbody>
-  </table>
-  </div>
+  %= include 'components/pagination_summary', shown => scalar @{ $results->{reports} }, total => $results->{report_count}, noun => 'reports'
+
+% if (!@{ $results->{reports} }) {
+  %= include 'components/empty_state', title => 'No reports match your filters', desc => 'Try clearing one or more filters above, or reset everything to start over.', icon => '&empty;', actions => begin
+    %= btn_link 'Reset filters', '/search', 'primary', 'sm'
+  % end
+% } else {
+%   my @headers = (
+%     { label => 'Host',         sort => 'host' },
+%     { label => 'Architecture', sort => 'arch' },
+%     { label => 'OS',           sort => 'os' },
+%     { label => 'Perl',         sort => 'perl' },
+%     { label => 'Status',       sort => 'status' },
+%     { label => 'Smoker',       sort => 'smoker' },
+%     { label => 'Smoke date',   sort => 'date' },
+%   );
+  %= include 'components/data_table', headers => \@headers, tbody_id => 'report-rows', body => begin
+    %= include 'web/_reports_rows', path => '/search', reports => $results->{reports}, report_count => $results->{report_count}, page => $page, reports_per_page => $reports_per_page, filter => $filter
+  % end
+% }
 </div>

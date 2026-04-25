@@ -13,7 +13,7 @@ my $h = TestApp->new;
 my $t = $h->t;
 
 # Empty DB
-$t->get_ok('/')      ->status_is(200)->text_like('h1' => qr/Latest smoke results/);
+$t->get_ok('/')      ->status_is(200)->content_like(qr/Latest\s+<em>smoke<\/em>\s+results|Latest smoke results/i);
 $t->get_ok('/latest')->status_is(200);
 $t->get_ok('/search')->status_is(200);
 $t->get_ok('/matrix')->status_is(200);
@@ -45,7 +45,7 @@ $t->get_ok("/file/log_file/$rid")->status_is(404);
 # /search shows smoker version column and filter dropdown
 $t->get_ok('/search')->status_is(200)
   ->element_exists('select[name=selected_smkv]', 'smoker filter exists')
-  ->content_like(qr/<th>Smoker<\/th>/);
+  ->content_like(qr/<th[^>]*>\s*Smoker\s*<\/th>/);
 
 # Smoker filter narrows results
 $t->get_ok('/search?selected_smkv=1.77')->status_is(200)

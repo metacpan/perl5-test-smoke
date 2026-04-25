@@ -1,0 +1,1 @@
+<span class="spinner" role="status" aria-label="<%= (stash('label') // 'Loading') %>"></span>

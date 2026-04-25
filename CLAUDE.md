@@ -18,7 +18,13 @@ lib/CoreSmoke/         — namespace is `CoreSmoke`, NOT `Perl5::CoreSmoke`
                          ReportFiles, Ingest
   Schema/migrations.sql
 templates/             — Mojolicious EP templates
-public/                — CSS + (gitignored) htmx.min.js
+  layouts/default.html.ep — top-level shell (topbar + main + footer)
+  partials/menu.html.ep   — split topbar (brand / nav / utilities)
+  partials/palette.html.ep — Cmd+K command-palette overlay markup
+  components/          — reusable design-system partials, see below
+  web/                 — page templates per Web controller action
+public/                — coresmoke.css, app.js, favicon.ico, icon.svg,
+                         (gitignored) htmx.min.js
 script/{smoke,migrate,fix-plevels,import-from-pgdump}
 etc/{coresmoke,*.conf,openapi.yaml}
 data/                  — gitignored: SQLite + reports/ tree
@@ -157,6 +163,16 @@ App.pm registers a few helpers that aren't in `Mojolicious::Plugin::DefaultHelpe
 - `selected_if($cond)` — returns `'selected'` or `''` for
   `<option>`/`<input>` markup.
 - `sqlite`, `report_files`, `reports`, `ingest` — DAO accessors.
+- `duration_hms($seconds)` — formats a duration like `1h 5m 12s`.
+- `badge($text, $variant)` / `status_pill($summary)` /
+  `nav_link($label, $href)` / `btn_link($label, $href, $variant?, $size?)`
+  — design-system component helpers. Return `Mojo::ByteStream` of
+  pre-escaped HTML. See "Design system" below.
+- `asset_url('/coresmoke.css')` — appends `?v=<mtime>` for cache busting.
+  Use it in the layout for every static CSS/JS asset reference.
+  mtime is stat'd once per worker per asset (closure-cached), so it's
+  effectively free. Hot-reload (`make reload`) restarts workers and
+  picks up the new mtime automatically.
 
 ### Controller namespace
 
@@ -207,6 +223,100 @@ in startup too.
 - **Push a clean URL**: `hx-push-url="true"` + `hx-on::config-request`
   to drop default-valued (`all`/empty) params from
   `event.detail.parameters` before HTMX builds the URL.
+
+### Design system: use it, don't reinvent it
+
+Visual reference: `docs/design-system/metacpan-design-system.html`
+(open in a browser). Long-form usage notes:
+`docs/conventions/design-system.md`.
+
+**For any UI work** — new page, edited page, new HTMX fragment — reach
+for these in priority order:
+
+1. A helper from `App.pm`: `badge`, `status_pill`, `nav_link`,
+   `btn_link`. Cheapest, most ergonomic.
+2. A partial in `templates/components/`: `hero`, `stat`, `page_header`,
+   `breadcrumb`, `card`, `alert`, `data_table`, `code_block`,
+   `empty_state`, `form_field`, `pagination_summary`, `tabs`,
+   `spinner`, `skeleton_rows`, `status_chips`, `badge`. Always pass
+   content via `body => begin ... end` blocks for blocks that need
+   raw HTML.
+3. Existing design-system classes from `public/coresmoke.css`
+   (`.btn`, `.card`, `.alert`, `.data-table`, `.dl-grid`, ...).
+4. Only if none of the above fit: extend `coresmoke.css` with a new
+   rule that **composes from existing tokens** (`var(--accent)`,
+   `var(--space-4)`, `--success-500`, etc.) and add a partial or
+   helper for it. Document it in `docs/conventions/design-system.md`.
+
+**Forbidden** (CI grep checks for these in the verification step):
+
+- Hex colors anywhere outside the `:root` and `[data-theme="dark"]`
+  blocks of `public/coresmoke.css`.
+- `style="..."` in templates, **except** the documented
+  `style="--ratio: NN%"` on heatmap cells in `web/matrix.html.ep`.
+- Pixel sizes outside the `--space-*` scale (exceptions: 1-3px
+  borders, the heatmap `--ratio` percentage).
+- Class names that don't appear in `public/coresmoke.css` — if you
+  invent a class, define it.
+
+**Page header**: every page sets a `page_header` stash entry; the
+layout includes the partial. Minimum is `crumbs => [...]` +
+`title => '...'`. Optional: `subtitle`, `actions => begin ... end`.
+
+**HTMX + components**: when returning an HTMX fragment, render the
+SAME partial as the full-page render. OOB swap targets keep their ids
+across renders (`#latest-summary`, `#search-region`, no-id load-more
+`<tr>`). The `pagination_summary` partial emits `data-count="N"` so
+the filter-change toast in `app.js` can read it without a re-query.
+
+**Dark mode**: bootstrap script in the `<head>` of `default.html.ep`
+sets `data-theme` from `localStorage.theme` (falls back to
+`prefers-color-scheme`). Toggle via the topbar button. **Never**
+assume background is white — use `--bg-*` / `--fg-*` tokens. Test
+both themes before considering a UI change done.
+
+**Cmd+K palette**: `templates/partials/palette.html.ep` renders a
+closed-by-default overlay. `app.js` opens it on `Cmd+K`/`Ctrl+K`
+and on click of the topbar trigger chip. Free-text Enter submits to
+`/search?selected_summary=<query>`. Add jump entries to the
+palette's `<ul class="palette-list">` when introducing a new
+top-level page.
+
+**Hero blocks**: landing pages (`/latest`, `/matrix`, `/about`) use
+the `hero` partial: optional eyebrow, big Fraunces title with `<em>`
+italic accent, lede paragraph, and a stat strip
+(`stats => [{ label, value, variant?: success|danger|accent }, ...]`).
+Use sparingly — sub-pages (e.g. `/report/:rid`, `/submatrix`,
+`/file/...`) keep the smaller `page_header` partial.
+
+**Brand & logo**: `public/logo.png` is the canonical brand mark
+(also referenced by `<link rel="icon">` and the topbar / footer
+brand block). Topbar brand is a 3-row composition: 36px round logo,
+`brand-name` (Fraunces, italic accent on the suffix `<em>DB</em>`),
+small uppercase `brand-meta`. Don't replace it with text-only.
+
+**Tables**: every tabular page uses the `data_table` partial. Power
+features wired in `coresmoke.css` + `app.js`:
+- Sticky `<thead>` (already in `.data-table th`).
+- Subtle zebra rows + hover.
+- Clickable rows: add `data-href="/report/<id>"` on `<tr>`; JS
+  navigates on click (ignores clicks on inner links/buttons).
+- Status emphasis: row gets `row-accent-<variant>` AND the status
+  cell gets `status-cell-<variant>` for the column tint.
+- Sortable columns: pass `headers => [{label, sort=><key>}, ...]`.
+  Each `<td>` carries `data-sort-key="<key>"` (and optional
+  `data-sort-value=` for non-text comparisons). Sorting is
+  client-side, scoped to the visible page; works without HTMX swaps.
+- Density toggle: topbar button toggles
+  `body.density-compact`. JS persists `localStorage.density`.
+  Compact halves row padding via the rule in `coresmoke.css`.
+
+**Asset cache busting**: every `<link rel=stylesheet>` and `<script
+src>` that points at `/coresmoke.css`, `/app.js`, `/htmx.min.js`,
+`/logo.png`, etc. MUST go through the `asset_url` helper:
+`<%= asset_url '/coresmoke.css' %>`. The helper appends
+`?v=<mtime>`; a fresh edit + `make reload` invalidates browser
+caches automatically.
 
 ### SQLite GLOB vs LIKE
 

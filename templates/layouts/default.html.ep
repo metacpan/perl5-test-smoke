@@ -1,62 +1,82 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= title() || 'Perl 5 Core Smoke DB' %></title>
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/coresmoke.css">
-<script src="/htmx.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="<%= asset_url '/coresmoke.css' %>">
+<script>
+  /* Inline theme bootstrap. Runs before the page paints to avoid a
+   * flash of the wrong theme. The full toggle handler lives in app.js. */
+  (function () {
+    try {
+      var stored = localStorage.getItem('theme');
+      var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', stored || (prefers ? 'dark' : 'light'));
+    } catch (e) { /* private mode */ }
+  })();
+</script>
+<script src="<%= asset_url '/htmx.min.js' %>"></script>
+<script src="<%= asset_url '/app.js' %>" defer></script>
 </head>
 <body>
 %= include 'partials/menu'
-<main>
+%= include 'partials/palette'
+
+<main class="main">
+% if (my $ph = stash 'page_header') {
+  %= include 'components/page_header', %$ph
+% }
 <%= content %>
 </main>
-<footer>
-  <small>
-    <span class="credits-version">
-      <a href="/about"><%= config('app_name') // 'Perl 5 Core Smoke DB' %> (dev) v<%= config('app_version') // '2.0' %></a>
-      &mdash; re-write at the 2026 Perl Toolchain Summit, Vienna, Austria
-      (rewrite of CoreSmokeDB 1.04 / 0.0.5)
-    </span>
-    <span class="credits-courtesy">
-      Courtesy of the Perl QA Hackathon:
-      2010 Vienna &middot; 2011 Amsterdam &middot;
-      2012 Paris &middot; 2013 Lancaster &middot;
-      2014 Lyon &middot; 2015 Berlin &middot;
-      2016 Rugby &middot; PTS 2017 Lyon &middot;
-      2018 Oslo &middot; Private 2022 abeltje &middot;
-      PTS 2023 Lyon &middot; 2024 Lisbon &middot;
-      PTS 2026 Vienna
-    </span>
-  </small>
+
+<footer class="site-footer">
+  <div class="site-footer-brand">
+    <img class="brand-logo" src="<%= asset_url '/logo.png' %>" alt="" width="40" height="40">
+    <div>
+      <a class="site-footer-version" href="/about">
+        <%= config('app_name') // 'Perl 5 Core Smoke DB' %>
+        v<%= config('app_version') // '2.0' %>
+      </a>
+      <p class="site-footer-tagline">Rewritten at the 2026 Perl Toolchain Summit, Vienna. Rewrite of CoreSmokeDB 1.04 / 0.0.5.</p>
+    </div>
+  </div>
+
+  <nav aria-label="Footer">
+    <h4>Links</h4>
+    <div class="site-footer-links">
+      <a href="/about">About this site</a>
+      <a href="/api/openapi/web">OpenAPI reference</a>
+      <a href="/api/openapi/web.yaml">OpenAPI YAML</a>
+      <a href="https://github.com/Perl/Perl5-CoreSmokeDB" rel="noopener">GitHub source</a>
+    </div>
+  </nav>
+
+  <div>
+    <h4>Courtesy of Perl QA Hackathon / PTS</h4>
+    <div class="site-footer-courtesy">
+      <span class="summit-chip">2010 Vienna</span>
+      <span class="summit-chip">2011 Amsterdam</span>
+      <span class="summit-chip">2012 Paris</span>
+      <span class="summit-chip">2013 Lancaster</span>
+      <span class="summit-chip">2014 Lyon</span>
+      <span class="summit-chip">2015 Berlin</span>
+      <span class="summit-chip">2016 Rugby</span>
+      <span class="summit-chip">2017 Lyon</span>
+      <span class="summit-chip">2018 Oslo</span>
+      <span class="summit-chip">2022 abeltje</span>
+      <span class="summit-chip">2023 Lyon</span>
+      <span class="summit-chip">2024 Lisbon</span>
+      <span class="summit-chip is-current">2026 Vienna</span>
+    </div>
+  </div>
 </footer>
-<script>
-(function () {
-  var fmt = new Intl.DateTimeFormat(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    timeZoneName: 'short'
-  });
 
-  function localise(root) {
-    var els = (root || document).querySelectorAll('time.utc-date');
-    for (var i = 0; i < els.length; i++) {
-      var dt = els[i].getAttribute('datetime');
-      if (!dt) continue;
-      var d = new Date(dt);
-      if (isNaN(d)) continue;
-      els[i].textContent = fmt.format(d);
-    }
-  }
-
-  localise();
-  document.body.addEventListener('htmx:afterSettle', function (e) {
-    localise(e.detail.elt);
-  });
-})();
-</script>
+<div id="toast-mount" class="toast-mount" aria-live="polite"></div>
 </body>
 </html>

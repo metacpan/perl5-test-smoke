@@ -17,3 +17,4 @@ data/*.pid
 # Dockerfile.base builder stage). Don't commit a stale copy.
 /public/htmx.min.js
 .DS_Store
+test.db

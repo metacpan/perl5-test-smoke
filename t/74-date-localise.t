@@ -37,11 +37,20 @@ ok $time_el, '/report has <time class="utc-date"> element';
 like $time_el->attr('datetime'), qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/,
     'full report datetime attr is ISO 8601 UTC';
 
-# --- Layout includes the localisation script ---
+# --- Layout loads app.js (which contains the date-localise logic) ---
 
 $t->get_ok('/latest')->status_is(200)
-  ->content_like(qr/Intl\.DateTimeFormat/, 'layout includes Intl.DateTimeFormat script')
-  ->content_like(qr/htmx:afterSettle/,    'script hooks into HTMX afterSettle');
+  ->element_exists('script[src^="/app.js"]',
+      'layout includes /app.js script tag (with cache-buster suffix)')
+  ->element_exists('script[src^="/htmx.min.js"]',
+      'layout still includes htmx.min.js');
+
+# Sanity-check app.js itself has the date-localise hook
+$t->get_ok('/app.js')->status_is(200)
+  ->content_like(qr/Intl\.DateTimeFormat/,
+      'app.js uses Intl.DateTimeFormat')
+  ->content_like(qr/htmx:afterSettle/,
+      'app.js hooks into HTMX afterSettle');
 
 # --- HTMX fragment also contains <time> elements ---
 

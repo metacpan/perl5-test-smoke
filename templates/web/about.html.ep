@@ -1,28 +1,47 @@
 % layout 'default';
 % title 'About';
+% my @hero_stats = (
+%   { label => 'App version', value => 'v' . $app_version, variant => 'accent' },
+%   { label => 'Perl',        value => qq(<span class="code-inline">$perl_version</span>) },
+%   { label => 'Mojolicious', value => qq(<span class="code-inline">$mojo_version</span>) },
+%   { label => 'SQLite',      value => qq(<span class="code-inline">$sqlite_version</span>) },
+%   { label => 'DB version',  value => qq(<span class="code-inline">$db_version</span>) },
+% );
+%= include 'components/hero', eyebrow => 'About', title => qq(A Perl smoke <em>archive</em>, rewritten.), lede => qq($app_name is a single Mojolicious app backed by SQLite. It replaces the legacy three-repo CoreSmokeDB 1.04 / 0.0.5 stack &mdash; one site, one binary, faster every time.), stats => \@hero_stats
 
-<h1>About</h1>
-<p><%= $app_name %> (dev) v<%= $app_version %> is a re-write produced at
-the <strong>2026 Perl Toolchain Summit in Vienna, Austria</strong>. It
-replaces the legacy three-repo CoreSmokeDB 1.04 / 0.0.5 stack
-(Perl5-CoreSmokeDB, -API, -Web) with a single Mojolicious app backed by
-SQLite.</p>
+<div class="card-grid">
+  %= include 'components/card', title => 'API', body => begin
+  <p>Every page on this site is also reachable as JSON:</p>
+  <ul class="link-list">
+    <li><a href="/api/openapi/web.yaml">OpenAPI YAML</a></li>
+    <li><a href="/api/openapi/web.json">OpenAPI JSON</a></li>
+    <li><a href="/api/openapi/web">OpenAPI text reference</a></li>
+  </ul>
+  <p>A JSONRPC 2.0 endpoint at <code class="code-inline">POST /api</code>
+  exposes the same methods.</p>
+  % end
 
-<dl>
-  <dt>App</dt>         <dd><%= $app_name %> (dev) v<%= $app_version %></dd>
-  <dt>Perl</dt>        <dd><%= $perl_version %></dd>
-  <dt>Mojolicious</dt> <dd><%= $mojo_version %></dd>
-  <dt>SQLite</dt>      <dd><%= $sqlite_version %></dd>
-  <dt>DB version</dt>  <dd><%= $db_version %></dd>
-</dl>
+  %= include 'components/card', title => 'Quick links', body => begin
+  <ul class="link-list">
+    <li><a href="/latest">Latest smoke results</a></li>
+    <li><a href="/search">Advanced search</a></li>
+    <li><a href="/matrix">Failure matrix</a></li>
+  </ul>
+  % end
 
-<h2>API</h2>
-<p>Every page on this site is also reachable as JSON via the
-<a href="/api/openapi/web.yaml">OpenAPI</a>-documented REST routes.
-A JSONRPC 2.0 endpoint at <code>POST /api</code> exposes the same methods.</p>
+  %= include 'components/card', title => 'Source', body => begin
+  <p>This rewrite was produced at the <strong>2026 Perl Toolchain
+  Summit in Vienna, Austria</strong>. The legacy three-repo stack
+  (<code class="code-inline">Perl5-CoreSmokeDB</code>,
+  <code class="code-inline">-API</code>,
+  <code class="code-inline">-Web</code>) is preserved under
+  <code class="code-inline">legacy/</code> for reference only.</p>
+  % end
 
-<h2>Credits</h2>
-<p>Courtesy of the Perl QA Hackathon / Perl Toolchain Summit:
-2010 Vienna, 2011 Amsterdam, 2012 Paris, 2013 Lancaster, 2014 Lyon,
-2015 Berlin, 2016 Rugby, PTS 2017 Lyon, 2018 Oslo, Private 2022 abeltje,
-PTS 2023 Lyon, 2024 Lisbon, and PTS 2026 Vienna (this rewrite).</p>
+  %= include 'components/card', title => 'Credits', body => begin
+  <p>Courtesy of the Perl QA Hackathon / Perl Toolchain Summit:
+  2010 Vienna, 2011 Amsterdam, 2012 Paris, 2013 Lancaster, 2014 Lyon,
+  2015 Berlin, 2016 Rugby, PTS 2017 Lyon, 2018 Oslo, Private 2022 abeltje,
+  PTS 2023 Lyon, 2024 Lisbon, and PTS 2026 Vienna (this rewrite).</p>
+  % end
+</div>

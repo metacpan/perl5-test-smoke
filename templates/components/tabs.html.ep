@@ -1,0 +1,18 @@
+% # group  => string identifier (links tabs to panels)
+% # active => name of initial active tab
+% # tabs   => arrayref of { name, label }
+% # panels => hashref of { name => string|coderef }
+<div class="tabs" data-tabs="<%= $group %>" role="tablist">
+% for my $t (@$tabs) {
+%   my $sel = $t->{name} eq $active ? 'true' : 'false';
+  <button type="button" class="tab" role="tab" aria-selected="<%= $sel %>" data-tab="<%= $t->{name} %>"><%== $t->{label} %></button>
+% }
+</div>
+% for my $t (@$tabs) {
+%   my $name   = $t->{name};
+%   my $hidden = $name eq $active ? '' : 'hidden';
+%   my $body   = $panels->{$name};
+<section class="tab-panel" role="tabpanel" data-tab-panel="<%= $group %>" data-panel="<%= $name %>" <%= $hidden %>>
+<%= ref $body eq 'CODE' ? $body->() : $body %>
+</section>
+% }

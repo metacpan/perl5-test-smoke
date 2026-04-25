@@ -71,12 +71,84 @@ sub startup ($self) {
     # Mojolicious doesn't expose Mojo::Util::url_escape as a default
     # helper, but our templates use it for query-string assembly.
     require Mojo::Util;
+    require Mojo::ByteStream;
     $self->helper(url_escape => sub ($c, $s) { Mojo::Util::url_escape($s // '') });
 
     # Tiny helper for option/checkbox state. `print 'selected'` inside
     # an EP `% ... %` code block writes to the controller's stdout, not
     # to the template output, so use `<%= selected_if(...) %>` instead.
     $self->helper(selected_if => sub ($c, $cond) { $cond ? 'selected' : '' });
+
+    # Design system component helpers. See docs/conventions/design-system.md.
+    # All UI templates should reach for these (or partials in
+    # templates/components/) before inventing markup.
+
+    $self->helper(badge => sub ($c, $text, $variant = '') {
+        my $class = 'badge' . ($variant ? " badge-$variant" : '');
+        return Mojo::ByteStream->new(sprintf
+            '<span class="%s">%s</span>',
+            Mojo::Util::xml_escape($class),
+            Mojo::Util::xml_escape($text // ''));
+    });
+
+    # Map a smoke summary string (PASS, FAIL(M), UNKNOWN, ...) to a badge.
+    $self->helper(status_pill => sub ($c, $summary) {
+        my $key = lc($summary // '');
+        $key =~ s/\(.*//;
+        my %variant_for = (
+            pass        => 'success',
+            fail        => 'danger',
+            unknown     => 'warning',
+            configerror => 'warning',
+        );
+        return $c->badge($summary // 'UNKNOWN', $variant_for{$key} // '');
+    });
+
+    $self->helper(nav_link => sub ($c, $label, $href) {
+        my $path   = $c->req->url->path->to_string;
+        my $active = $href eq '/latest'
+            ? ($path eq '/' || $path =~ m{^/latest})
+            : ($path eq $href || $path =~ m{^\Q$href\E/});
+        my $class = 'nav-link' . ($active ? ' active' : '');
+        return Mojo::ByteStream->new(sprintf
+            '<a class="%s" href="%s">%s</a>',
+            $class,
+            Mojo::Util::xml_escape($href),
+            Mojo::Util::xml_escape($label));
+    });
+
+    $self->helper(btn_link => sub ($c, $label, $href, $variant = 'secondary', $size = '') {
+        my $class = "btn btn-$variant" . ($size ? " btn-$size" : '');
+        return Mojo::ByteStream->new(sprintf
+            '<a class="%s" href="%s">%s</a>',
+            Mojo::Util::xml_escape($class),
+            Mojo::Util::xml_escape($href),
+            Mojo::Util::xml_escape($label));
+    });
+
+    # Cache-buster: append ?v=<mtime> to a public asset URL so a fresh
+    # CSS/JS edit invalidates the browser cache without manual version
+    # bumps. Computed once per worker per asset (mtime cached in a
+    # closure to avoid stat-ing on every page render).
+    my %asset_mtime;
+    $self->helper(asset_url => sub ($c, $path) {
+        return $path unless $path =~ m{^/};
+        unless (exists $asset_mtime{$path}) {
+            my $disk = $home->child('public', $path =~ s{^/}{}r);
+            $asset_mtime{$path} = -e $disk ? (stat _)[9] : 0;
+        }
+        my $v = $asset_mtime{$path};
+        return $v ? "$path?v=$v" : $path;
+    });
+
+    # Insert thousands separators in big integers (e.g. 805449 -> 805,449)
+    # Useful for stat-values in hero blocks.
+    $self->helper(commify => sub ($c, $n) {
+        return '0' unless defined $n && length $n;
+        my $s = "$n";
+        1 while $s =~ s/^([-+]?\d+)(\d{3})/$1,$2/;
+        return $s;
+    });
 
     $self->helper(duration_hms => sub ($c, $seconds) {
         return '0s' unless $seconds && $seconds > 0;

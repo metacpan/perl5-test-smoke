@@ -16,6 +16,20 @@ sub latest ($c) {
     my $data = $c->app->reports->latest({ page => $page, reports_per_page => $rpp });
 
     my $is_htmx = _is_htmx($c);
+
+    # Cheap aggregate stats for the hero block (full-page renders only).
+    my %stats;
+    if (!$is_htmx) {
+        my $db = $c->app->sqlite->db;
+        $stats{total_reports} = $db->query('SELECT COUNT(*) AS n FROM report')->hash->{n} // 0;
+        $stats{fails_24h} = $db->query(
+            q{SELECT COUNT(*) AS n FROM report WHERE smoke_date >= datetime('now','-1 day') AND summary GLOB 'FAIL*'}
+        )->hash->{n} // 0;
+        $stats{pass_24h} = $db->query(
+            q{SELECT COUNT(*) AS n FROM report WHERE smoke_date >= datetime('now','-1 day') AND summary = 'PASS'}
+        )->hash->{n} // 0;
+    }
+
     my $tmpl    = $is_htmx ? 'web/_reports_rows' : 'web/latest';
     return $c->render(template => $tmpl,
         path             => '/latest',
@@ -26,8 +40,9 @@ sub latest ($c) {
         latest_plevel    => $data->{latest_plevel},
         # The fragment emits an OOB update for #latest-summary only on
         # HTMX requests; on a regular page load the OOB markup would
-        # duplicate the header inline.
+        # duplicate the inline element.
         oob_summary      => $is_htmx,
+        stats            => \%stats,
     );
 }
 
@@ -99,7 +114,13 @@ sub search ($c) {
 
 sub matrix ($c) {
     my $data = $c->app->reports->matrix;
-    return $c->render(template => 'web/matrix', %$data);
+    my $hot = 0;
+    for my $row (@{ $data->{rows} // [] }) {
+        for my $v (@{ $data->{perl_versions} // [] }) {
+            $hot += $row->{$v}{cnt} // 0;
+        }
+    }
+    return $c->render(template => 'web/matrix', %$data, hot_failures => $hot);
 }
 
 sub submatrix ($c) {

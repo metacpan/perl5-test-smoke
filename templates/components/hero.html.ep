@@ -1,0 +1,30 @@
+% # eyebrow => optional small uppercase label (e.g. 'CORE PERL SMOKE')
+% # title   => required, may contain inline <em> for italic accent
+% # lede    => optional paragraph of body copy
+% # stats   => optional arrayref of { label, value, variant?: success|danger|accent, trend? }
+% my $eyebrow = stash('eyebrow');
+% my $lede    = stash('lede');
+% my $stats   = stash('stats') // [];
+<header class="hero">
+% if (defined $eyebrow) {
+  <div class="hero-eyebrow"><%== $eyebrow %></div>
+% }
+  <h1 class="hero-title"><%== $title %></h1>
+% if (defined $lede) {
+  <p class="hero-lede"><%== $lede %></p>
+% }
+% if (@$stats) {
+  <div class="hero-meta">
+% for my $s (@$stats) {
+%   my $variant = $s->{variant} ? ' is-' . $s->{variant} : '';
+    <div class="stat">
+      <span class="stat-label"><%= $s->{label} %></span>
+      <span class="stat-value<%= $variant %>"><%== $s->{value} %></span>
+% if (defined $s->{trend}) {
+      <span class="stat-trend"><%= $s->{trend} %></span>
+% }
+    </div>
+% }
+  </div>
+% }
+</header>

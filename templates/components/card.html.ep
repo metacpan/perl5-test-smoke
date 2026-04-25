@@ -1,0 +1,18 @@
+% # title => optional string
+% # meta  => optional string
+% # body  => string OR code block (begin/end)
+<section class="card">
+% if (defined(my $t = stash 'title')) {
+  <h3 class="card-title"><%== $t %></h3>
+% }
+% if (defined(my $m = stash 'meta')) {
+  <p class="card-meta"><%== $m %></p>
+% }
+  <div class="card-body">
+% if (ref $body eq 'CODE') {
+    <%= $body->() %>
+% } else {
+    <%== $body %>
+% }
+  </div>
+</section>

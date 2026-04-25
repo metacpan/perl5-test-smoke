@@ -1,0 +1,15 @@
+% # variant => info | success | warning | danger
+% # title   => optional string
+% # body    => string OR code block (begin/end)
+<div class="alert alert-<%= $variant %>">
+% if (defined(my $t = stash 'title')) {
+  <p class="alert-title"><%== $t %></p>
+% }
+  <div class="alert-desc">
+% if (ref $body eq 'CODE') {
+    <%= $body->() %>
+% } else {
+    <%== $body %>
+% }
+  </div>
+</div>

@@ -1,0 +1,20 @@
+% # crumbs   => arrayref of { label, href? }
+% # title    => string (page H1)
+% # subtitle => optional string
+% # actions  => optional code block (begin/end) rendering action buttons
+<header class="page-header">
+  <div class="page-header-main">
+% if ($crumbs && @$crumbs) {
+    %= include 'components/breadcrumb', crumbs => $crumbs
+% }
+    <h1 class="page-header-title"><%== $title %></h1>
+% if (my $sub = stash 'subtitle') {
+    <p class="page-header-subtitle"><%== $sub %></p>
+% }
+  </div>
+% if (my $act = stash 'actions') {
+  <div class="page-header-actions">
+    <%= ref $act eq 'CODE' ? $act->() : $act %>
+  </div>
+% }
+</header>

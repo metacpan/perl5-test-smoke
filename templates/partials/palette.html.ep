@@ -1,0 +1,18 @@
+<div id="palette-overlay" class="palette-overlay" data-open="false" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="palette-panel">
+    <input class="palette-input" type="text" placeholder="Search reports or jump to a page..." autocomplete="off" spellcheck="false" data-action="palette-input">
+    <ul class="palette-list" role="listbox">
+      <li><a class="palette-item" href="/latest"   data-label="latest reports"><span class="palette-item-label">Latest reports</span><span class="palette-item-meta">/latest</span></a></li>
+      <li><a class="palette-item" href="/search"   data-label="search reports"><span class="palette-item-label">Search reports</span><span class="palette-item-meta">/search</span></a></li>
+      <li><a class="palette-item" href="/matrix"   data-label="failure matrix"><span class="palette-item-label">Failure matrix</span><span class="palette-item-meta">/matrix</span></a></li>
+      <li><a class="palette-item" href="/about"    data-label="about"><span class="palette-item-label">About</span><span class="palette-item-meta">/about</span></a></li>
+      <li><a class="palette-item" href="/api/openapi/web" data-label="api openapi rest documentation"><span class="palette-item-label">API: OpenAPI documentation</span><span class="palette-item-meta">/api/openapi/web</span></a></li>
+    </ul>
+    <div class="palette-footer">
+      <span class="palette-footer-hint"><kbd class="kbd-key">&#8682;</kbd><kbd class="kbd-key">&#8681;</kbd> navigate</span>
+      <span class="palette-footer-hint"><kbd class="kbd-key">&#8629;</kbd> open</span>
+      <span class="palette-footer-hint"><kbd class="kbd-key">esc</kbd> close</span>
+      <span class="palette-footer-hint palette-footer-tail">free text searches summary</span>
+    </div>
+  </div>
+</div>

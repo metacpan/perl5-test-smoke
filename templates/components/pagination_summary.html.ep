@@ -1,0 +1,13 @@
+% # shown => integer (rows currently rendered)
+% # total => integer (total available)
+% # noun  => optional, default 'reports'
+% # extra => optional code block rendering trailing inline metadata
+% # id    => optional element id (e.g. 'latest-summary' for HTMX OOB swaps)
+% # oob   => optional flag, adds hx-swap-oob="true"
+% my $n = $noun // 'reports';
+<p<% if (my $i = stash 'id') { %> id="<%= $i %>"<% } %><% if (stash 'oob') { %> hx-swap-oob="true"<% } %> class="pagination-summary" data-count="<%= $shown %>">
+  Showing <strong><%= $shown %></strong> of <strong><%= $total %></strong> <%= $n %>
+% if (my $e = stash 'extra') {
+  <%= ref $e eq 'CODE' ? $e->() : $e %>
+% }
+</p>

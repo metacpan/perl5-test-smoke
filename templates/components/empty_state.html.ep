@@ -1,0 +1,19 @@
+% # title   => string
+% # desc    => optional string
+% # icon    => optional UTF-8 glyph or short HTML
+% # actions => optional code block rendering CTA buttons
+% my $icon = stash('icon') // '!';
+% my $desc = stash('desc');
+% my $act  = stash('actions');
+<div class="empty-state">
+  <div class="empty-state-icon" aria-hidden="true"><%== $icon %></div>
+  <h2 class="empty-state-title"><%== $title %></h2>
+% if (defined $desc) {
+  <p class="empty-state-desc"><%== $desc %></p>
+% }
+% if ($act) {
+  <div class="empty-state-actions">
+    <%= ref $act eq 'CODE' ? $act->() : $act %>
+  </div>
+% }
+</div>

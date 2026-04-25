@@ -1,0 +1,3 @@
+% # text    => string
+% # variant => '' | success | warning | danger | info | accent
+%= badge $text, (stash('variant') // '')

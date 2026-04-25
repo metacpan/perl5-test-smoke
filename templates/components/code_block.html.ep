@@ -1,0 +1,8 @@
+% # lang => optional language label (shown in header)
+% # body => string (will be HTML-escaped)
+% if (defined(my $l = stash 'lang')) {
+<div class="code-block-header">
+  <span class="code-block-lang"><%= $l %></span>
+</div>
+% }
+<pre class="code-block"><%= $body %></pre>

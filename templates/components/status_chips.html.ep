@@ -1,0 +1,34 @@
+% # current => current selected value (string)
+% # param   => query-string param name to set on each chip link
+% # base    => base URL the chips link to (e.g. '/latest', '/search')
+% # options => arrayref of { value, label, variant? }
+% # carry   => optional hashref of params to preserve in each link
+% use Mojo::Util qw(url_escape);
+% my $cur     = stash('current') // 'all';
+% my $carry   = stash('carry')   // {};
+%
+% my $link_for = sub {
+%   my ($val) = @_;
+%   my %p = (%$carry, $param => $val);
+%   delete $p{$param} if $val eq 'all';
+%   my @parts;
+%   for my $k (sort keys %p) {
+%     next unless defined $p{$k} && length $p{$k};
+%     push @parts, url_escape($k) . '=' . url_escape($p{$k});
+%   }
+%   return @parts ? "$base?" . join('&', @parts) : $base;
+% };
+<ul class="chips" role="list">
+% for my $opt (@$options) {
+%   my $v = $opt->{value};
+%   my $is_active = $v eq $cur || ($v eq 'all' && ($cur eq '' || $cur eq 'all'));
+  <li>
+    <a class="chip <%= $is_active ? 'chip-active' : '' %>" href="<%= $link_for->($v) %>">
+% if ($opt->{variant}) {
+      <span class="chip-dot" aria-hidden="true"></span>
+% }
+      <%= $opt->{label} %>
+    </a>
+  </li>
+% }
+</ul>

@@ -1,0 +1,33 @@
+% # label   => string
+% # name    => string (form field name)
+% # type    => 'text' | 'select' (default 'text')
+% # value   => optional current value (for text inputs)
+% # options => arrayref of [{ value, label, selected? }] for select
+% # extra   => optional arrayref of extra options to pin (e.g. user's
+% #            current value when not in the available list)
+% # help    => optional help text under the field
+% # placeholder => optional input placeholder
+% my $t       = stash('type') // 'text';
+% my $opts    = stash('options') // [];
+% my $extras  = stash('extra')   // [];
+% my $value   = stash('value')   // '';
+% my $help    = stash('help');
+% my $placeholder = stash('placeholder');
+<label class="form-field">
+  <span class="field-label"><%== $label %></span>
+% if ($t eq 'select') {
+  <select class="select" name="<%= $name %>">
+%   for my $opt (@$opts) {
+    <option value="<%= $opt->{value} %>" <%= selected_if($opt->{selected}) %>><%= $opt->{label} %></option>
+%   }
+%   for my $opt (@$extras) {
+    <option value="<%= $opt->{value} %>" <%= selected_if($opt->{selected}) %>><%= $opt->{label} %></option>
+%   }
+  </select>
+% } else {
+  <input class="input" type="<%= $t %>" name="<%= $name %>" value="<%= $value %>"<% if (defined $placeholder) { %> placeholder="<%= $placeholder %>"<% } %>>
+% }
+% if (defined $help) {
+  <span class="field-help"><%== $help %></span>
+% }
+</label>

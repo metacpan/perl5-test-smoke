@@ -1,6 +1,11 @@
 % layout 'default';
 % title 'Not Found';
+% stash page_header => {
+%   crumbs => [ { label => 'Home', href => '/' }, { label => 'Not found' } ],
+%   title  => 'Not found',
+% };
 
-<h1>404 Not Found</h1>
-<p>That report or page does not exist (yet).</p>
-<p><a href="/latest">Go back to latest smoke results</a>.</p>
+%= include 'components/empty_state', title => '404 &mdash; that page does not exist (yet)', desc => 'The report id or path you followed does not match anything in the database.', icon => '?', actions => begin
+  %= btn_link 'Back to latest', '/latest', 'primary'
+  %= btn_link 'Open search',    '/search', 'secondary'
+% end

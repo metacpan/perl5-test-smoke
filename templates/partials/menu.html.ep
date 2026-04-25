@@ -1,6 +1,51 @@
-<nav>
-  <a href="/latest">Latest</a>
-  <a href="/search">Search</a>
-  <a href="/matrix">Matrix</a>
-  <a href="/about">About</a>
-</nav>
+<header class="topbar" data-open="false">
+  <div class="topbar-brand">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="<%= asset_url '/logo.png' %>" alt="" width="36" height="36">
+      <span class="brand-text">
+        <span class="brand-name">CoreSmoke<em>DB</em></span>
+        <span class="brand-meta">Perl 5 core smoke</span>
+      </span>
+    </a>
+  </div>
+
+  <nav class="topbar-nav" aria-label="Primary">
+    %= nav_link 'Latest', '/latest'
+    %= nav_link 'Search', '/search'
+    %= nav_link 'Matrix', '/matrix'
+    %= nav_link 'About',  '/about'
+  </nav>
+
+  <div class="topbar-utilities">
+    <button type="button" class="palette-trigger" data-action="open-palette" aria-label="Open command palette">
+      <span class="palette-trigger-label">Search reports...</span>
+      <span class="palette-trigger-keys">
+        <kbd class="kbd-key">&#8984;</kbd>
+        <kbd class="kbd-key">K</kbd>
+      </span>
+    </button>
+    <button type="button" class="density-toggle" data-action="toggle-density" aria-label="Toggle row density" aria-pressed="false" title="Toggle compact / comfortable density">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <button type="button" class="theme-toggle" data-action="toggle-theme" aria-label="Toggle theme">
+      <span class="theme-toggle-icon" data-theme-icon-light aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </span>
+      <span class="theme-toggle-icon" data-theme-icon-dark aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+      <span class="theme-toggle-label" data-theme-label-light>Light</span>
+      <span class="theme-toggle-label" data-theme-label-dark>Dark</span>
+    </button>
+    <button type="button" class="hamburger" data-action="toggle-mobile" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <div class="topbar-mobile-sheet">
+    %= nav_link 'Latest', '/latest'
+    %= nav_link 'Search', '/search'
+    %= nav_link 'Matrix', '/matrix'
+    %= nav_link 'About',  '/about'
+  </div>
+</header>

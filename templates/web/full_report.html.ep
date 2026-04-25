@@ -1,142 +1,166 @@
 % layout 'default';
 % title "Smoke report #$report->{id}";
+% my $rid          = $report->{id};
+% my $matrix_rows  = $report->{matrix_rows} // [];
+% my $io_labels    = $report->{io_labels} // [];
+% my $failures     = $report->{test_failures} // [];
+% my $compilers    = $report->{c_compilers} // [];
 
-<h1>Smoke report #<%= $report->{id} %></h1>
-
-<dl class="report-meta">
-  <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
-  <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
-  <dt>Patch</dt>     <dd><code><%= $report->{git_id} %></code></dd>
-  <dt>Host</dt>      <dd><%= $report->{hostname} %>: <%= $report->{cpu_description} %> (<%= $report->{architecture} %>/<%= $report->{cpu_count} %> cpus)</dd>
-  <dt>OS</dt>        <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
-% if (@{ $report->{c_compilers} // [] }) {
-  <dt>Compilers</dt> <dd>
-% for my $cc (@{ $report->{c_compilers} }) {
-    <%= $cc->{cc} %> <%= $cc->{ccversion} %><br>
-% }
-  </dd>
-% }
-  <dt>Smoke time</dt><dd><%= $report->{duration_in_hhmm} %> (avg <%= $report->{average_in_hhmm} %> per config)</dd>
-  <dt>Smoke date</dt><dd><time datetime="<%= $report->{smoke_date} %>" class="utc-date"><%= $report->{smoke_date} %></time></dd>
-  <dt>Tester</dt>    <dd><%= $report->{username} // '(unknown)' %></dd>
-  <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><strong><%= $report->{summary} %></strong></dd>
-% if ($report->{user_note}) {
-  <dt>Note</dt>      <dd class="user-note"><%= $report->{user_note} %></dd>
-% }
-</dl>
-
-<p class="report-actions">
+% my $header_actions = begin
+  %= status_pill $report->{summary}
 % if ($report->{has_log_file}) {
-  <a href="/file/log_file/<%= $report->{id} %>">View log_file</a>
+  %= btn_link 'log_file', "/file/log_file/$rid", 'ghost', 'sm'
 % }
 % if ($report->{has_out_file}) {
-  <a href="/file/out_file/<%= $report->{id} %>">View out_file</a>
+  %= btn_link 'out_file', "/file/out_file/$rid", 'ghost', 'sm'
 % }
-  <a href="/api/full_report_data/<%= $report->{id} %>">JSON</a>
-</p>
+  %= btn_link 'JSON', "/api/full_report_data/$rid", 'ghost', 'sm'
+% end
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Home',    href => '/' },
+%     { label => 'Reports', href => '/latest' },
+%     { label => "#$rid" },
+%   ],
+%   title   => "Smoke report #$rid",
+%   actions => $header_actions,
+% };
 
-<h2>Configurations &amp; results</h2>
-<div class="table-wrap">
-<table class="configs matrix">
-  <thead>
-    <tr>
-      <th>Build args</th>
-      <th>Debug</th>
-% for my $label (@{ $report->{io_labels} // [] }) {
-      <th><%= $label %></th>
-% }
-      <th>Duration</th>
-    </tr>
-  </thead>
-  <tbody>
-% for my $row (@{ $report->{matrix_rows} // [] }) {
-%   my %by_label = map { $_->{label} => $_ } @{ $row->{results} };
-    <tr>
-      <td class="cfg-args"><code><%= length $row->{arguments} ? $row->{arguments} : '(default)' %></code></td>
-      <td><%= $row->{debugging} // '' %></td>
-%   for my $label (@{ $report->{io_labels} // [] }) {
-%     my $r = $by_label{$label};
-%     my $sum = $r ? ($r->{summary} // '') : '';
-%     my $cls = !$r           ? ''
-%             : $sum eq 'O'   ? 'pass'
-%             : $sum eq 'F'   ? 'fail'
-%             : $sum eq 'X'   ? 'fail'
-%             :                 '';
-      <td class="<%= $cls %>" title="<%= $label %>: <%= length $sum ? "$sum -- " . summary_desc($sum) : 'N/A' %>"><%= $sum %></td>
+% my $panel_overview = begin
+<dl class="dl-grid">
+  <dt>Branch</dt>     <dd><code class="code-inline"><%= $report->{smoke_branch} %></code></dd>
+  <dt>Perl</dt>       <dd><code class="code-inline"><%= $report->{perl_id} %></code> (<code class="code-inline"><%= $report->{git_describe} %></code>)</dd>
+  <dt>Patch</dt>      <dd><code class="code-inline"><%= $report->{git_id} %></code></dd>
+  <dt>Host</dt>       <dd><%= $report->{hostname} %>: <%= $report->{cpu_description} %> (<%= $report->{architecture} %> / <%= $report->{cpu_count} %> cpus)</dd>
+  <dt>OS</dt>         <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
+%   if (@$compilers) {
+  <dt>Compilers</dt>  <dd>
+%     for my $cc (@$compilers) {
+    <code class="code-inline"><%= $cc->{cc} %> <%= $cc->{ccversion} %></code><br>
+%     }
+  </dd>
 %   }
+  <dt>Smoke time</dt> <dd><%= $report->{duration_in_hhmm} %> (avg <%= $report->{average_in_hhmm} %> per config)</dd>
+  <dt>Smoke date</dt> <dd><time datetime="<%= $report->{smoke_date} %>" class="utc-date"><%= $report->{smoke_date} %></time></dd>
+  <dt>Tester</dt>     <dd><%= $report->{username} // '(unknown)' %></dd>
+  <dt>Summary</dt>    <dd><%= status_pill $report->{summary} %></dd>
+%   if ($report->{user_note}) {
+  <dt>Note</dt>       <dd>
+    %= include 'components/alert', variant => 'warning', body => $report->{user_note}
+  </dd>
+%   }
+</dl>
+% end
+
+% my $panel_matrix = begin
+%   if (!@$matrix_rows) {
+    %= include 'components/empty_state', title => 'No configurations recorded', icon => '&empty;'
+%   } else {
+%     my @headers = ('Build args', 'Debug');
+%     push @headers, $_ for @$io_labels;
+%     push @headers, 'Duration';
+%     my $rows = begin
+%       for my $row (@$matrix_rows) {
+%         my %by_label = map { $_->{label} => $_ } @{ $row->{results} };
+    <tr>
+      <td><code class="code-inline"><%= length $row->{arguments} ? $row->{arguments} : '(default)' %></code></td>
+      <td><%= $row->{debugging} // '' %></td>
+%         for my $label (@$io_labels) {
+%           my $r   = $by_label{$label};
+%           my $sum = $r ? ($r->{summary} // '') : '';
+%           my $tint =
+%               !$r          ? ''
+%             : $sum eq 'O'  ? 'status-cell-success'
+%             : $sum eq 'F'  ? 'status-cell-danger'
+%             : $sum eq 'X'  ? 'status-cell-danger'
+%             :                'status-cell-warning';
+      <td class="status-cell <%= $tint %>" title="<%= $label %>: <%= length $sum ? "$sum -- " . summary_desc($sum) : 'N/A' %>"><strong><%= $sum %></strong></td>
+%         }
       <td><%= duration_hms($row->{duration}) %></td>
     </tr>
-% }
-  </tbody>
-</table>
-</div>
-<p><small>Hover any cell for the full status description.</small></p>
-
-% if (@{ $report->{test_failures} // [] }) {
-<h2>Test failures</h2>
-<dl class="test-failures">
-% for my $f (@{ $report->{test_failures} }) {
-  <dt>
-    <a href="/submatrix?test=<%= url_escape $f->{test} %>"><code><%= $f->{test} %></code></a>
-    <span class="status">(<%= $f->{status} %>)</span>
-  </dt>
-  <dd>
-%   if (defined $f->{extra} && length $f->{extra}) {
-    <pre class="failure-extra"><%= $f->{extra} %></pre>
+%       }
+%     end
+    %= include 'components/data_table', headers => \@headers, body => $rows
+    <p class="field-help">Hover any cell for the full status description.</p>
 %   }
-%   if (@{ $f->{configs} // [] }) {
-    <small>Configurations:</small>
-    <ul class="failure-configs">
-%     for my $c (@{ $f->{configs} }) {
-      <li>
-        [<%= $c->{io_env} %><%= length($c->{locale} // '') ? '/'.$c->{locale} : '' %>]
-        <code><%= length($c->{arguments}) ? $c->{arguments} : '(default)' %></code>
-      </li>
+% end
+
+% my $panel_failures = begin
+%   if (!@$failures) {
+    %= include 'components/empty_state', title => 'No failing tests', desc => 'This report did not record any failing tests.', icon => '&check;'
+%   } else {
+%     for my $f (@$failures) {
+%       my $alert_body = begin
+%         if (defined $f->{extra} && length $f->{extra}) {
+        %= include 'components/code_block', body => $f->{extra}
+%         }
+%         if (@{ $f->{configs} // [] }) {
+        <p class="field-help">Configurations:</p>
+        <ul class="link-list">
+%           for my $c (@{ $f->{configs} }) {
+          <li>[<%= $c->{io_env} %><%= length($c->{locale} // '') ? '/'.$c->{locale} : '' %>] <code class="code-inline"><%= length($c->{arguments}) ? $c->{arguments} : '(default)' %></code></li>
+%           }
+        </ul>
+%         }
+        <p><a class="btn-link" href="/submatrix?test=<%= url_escape $f->{test} %>">View failure history across smoke reports &rarr;</a></p>
+%       end
+      %= include 'components/alert', variant => 'danger', title => qq($f->{test}  ($f->{status})), body => $alert_body
 %     }
-    </ul>
 %   }
-  </dd>
-% }
-</dl>
-% }
+% end
 
-% if (defined $report->{compiler_msgs_text} && length $report->{compiler_msgs_text}) {
-<h2>Compiler messages</h2>
-<pre class="report-section"><%= $report->{compiler_msgs_text} %></pre>
-% }
+% my $panel_messages = begin
+%   my $any = 0;
+%   for my $sect (
+%     [ 'Compiler messages',  $report->{compiler_msgs_text} ],
+%     [ 'Manifest messages',  $report->{manifest_msgs_text} ],
+%     [ 'Non-fatal messages', $report->{nonfatal_msgs_text} ],
+%     [ 'Applied patches',    $report->{applied_patches} ],
+%     [ 'Skipped tests',      $report->{skipped_tests} ],
+%   ) {
+%     next unless defined $sect->[1] && length $sect->[1];
+%     $any = 1;
+  <h3><%= $sect->[0] %></h3>
+  %= include 'components/code_block', body => $sect->[1]
+%   }
+%   if (!$any) {
+    %= include 'components/empty_state', title => 'No build messages', icon => '&check;'
+%   }
+% end
 
-% if (defined $report->{manifest_msgs_text} && length $report->{manifest_msgs_text}) {
-<h2>Manifest messages</h2>
-<pre class="report-section"><%= $report->{manifest_msgs_text} %></pre>
-% }
-
-% if (defined $report->{nonfatal_msgs_text} && length $report->{nonfatal_msgs_text}) {
-<h2>Non-fatal messages</h2>
-<pre class="report-section"><%= $report->{nonfatal_msgs_text} %></pre>
-% }
-
-% if ($report->{applied_patches}) {
-<h2>Applied patches</h2>
-<pre class="report-section"><%= $report->{applied_patches} %></pre>
-% }
-
-% if ($report->{skipped_tests}) {
-<h2>Skipped tests</h2>
-<pre class="report-section"><%= $report->{skipped_tests} %></pre>
-% }
-
-<h2>About this smoke</h2>
-<dl class="report-about">
-  <dt>smoking-perl</dt>   <dd><%= $report->{smoke_perl} // '' %></dd>
-  <dt>smoker-version</dt> <dd><%= $report->{smoke_version} // '' %>/<%= $report->{smoker_version} // '' %></dd>
-  <dt>reporter</dt>       <dd><%= $report->{reporter} // '' %> <%= $report->{reporter_version} // '' %></dd>
+% my $panel_about = begin
+<dl class="dl-grid">
+  <dt>smoking-perl</dt>   <dd><code class="code-inline"><%= $report->{smoke_perl} // '' %></code></dd>
+  <dt>smoker-version</dt> <dd><code class="code-inline"><%= $report->{smoke_version} // '' %>/<%= $report->{smoker_version} // '' %></code></dd>
+  <dt>reporter</dt>       <dd><%= $report->{reporter} // '' %> <code class="code-inline"><%= $report->{reporter_version} // '' %></code></dd>
   <dt>test_jobs</dt>      <dd><%= $report->{test_jobs} // '' %></dd>
-  <dt>LANG</dt>           <dd><%= $report->{lang} // '' %></dd>
-  <dt>LC_ALL</dt>         <dd><%= $report->{lc_all} // '' %></dd>
-% if ($report->{harness_only}) {
+  <dt>LANG</dt>           <dd><code class="code-inline"><%= $report->{lang} // '' %></code></dd>
+  <dt>LC_ALL</dt>         <dd><code class="code-inline"><%= $report->{lc_all} // '' %></code></dd>
+%   if ($report->{harness_only}) {
   <dt>harness only</dt>   <dd>1 (testsuite was run only with 'harness')</dd>
-% }
-% if ($report->{harness3opts}) {
-  <dt>HARNESS3OPTS</dt>   <dd><code><%= $report->{harness3opts} %></code></dd>
-% }
+%   }
+%   if ($report->{harness3opts}) {
+  <dt>HARNESS3OPTS</dt>   <dd><code class="code-inline"><%= $report->{harness3opts} %></code></dd>
+%   }
 </dl>
+% end
+
+%   my @tabs_list = (
+%     { name => 'overview', label => 'Overview' },
+%     { name => 'matrix',   label => 'Configurations &amp; results (' . scalar(@$matrix_rows) . ')' },
+%     { name => 'failures', label => 'Failures (' . scalar(@$failures) . ')' },
+%     { name => 'messages', label => 'Build messages' },
+%     { name => 'about',    label => 'About this smoke' },
+%   );
+%   my %panels = (
+%     overview => $panel_overview,
+%     matrix   => $panel_matrix,
+%     failures => $panel_failures,
+%     messages => $panel_messages,
+%     about    => $panel_about,
+%   );
+<%= include 'components/tabs',
+    group   => 'report',
+    active  => 'overview',
+    tabs    => \@tabs_list,
+    panels  => \%panels %>

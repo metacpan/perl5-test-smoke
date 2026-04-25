@@ -1,5 +1,17 @@
 % layout 'default';
 % title $title;
+% my $rid = stash 'rid';
+% my @crumbs = ({ label => 'Home', href => '/' }, { label => 'Reports', href => '/latest' });
+% push @crumbs, { label => "#$rid", href => "/report/$rid" } if $rid;
+% push @crumbs, { label => $title };
+% stash page_header => {
+%   crumbs => \@crumbs,
+%   title  => qq(<code class="code-inline">$title</code>),
+%   actions => begin
+% if ($rid) {
+%= btn_link 'Back to report', "/report/$rid", 'ghost', 'sm'
+% }
+%   end,
+% };
 
-<h1><%= $title %></h1>
-<pre class="plain-text"><%= $content %></pre>
+%= include 'components/code_block', lang => $title, body => $content

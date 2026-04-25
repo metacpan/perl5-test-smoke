@@ -1,0 +1,25 @@
+% # headers     => arrayref. Each entry is either:
+% #                 - a string: plain header
+% #                 - a hashref { label, sort?: key } : sortable header
+% # body        => code block (begin/end) rendering the <tr>s
+% # tbody_id    => optional id for the <tbody>
+% # extra_class => optional extra class on the .data-table (e.g. 'matrix-table')
+% my $extra = stash('extra_class') // '';
+<div class="table-wrap">
+  <table class="data-table<%= $extra ? " $extra" : '' %>">
+    <thead>
+      <tr>
+% for my $h (@$headers) {
+%   if (ref $h eq 'HASH') {
+        <th<% if ($h->{sort}) { %> data-sort-key="<%= $h->{sort} %>"<% } %>><%== $h->{label} %></th>
+%   } else {
+        <th><%== $h %></th>
+%   }
+% }
+      </tr>
+    </thead>
+    <tbody<% if (my $tid = stash 'tbody_id') { %> id="<%= $tid %>"<% } %>>
+<%= ref $body eq 'CODE' ? $body->() : $body %>
+    </tbody>
+  </table>
+</div>

@@ -1,14 +1,37 @@
+% # Renders <tr>s for a list of reports plus a load-more skeleton row
+% # when more pages exist. On HTMX infinite-scroll requests, also emits an
+% # OOB pagination_summary update so the "Showing N of M" header grows.
+% #
+% # IMPORTANT: the load-more <tr> intentionally has NO id attribute. The
+% # /search controller distinguishes form-change requests from infinite-
+% # scroll requests via the HX-Trigger header (form has id="search-form",
+% # this row does not). Don't add an id here.
 % for my $r (@$reports) {
-<tr>
-  <td><%= $r->{hostname} %></td>
-  <td><%= $r->{architecture} %></td>
-  <td><%= $r->{osname} %> <%= $r->{osversion} %></td>
-  <td><%= $r->{perl_id} %></td>
-  <td class="summary-<%= (lc($r->{summary} // '') =~ s/\(.*//r) %>">
-    <a href="/report/<%= $r->{id} %>"><%= $r->{summary} %></a>
+%   my $key = lc($r->{summary} // '');
+%   $key =~ s/\(.*//;
+%   my $row_accent =
+%       $key eq 'pass'        ? 'row-accent-success'
+%     : $key eq 'fail'        ? 'row-accent-danger'
+%     : $key eq 'configerror' ? 'row-accent-warning'
+%     :                         'row-accent';
+%   my $cell_tint =
+%       $key eq 'pass'        ? 'status-cell-success'
+%     : $key eq 'fail'        ? 'status-cell-danger'
+%     : $key eq 'configerror' ? 'status-cell-warning'
+%     :                         '';
+%   my $smoker = ($r->{smoke_version} // '') =~ s|/.*||r;
+<tr class="<%= $row_accent %>" data-href="/report/<%= $r->{id} %>">
+  <td data-sort-key="host"><%= $r->{hostname} %></td>
+  <td data-sort-key="arch"><%= $r->{architecture} %></td>
+  <td data-sort-key="os"><%= $r->{osname} %> <%= $r->{osversion} %></td>
+  <td data-sort-key="perl"><code class="code-inline"><%= $r->{perl_id} %></code></td>
+  <td data-sort-key="status" data-sort-value="<%= lc($r->{summary} // '') %>" class="status-cell <%= $cell_tint %>">
+    <a href="/report/<%= $r->{id} %>" aria-label="View report <%= $r->{id} %>">
+      %= status_pill $r->{summary}
+    </a>
   </td>
-  <td><%= ($r->{smoke_version} // '') =~ s|/.*||r %></td>
-  <td><time datetime="<%= $r->{smoke_date} %>" class="utc-date"><%= $r->{smoke_date} %></time></td>
+  <td data-sort-key="smoker"><code class="code-inline"><%= $smoker %></code></td>
+  <td data-sort-key="date" data-sort-value="<%= $r->{smoke_date} %>"><time datetime="<%= $r->{smoke_date} %>" class="utc-date"><%= $r->{smoke_date} %></time></td>
 </tr>
 % }
 % if ($report_count > $page * $reports_per_page) {
@@ -21,20 +44,16 @@
 %       $url .= "&" . url_escape($k) . "=" . url_escape($f->{$k});
 %     }
 %   }
-<tr class="hx-load-more"
+<tr class="skeleton-row hx-load-more"
     hx-get="<%= $url %>"
     hx-trigger="revealed"
     hx-swap="outerHTML"
     hx-target="this">
-  <td colspan="7"><em>Loading more...</em></td>
+  <td colspan="7"><span class="skeleton"></span></td>
 </tr>
 % }
-% # When this fragment is loaded by an infinite-scroll HTMX request on
-% # /latest, also emit an out-of-band update for the page header so the
-% # "Showing N of M hosts" count grows as more rows scroll in. The OOB
-% # element targets #latest-summary by id; HTMX swaps it on the client.
 % if (stash('oob_summary')) {
 %   my $shown = $page * $reports_per_page;
 %   $shown = $report_count if $shown > $report_count;
-<p id="latest-summary" hx-swap-oob="true"><small>Showing <%= $shown %> of <%= $report_count %> hosts. Latest plevel: <code><%= stash('latest_plevel') // '' %></code></small></p>
+%= include 'components/pagination_summary', shown => $shown, total => $report_count, noun => 'hosts', id => 'latest-summary', oob => 1
 % }

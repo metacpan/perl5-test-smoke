@@ -1,39 +1,44 @@
 % layout 'default';
 % title 'Failure matrix';
+% my $hot = stash('hot_failures') // 0;
+% my @hero_stats = (
+%   { label => 'Tests tracked', value => commify(scalar @$rows) },
+%   { label => 'Perl versions', value => commify(scalar @$perl_versions) },
+%   { label => 'Total failures', value => commify($hot), variant => $hot ? 'danger' : 'success' },
+% );
+%= include 'components/hero', eyebrow => 'Test failure matrix', title => 'Where Perl <em>breaks</em> across versions.', lede => 'Heatmap of failing tests by Perl version. Darker cells mean more failing reports. Click any cell for the matching reports.', stats => \@hero_stats
 
-<h1>Failure matrix</h1>
 % if (!@$perl_versions) {
-<p>No reports yet.</p>
+  %= include 'components/empty_state', title => 'No reports yet', desc => 'Once smoke results are ingested, the failure matrix will appear here.', icon => '&hellip;'
 % } else {
-<div class="table-wrap">
-<table class="matrix">
-  <thead>
-    <tr>
-      <th>Test</th>
-% for my $v (@$perl_versions) {
-      <th><%= $v %></th>
-% }
-    </tr>
-  </thead>
-  <tbody>
+%   my @headers = ('Test');
+%   push @headers, qq(<code class="code-inline">$_</code>) for @$perl_versions;
+  %= include 'components/data_table', extra_class => 'matrix-table', headers => \@headers, body => begin
 % for my $row (@$rows) {
     <tr>
-      <td class="test">
+      <td class="matrix-test">
         <a href="/submatrix?test=<%= url_escape $row->{test} %>"><%= $row->{test} %></a>
       </td>
 % for my $v (@$perl_versions) {
 %   my $cell = $row->{$v};
 %   if ($cell) {
-      <td class="fail" title="<%= $cell->{alt} %>">
-        <a href="/submatrix?test=<%= url_escape $row->{test} %>&pversion=<%= $v %>"><%= $cell->{cnt} %></a>
+%     my $cnt = $cell->{cnt} // 0;
+%     # Log-scale intensity so a few failures still read, but huge counts
+%     # don't saturate every cell. cnt=1 -> ~10%, cnt=10 -> ~30%,
+%     # cnt=100 -> ~50%, cnt=1000 -> ~70%, capped at 80%.
+%     use POSIX ();
+%     my $ratio = $cnt > 0 ? POSIX::floor(10 + 20 * POSIX::log10($cnt)) : 0;
+%     $ratio = 80 if $ratio > 80;
+%     $ratio = 10 if $ratio < 10 && $cnt > 0;
+%     my $intense = $ratio >= 55 ? ' intense' : '';
+      <td class="heatmap-cell heatmap-fail<%= $intense %>" style="--ratio: <%= $ratio %>%" title="<%= $cnt %> failure(s)">
+        <a href="/submatrix?test=<%= url_escape $row->{test} %>&amp;pversion=<%= $v %>"><%= commify($cnt) %></a>
       </td>
 %   } else {
-      <td class="pass">0</td>
+      <td class="heatmap-cell heatmap-zero">0</td>
 %   }
 % }
     </tr>
 % }
-  </tbody>
-</table>
-</div>
+  % end
 % }

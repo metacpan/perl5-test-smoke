@@ -1,0 +1,12 @@
+% # label   => required
+% # value   => required (may contain inline HTML)
+% # variant => optional: success | danger | accent
+% # trend   => optional small trailing text
+% my $variant = stash('variant') ? ' is-' . stash('variant') : '';
+<div class="stat">
+  <span class="stat-label"><%= $label %></span>
+  <span class="stat-value<%= $variant %>"><%== $value %></span>
+% if (defined(my $tr = stash 'trend')) {
+  <span class="stat-trend"><%= $tr %></span>
+% }
+</div>

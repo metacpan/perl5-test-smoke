@@ -1,36 +1,39 @@
 % layout 'default';
-% title "Failures for $test";
-
-<h1>Failures for <code><%= $test %></code>
-% if ($pversion) {
-on perl <code><%= $pversion %></code>
-% }
-</h1>
-% if (!$test) {
-<p><em>Missing <code>test</code> query parameter.</em></p>
-% } elsif (!@$reports) {
-<p>No matching reports.</p>
+% title "Failures for " . ($test // 'unknown');
+% my @crumbs = (
+%   { label => 'Home',   href => '/' },
+%   { label => 'Matrix', href => '/matrix' },
+% );
+% if (defined $test && length $test) {
+%   push @crumbs, { label => $test };
 % } else {
-<div class="table-wrap">
-<table class="reports">
-  <thead>
-    <tr>
-      <th>Perl</th>
-      <th>git_describe</th>
-      <th>Host</th>
-      <th>OS</th>
-    </tr>
-  </thead>
-  <tbody>
+%   push @crumbs, { label => 'Submatrix' };
+% }
+% stash page_header => {
+%   crumbs => \@crumbs,
+%   title  => $test
+%     ? ($pversion ? qq(Failures for <code class="code-inline">$test</code> on perl <code class="code-inline">$pversion</code>)
+%                  : qq(Failures for <code class="code-inline">$test</code>))
+%     : 'Submatrix',
+% };
+
+% if (!defined $test || !length $test) {
+  %= include 'components/empty_state', title => 'Missing test parameter', desc => 'The /submatrix endpoint needs a `test=...` query parameter. Try clicking a cell from the matrix.', icon => '?', actions => begin
+    %= btn_link 'Back to matrix', '/matrix', 'primary', 'sm'
+  % end
+% } elsif (!@$reports) {
+  %= include 'components/empty_state', title => 'No matching reports', desc => 'No smoke reports record a failure of this test for this Perl version.', icon => '&empty;', actions => begin
+    %= btn_link 'Back to matrix', '/matrix', 'secondary', 'sm'
+  % end
+% } else {
+  %= include 'components/data_table', headers => ['Perl', 'git_describe', 'Host', 'OS'], body => begin
 % for my $r (@$reports) {
     <tr>
-      <td><a href="/report/<%= $r->{id} %>"><%= $r->{perl_id} %></a></td>
-      <td><code><%= $r->{git_describe} %></code></td>
+      <td><a href="/report/<%= $r->{id} %>"><code class="code-inline"><%= $r->{perl_id} %></code></a></td>
+      <td><code class="code-inline"><%= $r->{git_describe} %></code></td>
       <td><%= $r->{hostname} %></td>
       <td><%= $r->{osname} %> <%= $r->{osversion} %></td>
     </tr>
 % }
-  </tbody>
-</table>
-</div>
+  % end
 % }

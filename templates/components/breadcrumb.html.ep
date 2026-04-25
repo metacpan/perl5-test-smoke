@@ -1,0 +1,14 @@
+% # crumbs => arrayref of { label => '...', href => '...' (optional) }
+<nav class="breadcrumb" aria-label="Breadcrumb">
+% my $count = scalar @$crumbs;
+% for my $i (0 .. $count - 1) {
+%   my $c = $crumbs->[$i];
+%   my $is_last = $i == $count - 1;
+%   if ($i) { %><span class="breadcrumb-sep" aria-hidden="true"></span><% }
+%   if (!$is_last && $c->{href}) {
+  <a href="<%= $c->{href} %>"><%= $c->{label} %></a>
+%   } else {
+  <span class="breadcrumb-current"><%= $c->{label} %></span>
+%   }
+% }
+</nav>

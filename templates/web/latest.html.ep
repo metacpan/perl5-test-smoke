@@ -1,24 +1,26 @@
 % layout 'default';
 % title 'Latest smoke results';
+% my $stats = stash('stats') // {};
+% my @hero_stats = (
+%   { label => 'Hosts',        value => commify($report_count) },
+%   { label => 'Latest plevel', value => qq(<span class="code-inline">$latest_plevel</span>) },
+%   { label => 'PASS (24h)',   value => commify($stats->{pass_24h}  // 0), variant => 'success' },
+%   { label => 'FAIL (24h)',   value => commify($stats->{fails_24h} // 0), variant => 'danger'  },
+%   { label => 'Total reports', value => commify($stats->{total_reports} // 0) },
+% );
+%= include 'components/hero', eyebrow => 'Live smoke ingest', title => 'Latest <em>smoke</em> results.', lede => 'The most recent run from each host, freshest plevel first. Click a row to open the full report.', stats => \@hero_stats
 
-<h1>Latest smoke results</h1>
-<p id="latest-summary"><small>Showing <%= scalar @$reports %> of <%= $report_count %> hosts. Latest plevel: <code><%= $latest_plevel %></code></small></p>
+%= include 'components/pagination_summary', shown => scalar @$reports, total => $report_count, noun => 'hosts', id => 'latest-summary'
 
-<div class="table-wrap">
-<table class="reports">
-  <thead>
-    <tr>
-      <th>Host</th>
-      <th>Architecture</th>
-      <th>OS</th>
-      <th>Perl</th>
-      <th>Summary</th>
-      <th>Smoker</th>
-      <th>Smoke date</th>
-    </tr>
-  </thead>
-  <tbody id="report-rows">
+% my @headers = (
+%   { label => 'Host',         sort => 'host' },
+%   { label => 'Architecture', sort => 'arch' },
+%   { label => 'OS',           sort => 'os' },
+%   { label => 'Perl',         sort => 'perl' },
+%   { label => 'Status',       sort => 'status' },
+%   { label => 'Smoker',       sort => 'smoker' },
+%   { label => 'Smoke date',   sort => 'date' },
+% );
+%= include 'components/data_table', headers => \@headers, tbody_id => 'report-rows', body => begin
 %= include 'web/_reports_rows', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page
-  </tbody>
-</table>
-</div>
+% end

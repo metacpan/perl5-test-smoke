@@ -1,6 +1,12 @@
 % layout 'default';
 % title 'Search smoke reports';
-
-<h1>Search smoke reports</h1>
+% stash page_header => {
+%   crumbs => [ { label => 'Home', href => '/' }, { label => 'Search' } ],
+%   title  => 'Search smoke reports',
+%   subtitle => 'Filter the full report history. Changes apply automatically.',
+%   actions => begin
+%= btn_link 'Reset filters', '/search', 'ghost', 'sm'
+%   end,
+% };
 
 %= include 'web/_search_region', available => $available, filter => $filter, results => $results, page => $page, reports_per_page => $reports_per_page
