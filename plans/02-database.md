@@ -2,7 +2,7 @@
 
 ## Goal
 
-Translate the PostgreSQL schema in `legacy/sql/coresmokedb.sql` to a SQLite-compatible migration that Mojo::SQLite can apply on first boot of `smoke.db`. Port the `git_describe_as_plevel()` PL/pgSQL function to Perl with byte-for-byte parity.
+Translate the PostgreSQL schema in `legacy/sql/coresmokedb.sql` to a SQLite-compatible migration that Mojo::SQLite applies on first boot of `smoke.db`. **Drop the five bytea columns from `report` — those bytes live on disk** (decision #30, see plan 05). Port `git_describe_as_plevel()` to Perl with parity against a hand-curated corpus.
 
 ## Schema source of truth
 
@@ -10,17 +10,17 @@ Translate the PostgreSQL schema in `legacy/sql/coresmokedb.sql` to a SQLite-comp
 
 | Table | Notes |
 |------|-------|
-| `report` | Largest. Contains BLOB columns (`manifest_msgs`, `compiler_msgs`, `log_file`, `out_file`, `nonfatal_msgs`) and a generated `plevel` column. |
-| `config` | FK → `report.id`. |
-| `result` | FK → `config.id`. |
+| `report` | Largest. **No BLOB columns in 2.0.** New `report_hash` UNIQUE column. |
+| `config` | FK → `report.id` `ON DELETE CASCADE`. |
+| `result` | FK → `config.id` `ON DELETE CASCADE`. |
 | `failure` | UNIQUE(test, status, extra). |
-| `failures_for_env` | Junction; FKs → `result.id`, `failure.id`; UNIQUE(result_id, failure_id). |
+| `failures_for_env` | Junction; FKs `ON DELETE CASCADE` to `result.id` and `failure.id`; UNIQUE(result_id, failure_id). |
 | `smoke_config` | UNIQUE(md5). |
-| `tsgateway_config` | UNIQUE(name). One row holds `dbversion`. |
+| `tsgateway_config` | UNIQUE(name). One row holds `dbversion = '4'`. |
 
 ## Migration file
 
-`lib/Perl5/CoreSmoke/Schema/migrations.sql` — single Mojo::SQLite migrations file:
+`lib/CoreSmoke/Schema/migrations.sql` — single Mojo::SQLite migrations file:
 
 ```sql
 -- 1 up
@@ -58,30 +58,28 @@ CREATE TABLE report (
     lc_all            TEXT,
     lang              TEXT,
     user_note         TEXT,
-    manifest_msgs     BLOB,
-    compiler_msgs     BLOB,
     skipped_tests     TEXT,
-    log_file          BLOB,
-    out_file          BLOB,
     harness_only      TEXT,
     harness3opts      TEXT,
     summary           TEXT NOT NULL,
     smoke_branch      TEXT DEFAULT 'blead',
-    nonfatal_msgs     BLOB,
     plevel            TEXT NOT NULL,            -- populated in Perl on insert
+    report_hash       TEXT NOT NULL UNIQUE,     -- md5(git_id, smoke_date, duration, hostname, architecture)
     UNIQUE(git_id, smoke_date, duration, hostname, architecture)
 );
+-- NOTE: the legacy bytea columns log_file, out_file, manifest_msgs, compiler_msgs, nonfatal_msgs
+--       are NOT in 2.0. Their content lives on disk under data/reports/<sharded-hash>/<field>.xz.
 
-CREATE INDEX report_architecture_idx           ON report(architecture);
-CREATE INDEX report_hostname_idx               ON report(hostname);
-CREATE INDEX report_osname_idx                 ON report(osname);
-CREATE INDEX report_osversion_idx              ON report(osversion);
-CREATE INDEX report_perl_id_idx                ON report(perl_id);
-CREATE INDEX report_plevel_idx                 ON report(plevel);
-CREATE INDEX report_smoke_date_idx             ON report(smoke_date);
-CREATE INDEX report_plevel_hostname_idx        ON report(hostname, plevel);
-CREATE INDEX report_smokedate_hostname_idx     ON report(hostname, smoke_date);
-CREATE INDEX report_smokedate_plevel_hostname  ON report(hostname, plevel, smoke_date);
+CREATE INDEX report_architecture_idx          ON report(architecture);
+CREATE INDEX report_hostname_idx              ON report(hostname);
+CREATE INDEX report_osname_idx                ON report(osname);
+CREATE INDEX report_osversion_idx             ON report(osversion);
+CREATE INDEX report_perl_id_idx               ON report(perl_id);
+CREATE INDEX report_plevel_idx                ON report(plevel);
+CREATE INDEX report_smoke_date_idx            ON report(smoke_date);
+CREATE INDEX report_plevel_hostname_idx       ON report(hostname, plevel);
+CREATE INDEX report_smokedate_hostname_idx    ON report(hostname, smoke_date);
+CREATE INDEX report_smokedate_plevel_hostname ON report(hostname, plevel, smoke_date);
 
 CREATE TABLE config (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +125,7 @@ CREATE TABLE tsgateway_config (
     value  TEXT
 );
 
-INSERT INTO tsgateway_config (name, value) VALUES ('dbversion', '3');
+INSERT INTO tsgateway_config (name, value) VALUES ('dbversion', '4');
 
 -- 1 down
 
@@ -144,15 +142,15 @@ DROP TABLE tsgateway_config;
 
 - `character varying` → `TEXT`
 - `integer` → `INTEGER`
-- `bytea` → `BLOB`
+- ~~`bytea` → `BLOB`~~ — **all bytea columns dropped**; content on disk
 - `timestamp with time zone` → `TEXT` (ISO 8601 UTC, e.g. `2024-05-08T10:23:11Z`)
 - `double precision` → `REAL`
 - Sequences (`*_id_seq` + `nextval`) → `INTEGER PRIMARY KEY AUTOINCREMENT`
 - `STORED GENERATED plevel` → ordinary `TEXT NOT NULL`, populated by `Model::Plevel` on insert
 
-### FK enforcement
+### FK enforcement and journal mode
 
-Mojo::SQLite enables `PRAGMA foreign_keys = ON` automatically per connection. Confirm in `Model::DB` and assert in tests.
+Mojo::SQLite enables `PRAGMA foreign_keys = ON` automatically per connection. WAL journal mode is the default. Confirm both in `Model::DB::pragma_check()` and assert in `t/01-config.t`.
 
 ## `Model::Plevel`
 
@@ -169,7 +167,7 @@ Port `git_describe_as_plevel()` (`legacy/sql/coresmokedb.sql:46-74`) to Perl. Th
 Implementation:
 
 ```perl
-package Perl5::CoreSmoke::Model::Plevel;
+package CoreSmoke::Model::Plevel;
 use v5.42;
 use experimental qw(signatures);
 
@@ -189,29 +187,46 @@ sub from_git_describe ($describe) {
 1;
 ```
 
-A parity test (see plan 09) runs a corpus of `git_describe` strings through both this module and a checked-in expected-output table extracted from the live PG database. Adjust the regex/edge cases until parity holds.
+A parity test (see plan 09) runs each entry of `t/data/plevel-corpus.tsv` through this module and asserts the output matches. The corpus is **hand-curated** (decision #7) covering at least these variants:
+
+```
+5.42.0                          5.042000zzz000
+v5.42.0                         5.042000zzz000
+v5.42.0-RC1                     5.042000RC1000
+v5.42.0-RC2                     5.042000RC2000
+v5.41.10                        5.041010zzz000
+v5.41.10-12-gabc1234            5.041010zzz012
+v5.40.2                         5.040002zzz000
+v5.40.0-RC3-5-gdef5678          5.040000RC3005
+... (~30 entries total)
+```
+
+If a real-world `git_describe` ever fails the test in production, add it to the corpus and fix `from_git_describe` until it passes.
 
 ## `Model::DB`
 
 Mojolicious helper around `Mojo::SQLite`. Responsibilities:
 
 - Construct from `db_path` config value.
-- Attach migrations file path.
+- Attach migrations file path (`lib/CoreSmoke/Schema/migrations.sql`).
+- Run `migrate` on app startup.
 - Expose `db()` for short-lived `Mojo::SQLite::Database` handles.
 - `pragma_check()` for tests: assert `foreign_keys = 1`, `journal_mode = wal`.
+- `report_hash($data)` helper: `md5_hex(join "\0", @{$data}{qw/git_id smoke_date duration hostname architecture/})`.
 
 ## Critical files to read
 
 - `legacy/sql/coresmokedb.sql:46-74`         (plevel function source)
-- `legacy/sql/coresmokedb.sql:175-213`       (report table)
+- `legacy/sql/coresmokedb.sql:175-213`       (report table — note we drop bytea columns)
 - `legacy/sql/coresmokedb.sql:380-475`       (FK and unique constraints)
-- `legacy/api/lib/Perl5/CoreSmokeDB/Client/Database.pm`  (how schema is consumed)
-- `legacy/api/t/coresmokedb.sqlite`          (sample SQLite DB; for column shape reference only)
+- `legacy/api/lib/CoreSmokeDB/Client/Database.pm`  (DAO behavior to mirror)
 
 ## Verification
 
 1. `script/smoke eval 'app->sqlite->migrations->migrate'` against an empty `smoke.db` exits 0 and creates all tables.
-2. `sqlite3 smoke.db '.schema'` matches the migration above.
-3. `script/smoke eval 'app->sqlite->db->query("PRAGMA foreign_keys")->hash'` returns `{ foreign_keys => 1 }`.
-4. Plevel parity test: a corpus of ≥30 `git_describe` strings (extracted via `psql -c "select distinct git_describe, plevel from report limit 200"` from a legacy DB if available, or hand-curated) all map to the legacy plevel string.
-5. Inserting a sample report via raw SQL with a hand-computed plevel succeeds; FK violations are rejected.
+2. `sqlite3 data/smoke.db '.schema report'` shows **no** `manifest_msgs`, `compiler_msgs`, `log_file`, `out_file`, or `nonfatal_msgs` columns and **does** show `report_hash TEXT NOT NULL`.
+3. `sqlite3 data/smoke.db 'SELECT value FROM tsgateway_config WHERE name=\"dbversion\"'` returns `4`.
+4. `script/smoke eval 'app->sqlite->db->query("PRAGMA foreign_keys")->hash'` returns `{ foreign_keys => 1 }`.
+5. `script/smoke eval 'app->sqlite->db->query("PRAGMA journal_mode")->hash'` returns `{ journal_mode => 'wal' }`.
+6. Plevel parity test: every entry of `t/data/plevel-corpus.tsv` passes (`prove -lv t/02-plevel.t`).
+7. Inserting a sample report via raw SQL succeeds; a duplicate insert (same composite tuple) fails with `UNIQUE constraint failed: report.git_id, report.smoke_date, ...`.

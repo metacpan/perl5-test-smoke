@@ -2,49 +2,49 @@
 
 ## Goal
 
-Build the entire 2.0 stack (API + web + ingest) into one Docker image. `smoke.db` lives outside the container and is mounted in as a volume so data survives image rebuilds.
+Build the entire 2.0 stack into one Alpine-based Docker image (decision #15). `smoke.db` and the `data/reports/` tree live outside the container and are mounted in as a directory volume so data survives image rebuilds.
 
 ## Image strategy
 
-Multi-stage build on `perl:5.42-slim` (Debian-slim):
+Multi-stage build:
 
-- **Stage 1 (`builder`)**: install build toolchain + `cpm`, copy `cpanfile`, install deps to `/build/local/`.
-- **Stage 2 (`runtime`)**: copy `local/`, copy app source, install only runtime libs (libsqlite3, libssl3), drop into a non-root user, expose 8080, run Hypnotoad.
+- **Stage 1 (`builder`)** — Alpine perl + build tools + xz dev headers; install CPAN deps to `/build/local/`.
+- **Stage 2 (`runtime`)** — slim Alpine perl; copy `local/` and app source; non-root user; expose 3000; run Hypnotoad in foreground.
 
 ## `Dockerfile`
 
 ```dockerfile
 ARG PERL_VERSION=5.42
 
+# ---------- builder ----------
 FROM perl:${PERL_VERSION}-slim AS builder
+# (If perl:5.42-alpine isn't published, switch FROM to alpine:3 + apk add perl)
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-        build-essential \
-        libsqlite3-dev \
-        libssl-dev \
-        zlib1g-dev \
+RUN apk add --no-cache \
+        build-base \
+        sqlite-dev \
+        sqlite-libs \
+        xz-dev \
+        xz-libs \
+        openssl-dev \
         ca-certificates \
         curl \
- && rm -rf /var/lib/apt/lists/*
-
-RUN cpan -T App::cpm
+ && cpan -T App::cpm
 
 WORKDIR /build
-COPY cpanfile cpanfile.snapshot* ./
-RUN cpm install --workers=4 --no-test --resolver=metadb --show-build-log-on-failure
+COPY cpanfile cpanfile.snapshot ./
+RUN cpm install --workers=4 --no-test --resolver=metadb --show-build-log-on-failure --resolver=snapshot
 
-
+# ---------- runtime ----------
 FROM perl:${PERL_VERSION}-slim AS runtime
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-        libsqlite3-0 \
-        libssl3 \
+RUN apk add --no-cache \
+        sqlite-libs \
+        xz-libs \
+        openssl \
         ca-certificates \
         tini \
- && rm -rf /var/lib/apt/lists/* \
- && useradd --system --create-home --uid 1000 smoke
+ && adduser -D -u 1000 smoke
 
 COPY --from=builder /build/local /app/local
 COPY --chown=smoke:smoke . /app
@@ -55,37 +55,47 @@ USER smoke
 ENV PERL5LIB=/app/local/lib/perl5:/app/lib \
     PATH=/app/local/bin:$PATH \
     SMOKE_DB_PATH=/data/smoke.db \
+    SMOKE_REPORTS_DIR=/data/reports \
     MOJO_MODE=production \
-    MOJO_HOME=/app
+    MOJO_HOME=/app \
+    TZ=UTC
 
 VOLUME ["/data"]
-EXPOSE 8080
+EXPOSE 3000
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["script/smoke", "prefork", "--listen", "http://*:8080"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:3000/healthz || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["script/smoke", "prefork", "--listen", "http://*:3000"]
 ```
 
 Notes:
 
-- `tini` is PID 1 so signals propagate cleanly.
-- `--no-test` during dep build keeps the layer fast; CI runs the test suite separately against the same `local/`.
-- The runtime image does **not** include `build-essential` or headers — keeps the image slim.
-- Hypnotoad in foreground via `prefork` is fine; we don't want the daemonized form inside a container.
-- `MOJO_MODE=production` selects `etc/coresmoke.production.conf` if present.
+- Listen port **3000** (decision #13). EXPOSE matches.
+- `tini` is PID 1 so signals propagate cleanly. `/sbin/tini` is the Alpine path.
+- `--no-test` during dep build keeps the layer fast; CI runs the full test suite separately.
+- Runtime image does **not** include `build-base` or dev headers — keeps the image slim.
+- `MOJO_MODE=production` selects `etc/coresmoke.production.conf` which sets `workers => 2` (decision #14).
+- `TZ=UTC` (decision #27) — both for log timestamps and any DateTime defaults.
+- `HEALTHCHECK` calls the new `/healthz` endpoint (decision #34) so `docker ps` and orchestrators see liveness.
 
 ## Volume mount contract
 
-The container reads/writes `smoke.db` at `/data/smoke.db`. The host directory `./` is mounted to `/data`, so:
+The container reads/writes everything under `/data`. Mount the host's data directory:
 
 ```
-host:  ./smoke.db          ↔  container: /data/smoke.db
-host:  ./smoke.db-wal      ↔  container: /data/smoke.db-wal
-host:  ./smoke.db-shm      ↔  container: /data/smoke.db-shm
+host:  ./data/                  ↔  container: /data/
+       ├── smoke.db                          ├── smoke.db
+       ├── smoke.db-wal                      ├── smoke.db-wal
+       ├── smoke.db-shm                      ├── smoke.db-shm
+       └── reports/                          └── reports/
+           └── ab/cd/ef/<hash>/                  └── ab/cd/ef/<hash>/
+               ├── log_file.xz                       ├── log_file.xz
+               └── ...                                └── ...
 ```
 
-WAL and shared-memory files appear next to `smoke.db` because Mojo::SQLite enables WAL by default. They must be on the same filesystem as the DB file.
-
-The host `smoke.db` file does not need to exist before the first run; Mojo::SQLite creates and migrates it on first connect.
+A directory mount keeps WAL sidecars and the per-report xz files together (decision #16). Mojo::SQLite creates and migrates `smoke.db` on first connect.
 
 ## `docker-compose.yml`
 
@@ -93,20 +103,18 @@ The host `smoke.db` file does not need to exist before the first run; Mojo::SQLi
 services:
   smoke:
     build: .
-    image: coresmoke:latest
+    image: ghcr.io/${OWNER:-metacpan}/coresmoke:latest
     ports:
-      - "8080:8080"
+      - "3000:3000"
     volumes:
-      - ./smoke.db:/data/smoke.db
-      - ./smoke.db-wal:/data/smoke.db-wal
-      - ./smoke.db-shm:/data/smoke.db-shm
+      - ./data:/data
     environment:
       MOJO_MODE: production
       SMOKE_DB_PATH: /data/smoke.db
+      SMOKE_REPORTS_DIR: /data/reports
+      TZ: UTC
     restart: unless-stopped
 ```
-
-Bind-mounting the three SQLite files individually (rather than a directory) avoids the SPA-style "mount over /data" trap on macOS where the host directory permissions clash with the container user. If the user prefers a directory mount, switch to `- ./db:/data` and adjust `SMOKE_DB_PATH=/data/smoke.db`.
 
 ## `.dockerignore`
 
@@ -114,14 +122,43 @@ Bind-mounting the three SQLite files individually (rather than a directory) avoi
 legacy/
 local/
 .git/
+data/
 log/
 *.swp
 plans/
-t/data/*.large
 README.md.bak
+.github/
+t/coverage/
 ```
 
-`legacy/` is intentionally excluded from the image — it's reference material only.
+`legacy/` and `plans/` are intentionally excluded — reference material, not runtime.
+
+## Multi-arch build
+
+CI uses `docker/setup-buildx-action` and `docker/build-push-action`:
+
+```yaml
+- uses: docker/build-push-action@v5
+  with:
+    platforms: linux/amd64,linux/arm64
+    push: ${{ github.ref == 'refs/heads/main' }}
+    tags: ghcr.io/${{ github.repository_owner }}/coresmoke:latest
+```
+
+Both `amd64` and `arm64` (decision #48). Push to `ghcr.io` (decision #46) with tag `:latest` only (decision #47). On PRs, build but don't push.
+
+## Vulnerability scanning
+
+After build, run Trivy on the image (decision #49), report-only:
+
+```yaml
+- uses: aquasecurity/trivy-action@master
+  with:
+    image-ref: 'ghcr.io/${{ github.repository_owner }}/coresmoke:latest'
+    format: 'table'
+    exit-code: '0'    # never fail the build
+    severity: 'HIGH,CRITICAL'
+```
 
 ## Local dev workflow
 
@@ -129,24 +166,29 @@ README.md.bak
 docker compose build
 docker compose up
 # In another shell:
-curl http://localhost:8080/system/ping
-curl -X POST http://localhost:8080/api/report \
+curl http://localhost:3000/system/ping
+curl -H 'Content-Encoding: gzip' --data-binary @<(gzip < payload.json) \
      -H 'Content-Type: application/json' \
-     -d "{\"report_data\": $(cat legacy/api/t/data/idefix-gff5bbe677.jsn)}"
+     -X POST http://localhost:3000/api/report
 ```
+
+For development without Docker: `script/smoke morbo` (decision #43).
 
 ## Critical files to read
 
-- `legacy/api/Dockerfile` (current Perl/Dancer container — for context, not as a template)
-- `legacy/web/Dockerfile` (Vue/Nginx container — being retired)
+- `legacy/api/Dockerfile` (current Perl/Dancer container — for context)
+- `legacy/web/Dockerfile` (Vue/Nginx — being retired)
 - `legacy/api/environments/docker.yml` (env-specific config keys to preserve in `etc/coresmoke.production.conf`)
 
 ## Verification
 
-1. `docker build -t coresmoke:test .` succeeds in under 5 minutes on a cold cache.
-2. Image size is < 300 MB (for sanity; not a hard limit).
+1. `docker build -t coresmoke:test .` succeeds in under 10 minutes on a cold cache.
+2. Image size is reasonable (< 200 MB target on Alpine).
 3. `docker run --rm coresmoke:test perl -V` reports 5.42.x.
-4. `docker compose up` starts; `curl localhost:8080/system/ping` returns `pong`.
-5. After `docker compose down && docker compose up`, prior data persists (`smoke.db` survives container recreation).
-6. Stop signal: `docker compose down` exits within ~2 seconds (tini + Hypnotoad graceful shutdown).
-7. `docker run --rm -u 0:0 coresmoke:test id` shows the container does **not** start as root by default (it should refuse — the image specifies `USER smoke`).
+4. `docker compose up` starts; `curl localhost:3000/system/ping` returns `pong`.
+5. `docker inspect --format '{{.State.Health.Status}}' <container>` returns `healthy` after the start period.
+6. After `docker compose down && docker compose up`, prior data persists (`./data/smoke.db` and `./data/reports/` survive).
+7. Stop signal: `docker compose down` exits within ~2 seconds.
+8. Container does not run as root: `docker exec <container> id` shows `uid=1000(smoke)`.
+9. CI builds linux/amd64 and linux/arm64 images and pushes both manifests to `ghcr.io/.../coresmoke:latest` on main.
+10. CI Trivy step uploads a report; build does not fail on findings.

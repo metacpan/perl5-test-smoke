@@ -2,33 +2,51 @@
 
 ## Goal
 
-A `Test::Mojo`-based suite that runs in seconds, requires no external services, and pins both REST and JSONRPC parity against the legacy contract. Plus a few targeted unit tests for the parts that have subtle correctness requirements (plevel, ingest dedup, search filter compiler).
+A `Test::Mojo`-based suite that runs in seconds, requires no external services, and pins both REST and JSONRPC parity against the legacy contract. Plus targeted unit tests for the parts with subtle correctness requirements (plevel, ingest dedup + on-disk file roundtrip, search filter compiler).
+
+CI runs the suite on Perl 5.42, runs `perlcritic` at severity 5 (fail on violation, decision #44), and uploads `Devel::Cover` coverage as a report (no enforced threshold, decision #45).
+
+## Test DB layout
+
+**Single shared `t/test.db` reset between tests, sequential runs** (decision #42). `t/lib/TestApp.pm` provides a `reset_db` helper that:
+
+1. Drops and re-runs the migration on `t/test.db`.
+2. Removes `t/data/reports-tmp/` recursively.
+3. Returns a `Test::Mojo` instance bound to `CoreSmoke::App`.
+
+Tests run sequentially — `prove -lr t/` (no `-j` flag).
 
 ## Layout
 
 ```
 t/
 ├── 00-load.t                 # all modules compile
-├── 01-config.t               # config loads, sqlite path resolves, migrations apply
-├── 02-plevel.t               # plevel parity vs legacy
+├── 01-config.t               # config loads, sqlite path resolves, migrations apply,
+│                             #   PRAGMA foreign_keys=1, PRAGMA journal_mode=wal
+├── 02-plevel.t               # plevel parity vs hand-curated corpus
 ├── 10-system.t               # /system/ping, /system/version, /system/status, /system/methods
-├── 20-api-version.t          # /api/version
+├── 11-health.t               # /healthz always 200, /readyz reflects DB state
+├── 20-api-version.t          # /api/version returns version=2.0, db_version=4
 ├── 30-rest-api.t             # full REST surface, fixture-driven
 ├── 40-jsonrpc.t              # JSONRPC parity over the same fixture
 ├── 41-jsonrpc-errors.t       # transport-level errors and batches
-├── 50-ingest.t               # POST /api/report + duplicate detection
-├── 51-ingest-old-format.t    # POST /api/old_format_reports + bytea round-trip
+├── 50-ingest.t               # POST /api/report + duplicate detection + xz file on disk
+├── 51-ingest-old-format.t    # POST /api/old_format_reports + POST /report alias
+├── 52-ingest-gzip.t          # POST /api/report with Content-Encoding: gzip
 ├── 60-search.t               # filter compiler, AND/NOT, latest perl, paging
 ├── 61-matrix.t               # matrix shape and counts
 ├── 62-submatrix.t            # submatrix filtering by test (+ optional pversion)
+├── 65-report-files.t         # Model::ReportFiles write/read xz roundtrip
 ├── 70-web.t                  # server-rendered HTML pages
+├── 71-web-htmx.t             # HX-Request returns fragment templates
 ├── 80-openapi.t              # spec parses; every documented path is mounted
 ├── 99-cors.t                 # access-control-allow-origin on /api/* responses
 ├── data/
 │   ├── idefix-gff5bbe677.jsn # copied from legacy/api/t/data/
-│   └── plevel-corpus.tsv     # one (git_describe, expected_plevel) pair per line
+│   ├── plevel-corpus.tsv     # hand-curated, ~30 entries (decision #7)
+│   └── reports-tmp/          # ephemeral; cleared by reset_db
 └── lib/
-    └── TestApp.pm            # bootstraps a Test::Mojo against a temp smoke.db
+    └── TestApp.pm
 ```
 
 ## `t/lib/TestApp.pm`
@@ -37,57 +55,75 @@ t/
 package TestApp;
 use v5.42;
 use experimental qw(signatures);
-use File::Temp ();
 use Test::Mojo;
 use Mojo::File qw(curfile);
+use File::Path qw(remove_tree);
+
+my $ROOT = curfile->sibling('..')->to_abs;
 
 sub new ($class) {
-    my $tmp = File::Temp->newdir;
-    $ENV{SMOKE_DB_PATH} = "$tmp/smoke.db";
-    $ENV{MOJO_MODE}     = 'test';
-    my $t = Test::Mojo->new('Perl5::CoreSmoke::App');
-    return bless { t => $t, tmp => $tmp }, $class;
+    $ENV{MOJO_MODE}         = 'test';
+    $ENV{SMOKE_DB_PATH}     = "$ROOT/test.db";
+    $ENV{SMOKE_REPORTS_DIR} = "$ROOT/data/reports-tmp";
+
+    reset_db();
+
+    my $t = Test::Mojo->new('CoreSmoke::App');
+    return bless { t => $t }, $class;
+}
+
+sub reset_db {
+    my $db = "$ROOT/test.db";
+    unlink $db, "$db-wal", "$db-shm";
+    remove_tree("$ROOT/data/reports-tmp");
 }
 
 sub t  ($self) { $self->{t} }
 sub app($self) { $self->{t}->app }
 
 sub ingest_fixture ($self, $name) {
-    my $path = curfile->sibling('..', 'data', $name);
-    my $json = Mojo::File->new($path)->slurp;
-    my $body = Mojo::JSON::decode_json($json);
-    return $self->t->post_ok('/api/report', json => { report_data => $body })->status_is(200)->tx->res->json;
+    my $path = "$ROOT/data/$name";
+    my $body = Mojo::JSON::decode_json(Mojo::File->new($path)->slurp);
+    return $self->t
+        ->post_ok('/api/report', json => { report_data => $body })
+        ->status_is(200)
+        ->tx->res->json;
 }
 
 1;
 ```
 
-Each test gets a fresh empty SQLite DB; tests are independent and can run in parallel.
+## `t/02-plevel.t` — plevel parity
 
-## `t/02-plevel.t` — parity with the legacy PL/pgSQL function
+Hand-curated corpus (no PG dump per decision #7). Each line of `t/data/plevel-corpus.tsv` is `<git_describe>\t<expected_plevel>`. Cover at least:
+
+```
+5.42.0                          5.042000zzz000
+v5.42.0                         5.042000zzz000
+v5.42.0-RC1                     5.042000RC1000
+v5.42.0-RC2                     5.042000RC2000
+v5.41.10                        5.041010zzz000
+v5.41.10-12-gabc1234            5.041010zzz012
+v5.40.2                         5.040002zzz000
+v5.40.0-RC3-5-gdef5678          5.040000RC3005
+... (~30 total covering release / RC / tagged-with-ahead variants)
+```
 
 ```perl
 use v5.42;
 use Test::More;
-use Perl5::CoreSmoke::Model::Plevel;
+use Mojo::File qw(curfile);
+use CoreSmoke::Model::Plevel;
 
-my $tsv = Mojo::File->new("$FindBin::Bin/data/plevel-corpus.tsv")->slurp;
+my $tsv = curfile->sibling('data', 'plevel-corpus.tsv')->slurp;
 for my $line (split /\n/, $tsv) {
     next if $line =~ /^\s*(#|$)/;
     my ($describe, $expected) = split /\t/, $line;
-    is(Perl5::CoreSmoke::Model::Plevel::from_git_describe($describe), $expected,
+    is(CoreSmoke::Model::Plevel::from_git_describe($describe), $expected,
        "plevel($describe) = $expected");
 }
 done_testing;
 ```
-
-`plevel-corpus.tsv` is generated once from a live legacy DB:
-
-```
-psql -At -c "SELECT DISTINCT git_describe || E'\t' || plevel FROM report ORDER BY 1" > t/data/plevel-corpus.tsv
-```
-
-Even if the user defers full data migration, capturing this corpus is cheap and pins the parity test. If a legacy DB isn't available, hand-author 30+ representative entries (`5.42.0`, `v5.42.0-RC1`, `v5.41.10-12-gabc123`, edge cases with `RC`, etc.).
 
 ## `t/30-rest-api.t` — fixture-driven REST surface
 
@@ -96,24 +132,18 @@ use TestApp;
 my $h = TestApp->new;
 my $t = $h->t;
 
-# Empty DB sanity
 $t->get_ok('/api/latest')->status_is(200)
   ->json_has('/reports')->json_is('/report_count' => 0);
 
-# Ingest the fixture
 my $resp = $h->ingest_fixture('idefix-gff5bbe677.jsn');
 my $rid  = $resp->{id};
 
-$t->get_ok('/api/latest')->status_is(200)
-  ->json_is('/report_count' => 1);
-
-$t->get_ok("/api/full_report_data/$rid")->status_is(200)
-  ->json_has('/sysinfo')
-  ->json_has('/configs');
-
+$t->get_ok('/api/latest')->status_is(200)->json_is('/report_count' => 1);
+$t->get_ok("/api/full_report_data/$rid")->status_is(200)->json_has('/sysinfo')->json_has('/configs');
 $t->get_ok("/api/report_data/$rid")->status_is(200);
 $t->get_ok("/api/logfile/$rid")->status_is(200)->json_has('/file');
-$t->get_ok("/api/outfle/$rid")->status_is(200)->json_has('/file');     # legacy typo preserved
+$t->get_ok("/api/outfile/$rid")->status_is(200)->json_has('/file');
+$t->get_ok("/api/outfle/$rid")->status_is(404);   # legacy typo intentionally removed
 
 $t->get_ok('/api/searchparameters')->status_is(200);
 $t->get_ok('/api/searchresults?selected_perl=all')->status_is(200);
@@ -123,7 +153,7 @@ $t->get_ok("/api/reports_from_id/$rid")->status_is(200);
 
 # Duplicate detection
 $h->t->post_ok('/api/report',
-    json => { report_data => Mojo::JSON::decode_json(Mojo::File->new("$FindBin::Bin/data/idefix-gff5bbe677.jsn")->slurp) }
+    json => { report_data => Mojo::JSON::decode_json(Mojo::File->new("$ROOT/data/idefix-gff5bbe677.jsn")->slurp) }
 )->status_is(409)->json_has('/error');
 
 done_testing;
@@ -143,38 +173,42 @@ is_deeply $jsonrpc, $rest, "$M parity";
 
 Loop over the table from `04-api-jsonrpc.md`.
 
-## `t/41-jsonrpc-errors.t`
+## `t/50-ingest.t` + `t/65-report-files.t`
 
-- POST malformed JSON → `error.code == -32700`.
-- Unknown method → `-32601`.
-- Batch request `[ping, version]` → array of two responses, ids preserved.
+Verify after a successful `POST /api/report`:
 
-## `t/60-search.t`
+1. Response is `{ id => N }`.
+2. The `report_hash` column matches `md5_hex(...)` of the unique tuple.
+3. The on-disk file `t/data/reports-tmp/<sharded>/log_file.xz` exists.
+4. `Model::ReportFiles::read($rid, 'log_file')` returns the original bytes.
+5. Re-posting returns 409 `{ error => 'Report already posted.' }`.
 
-Build 5 reports varying every dimension (architecture, osname, osversion, hostname, perl_id, smoke_branch, cc, ccversion). For each filter combination listed in the legacy `ValidationTemplates.pm`, assert the right subset.
+`t/65-report-files.t` independently verifies xz round-trip with arbitrary bytes (including utf-8, control chars, large payloads).
 
-Edge cases:
-
-- `selected_perl=latest` with no other filters → all reports at MAX(plevel).
-- `andnotsel_arch=1` flips the equality to inequality.
-- `page=2&reports_per_page=2` returns the third pair.
-
-## `t/70-web.t`
+## `t/52-ingest-gzip.t`
 
 ```perl
-$t->get_ok('/')->status_is(200)->text_is('h1' => 'Latest smoke results');
+use IO::Compress::Gzip qw(gzip);
+my $body = Mojo::JSON::encode_json({ report_data => $fixture });
+my $gz; gzip(\$body => \$gz);
+
+$t->post_ok('/api/report',
+    { 'Content-Encoding' => 'gzip', 'Content-Type' => 'application/json' },
+    $gz
+)->status_is(200)->json_has('/id');
+```
+
+## `t/70-web.t` and `t/71-web-htmx.t`
+
+```perl
+$t->get_ok('/')->status_is(200);
 $t->get_ok('/search')->status_is(200);
 $t->get_ok('/about')->status_is(200);
 $t->get_ok('/report/9999')->status_is(404);
-```
 
-After ingesting the fixture:
-
-```perl
-$t->get_ok("/report/$rid")->status_is(200)
-  ->text_like('h2' => qr/Smoke report/)
-  ->text_like('pre.summary' => qr/PASS|FAIL/);
-$t->get_ok("/file/log_file/$rid")->status_is(200)->content_type_like(qr{text/html});
+# HTMX fragment vs full page
+$t->get_ok('/latest', { 'HX-Request' => 'true' })->status_is(200)
+  ->content_unlike(qr{<html|<body});           # fragment, not full page
 ```
 
 ## CI outline
@@ -191,19 +225,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cpan -T App::cpm
-      - run: cpm install -L local --no-test
-      - run: prove -lr -j4 t/
+      - run: cpm install -L local --with-develop
+      - name: prove
+        run: prove -lr t/                       # sequential per decision #42
+      - name: perlcritic
+        run: perl -Ilocal/lib/perl5 local/bin/perlcritic --severity 5 lib/
+      - name: coverage
+        run: |
+          PERL5OPT='-MDevel::Cover' prove -lr t/
+          perl -Ilocal/lib/perl5 local/bin/cover -report html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: cover_db/
+
   docker:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - run: docker build -t coresmoke:ci .
+      - uses: docker/build-push-action@v5
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ghcr.io/${{ github.repository_owner }}/coresmoke:latest
+      - name: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/coresmoke:latest'
+          exit-code: '0'                        # report-only per decision #49
+          severity: 'HIGH,CRITICAL'
 ```
 
 ## Verification
 
 1. `prove -lr t/` passes locally and in CI.
-2. Run time under 10 seconds on a developer laptop (use `prove -j4`).
-3. New tests are added in tandem with each plan's implementation; no plan is "done" without its tests.
+2. Run time under 30 seconds on a developer laptop.
+3. `perlcritic --severity 5 lib/` reports no violations.
+4. CI publishes a coverage artifact viewable from the workflow run.
+5. New tests are added in tandem with each plan's implementation; no plan is "done" without its tests.
