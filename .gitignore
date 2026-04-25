@@ -7,6 +7,7 @@
 *.psql
 *.txz
 data/*.db
+data/*.pid
 /t/test.db
 /t/test.db-wal
 /t/test.db-shm

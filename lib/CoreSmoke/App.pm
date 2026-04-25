@@ -20,6 +20,14 @@ sub startup ($self) {
     my $db_path     = _resolve_path($home, $ENV{SMOKE_DB_PATH}     // $cfg->{db_path}     // 'data/smoke.db');
     my $reports_dir = _resolve_path($home, $ENV{SMOKE_REPORTS_DIR} // $cfg->{reports_dir} // 'data/reports');
 
+    # Hypnotoad reads pid_file via Mojo::File::path() which resolves
+    # relative paths against cwd, not MOJO_HOME. Rewrite it here so
+    # the configured 'data/hypnotoad.pid' lands in the repo regardless
+    # of where `make start` was invoked from.
+    if (my $pid_file = $cfg->{hypnotoad}{pid_file}) {
+        $cfg->{hypnotoad}{pid_file} = _resolve_path($home, $pid_file);
+    }
+
     $self->max_request_size(16 * 1024 * 1024);
 
     my $sqlite = CoreSmoke::Model::DB->new(
