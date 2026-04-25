@@ -48,17 +48,18 @@ sub latest ($self, $params = {}) {
     my $db = $self->{sqlite}->db;
 
     my $rows = $db->query(<<~'SQL', $rpp, $offset)->hashes->to_array;
-        WITH ranked AS (
-            SELECT *,
-                   ROW_NUMBER() OVER (
-                       PARTITION BY hostname
-                       ORDER BY plevel DESC, smoke_date DESC
-                   ) AS rn
-              FROM report
-        )
-        SELECT * FROM ranked
-         WHERE rn = 1
-         ORDER BY plevel DESC, smoke_date DESC
+        SELECT r.*
+          FROM report r
+         INNER JOIN (
+               SELECT hostname, MAX(plevel) AS plevel
+                 FROM report
+                GROUP BY hostname
+               ) g USING (hostname, plevel)
+         WHERE r.smoke_date = (
+               SELECT MAX(smoke_date) FROM report
+                WHERE hostname = r.hostname AND plevel = r.plevel
+               )
+         ORDER BY r.plevel DESC, r.smoke_date DESC
          LIMIT ? OFFSET ?
         SQL
 
