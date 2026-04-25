@@ -2,7 +2,7 @@
 % title 'Latest smoke results';
 
 <h1>Latest smoke results</h1>
-<p><small>Showing <%= scalar @$reports %> of <%= $report_count %> hosts. Latest plevel: <code><%= $latest_plevel %></code></small></p>
+<p id="latest-summary"><small>Showing <%= scalar @$reports %> of <%= $report_count %> hosts. Latest plevel: <code><%= $latest_plevel %></code></small></p>
 
 <table class="reports">
   <thead>

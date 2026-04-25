@@ -13,7 +13,8 @@ sub latest ($c) {
     my $rpp  = int($c->param('reports_per_page') || 25);
     my $data = $c->app->reports->latest({ page => $page, reports_per_page => $rpp });
 
-    my $tmpl = _is_htmx($c) ? 'web/_reports_rows' : 'web/latest';
+    my $is_htmx = _is_htmx($c);
+    my $tmpl    = $is_htmx ? 'web/_reports_rows' : 'web/latest';
     return $c->render(template => $tmpl,
         path             => '/latest',
         reports          => $data->{reports},
@@ -21,6 +22,10 @@ sub latest ($c) {
         page             => $page,
         reports_per_page => $rpp,
         latest_plevel    => $data->{latest_plevel},
+        # The fragment emits an OOB update for #latest-summary only on
+        # HTMX requests; on a regular page load the OOB markup would
+        # duplicate the header inline.
+        oob_summary      => $is_htmx,
     );
 }
 
