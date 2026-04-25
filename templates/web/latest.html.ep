@@ -4,6 +4,7 @@
 <h1>Latest smoke results</h1>
 <p id="latest-summary"><small>Showing <%= scalar @$reports %> of <%= $report_count %> hosts. Latest plevel: <code><%= $latest_plevel %></code></small></p>
 
+<div class="table-wrap">
 <table class="reports">
   <thead>
     <tr>
@@ -19,3 +20,4 @@
 %= include 'web/_reports_rows', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page
   </tbody>
 </table>
+</div>
