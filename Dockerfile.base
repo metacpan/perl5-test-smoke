@@ -22,19 +22,23 @@ RUN apt-get update \
         zlib1g-dev \
         ca-certificates \
         curl \
- && rm -rf /var/lib/apt/lists/* \
- && cpan -T App::cpm
+ && cpan -T App::cpm \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /var/log/apt /tmp/cpan_install_*
 
 WORKDIR /build
 
 # Snapshot-pinned install for reproducibility (decision #20).
-# After install, drop cpm's build cache + work dirs and the trimmed-out
-# /build/local/man pages. The builder stage itself is never shipped, but
-# this also keeps the cached layer smaller in the GHA buildx cache.
+# Strip cpm's build cache + work dirs, the trimmed-out manpages, and
+# .packlist files (only ExtUtils::Installed reads them; nothing in this
+# app does). The builder stage itself is never shipped, but the cleaner
+# this layer is, the smaller the GHA buildx cache.
 COPY cpanfile cpanfile.snapshot ./
 RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --show-build-log-on-failure \
- && rm -rf /root/.perl-cpm /root/.cpan /root/.cpanm /tmp/cpm-* \
- && rm -rf /build/local/man /build/local/lib/perl5/man
+ && rm -rf /root/.perl-cpm /root/.cpan /root/.cpanm /tmp/cpm-* /tmp/cpanm-* \
+ && rm -rf /build/local/man /build/local/lib/perl5/man \
+ && find /build/local -name '.packlist' -delete \
+ && find /build/local -name '*.pod'      -delete
 
 # Vendor htmx -- decision #17. Pinned to a stable major release.
 RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
@@ -45,6 +49,8 @@ RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
 FROM perl:${PERL_VERSION}-slim
 
 # Runtime deps: SQLite, xz, OpenSSL libs; tini for PID-1; wget for HEALTHCHECK.
+# Strip apt caches, archives, logs, and any docs/man re-introduced by the
+# installed packages so the final image stays lean.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         libsqlite3-0 \
@@ -53,12 +59,15 @@ RUN apt-get update \
         ca-certificates \
         tini \
         wget \
- && rm -rf /var/lib/apt/lists/* \
- && useradd --system --create-home --uid 1000 smoke
+ && useradd --system --create-home --uid 1000 smoke \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /var/log/apt \
+           /usr/share/doc/* /usr/share/man/* /usr/share/locale/*
 
-# Bake the prebuilt CPAN tree and the vendored htmx into /app.
-COPY --from=builder /build/local       /app/local
-COPY --from=builder /build/htmx.min.js /app/public/htmx.min.js
+# Bake the prebuilt CPAN tree and the vendored htmx into /app, owned by smoke.
+# `--chown` on COPY avoids a separate chown -R layer that would duplicate
+# every file's storage.
+COPY --from=builder --chown=smoke:smoke /build/local       /app/local
+COPY --from=builder --chown=smoke:smoke /build/htmx.min.js /app/public/htmx.min.js
 
-RUN mkdir -p /data \
- && chown -R smoke:smoke /app /data
+RUN install -d -o smoke -g smoke /data /app
