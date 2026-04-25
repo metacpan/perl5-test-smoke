@@ -10,17 +10,4 @@
 % );
 %= include 'components/hero', eyebrow => 'Live smoke ingest', title => 'Latest <em>smoke</em> results.', lede => 'The most recent run from each host, freshest plevel first. Click a row to open the full report.', stats => \@hero_stats
 
-%= include 'components/pagination_summary', shown => scalar @$reports, total => $report_count, noun => 'hosts', id => 'latest-summary'
-
-% my @headers = (
-%   { label => 'Host',         sort => 'host' },
-%   { label => 'Architecture', sort => 'arch' },
-%   { label => 'OS',           sort => 'os' },
-%   { label => 'Perl',         sort => 'perl' },
-%   { label => 'Status',       sort => 'status' },
-%   { label => 'Smoker',       sort => 'smoker' },
-%   { label => 'Smoke date',   sort => 'date' },
-% );
-%= include 'components/data_table', headers => \@headers, tbody_id => 'report-rows', body => begin
-%= include 'web/_reports_rows', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page
-% end
+%= include 'web/_latest_region', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page, latest_plevel => $latest_plevel, filter => $filter

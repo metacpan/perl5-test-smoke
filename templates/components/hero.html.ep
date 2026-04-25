@@ -1,7 +1,9 @@
-% # eyebrow => optional small uppercase label (e.g. 'CORE PERL SMOKE')
+% # eyebrow => optional small uppercase label
 % # title   => required, may contain inline <em> for italic accent
-% # lede    => optional paragraph of body copy
+% # lede    => optional short paragraph
 % # stats   => optional arrayref of { label, value, variant?: success|danger|accent, trend? }
+% #            Renders as a separate .stat-card BELOW the hero so the
+% #            hero block stays compact.
 % my $eyebrow = stash('eyebrow');
 % my $lede    = stash('lede');
 % my $stats   = stash('stats') // [];
@@ -13,18 +15,18 @@
 % if (defined $lede) {
   <p class="hero-lede"><%== $lede %></p>
 % }
+</header>
 % if (@$stats) {
-  <div class="hero-meta">
+<section class="stat-card" aria-label="Key metrics">
 % for my $s (@$stats) {
 %   my $variant = $s->{variant} ? ' is-' . $s->{variant} : '';
-    <div class="stat">
-      <span class="stat-label"><%= $s->{label} %></span>
-      <span class="stat-value<%= $variant %>"><%== $s->{value} %></span>
+  <div class="stat">
+    <span class="stat-label"><%= $s->{label} %></span>
+    <span class="stat-value<%= $variant %>"><%== $s->{value} %></span>
 % if (defined $s->{trend}) {
-      <span class="stat-trend"><%= $s->{trend} %></span>
-% }
-    </div>
+    <span class="stat-trend"><%= $s->{trend} %></span>
 % }
   </div>
 % }
-</header>
+</section>
+% }

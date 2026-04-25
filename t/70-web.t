@@ -42,6 +42,37 @@ $t->get_ok("/report/$rid")->status_is(200)
 # (we ingested an empty log_file so log_file path stays 404)
 $t->get_ok("/file/log_file/$rid")->status_is(404);
 
+# /latest exposes a Summary filter (All / Fail / Pass)
+$t->get_ok('/latest')->status_is(200)
+  ->element_exists('form#latest-form select[name=selected_summary]',
+                   'summary filter exists on /latest')
+  ->element_exists('option[value=all]')
+  ->element_exists('option[value=fail]')
+  ->element_exists('option[value=pass]');
+
+# Filter shrinks the row set. The ingested fixture (idefix) has
+# summary=PASS, so 'pass' and 'all' include it; 'fail' drops it.
+$t->get_ok('/latest?selected_summary=pass')->status_is(200)
+  ->content_like(qr/\bidefix\b/, 'pass filter keeps idefix (PASS)');
+$t->get_ok('/latest?selected_summary=fail')->status_is(200)
+  ->content_unlike(qr/\bidefix\b/, 'fail filter drops idefix');
+$t->get_ok('/latest?selected_summary=all')->status_is(200)
+  ->content_like(qr/\bidefix\b/, 'all filter keeps idefix');
+
+# HTMX form-change response returns the latest-region partial
+$t->get_ok('/latest?selected_summary=fail' =>
+            { 'HX-Request' => 'true', 'HX-Trigger' => 'latest-form' })
+  ->status_is(200)
+  ->content_like(qr/id="latest-region"/, 'form-change returns region wrapper')
+  ->content_like(qr/id="latest-form"/,   'form-change re-renders the form');
+
+# HTMX infinite-scroll response (no HX-Trigger=latest-form) returns the
+# rows-only partial: <tr> markup but no form/region wrapper.
+$t->get_ok('/latest?selected_summary=fail' => { 'HX-Request' => 'true' })
+  ->status_is(200)
+  ->content_unlike(qr/id="latest-region"/, 'infinite-scroll skips the wrapper')
+  ->content_unlike(qr/id="latest-form"/,   'infinite-scroll skips the form');
+
 # /search shows smoker version column and filter dropdown
 $t->get_ok('/search')->status_is(200)
   ->element_exists('select[name=selected_smkv]', 'smoker filter exists')

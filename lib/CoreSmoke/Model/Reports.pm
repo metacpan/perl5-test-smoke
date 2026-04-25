@@ -40,6 +40,11 @@ sub version ($self) {
 }
 
 # /api/latest -- latest report per hostname, ordered by plevel desc.
+#
+# Optional filter: $params->{selected_summary} in (all|pass|fail).
+# Applied to the OUTER row (the latest run per host), not to the inner
+# aggregates -- so "fail" means "the host's latest run failed", not
+# "the host has any failing run in history".
 sub latest ($self, $params = {}) {
     my $rpp  = int($params->{reports_per_page} || 25);
     $rpp = 500 if $rpp > 500;
@@ -47,9 +52,20 @@ sub latest ($self, $params = {}) {
     $page = 1 if $page < 1;
     my $offset = ($page - 1) * $rpp;
 
+    my $sum = lc($params->{selected_summary} // 'all');
+    my ($extra_where, @extra_bind) = ('');
+    if ($sum eq 'pass') {
+        $extra_where = " AND r.summary GLOB ?";
+        push @extra_bind, 'PASS*';
+    }
+    elsif ($sum eq 'fail') {
+        $extra_where = " AND r.summary GLOB ?";
+        push @extra_bind, 'FAIL*';
+    }
+
     my $db = $self->{sqlite}->db;
 
-    my $rows = $db->query(<<~'SQL', $rpp, $offset)->hashes->to_array;
+    my $rows = $db->query(<<~"SQL", @extra_bind, $rpp, $offset)->hashes->to_array;
         SELECT r.*
           FROM report r
          INNER JOIN (
@@ -60,14 +76,24 @@ sub latest ($self, $params = {}) {
          WHERE r.smoke_date = (
                SELECT MAX(smoke_date) FROM report
                 WHERE hostname = r.hostname AND plevel = r.plevel
-               )
+               )$extra_where
          ORDER BY r.plevel DESC, r.smoke_date DESC
          LIMIT ? OFFSET ?
         SQL
 
-    my $count_row = $db->query(<<~'SQL')->hash;
+    my $count_row = $db->query(<<~"SQL", @extra_bind)->hash;
         SELECT COUNT(*) AS n FROM (
-            SELECT 1 FROM report GROUP BY hostname
+            SELECT r.id
+              FROM report r
+             INNER JOIN (
+                   SELECT hostname, MAX(plevel) AS plevel
+                     FROM report
+                    GROUP BY hostname
+                   ) g USING (hostname, plevel)
+             WHERE r.smoke_date = (
+                   SELECT MAX(smoke_date) FROM report
+                    WHERE hostname = r.hostname AND plevel = r.plevel
+                   )$extra_where
         )
         SQL
 

@@ -13,9 +13,26 @@ sub latest ($c) {
     $page = 1 if $page < 1;
     my $rpp  = int($c->param('reports_per_page') || 25);
     $rpp = 500 if $rpp > 500;
-    my $data = $c->app->reports->latest({ page => $page, reports_per_page => $rpp });
+
+    # Summary filter: all|pass|fail. Anything else is treated as 'all'
+    # by the model. We keep the raw param in %filter so the template
+    # reflects the URL state on first paint.
+    my $sel_summary = $c->param('selected_summary') // '';
+    my %filter      = (selected_summary => $sel_summary);
+
+    my $data = $c->app->reports->latest({
+        page             => $page,
+        reports_per_page => $rpp,
+        selected_summary => $sel_summary,
+    });
 
     my $is_htmx = _is_htmx($c);
+
+    # Same trick as /search: distinguish form-change vs infinite-scroll
+    # via HX-Trigger. The filter form has id="latest-form"; the
+    # load-more <tr> has no id.
+    my $is_form_change = $is_htmx
+        && (($c->req->headers->header('HX-Trigger') // '') eq 'latest-form');
 
     # Cheap aggregate stats for the hero block (full-page renders only).
     my %stats;
@@ -31,7 +48,11 @@ sub latest ($c) {
         %stats = map { $_ => ($row->{$_} // 0) } qw(total_reports fails_24h pass_24h);
     }
 
-    my $tmpl    = $is_htmx ? 'web/_reports_rows' : 'web/latest';
+    my $tmpl
+        = $is_form_change            ? 'web/_latest_region'
+        : $is_htmx                   ? 'web/_reports_rows'
+        :                              'web/latest';
+
     return $c->render(template => $tmpl,
         path             => '/latest',
         reports          => $data->{reports},
@@ -39,10 +60,13 @@ sub latest ($c) {
         page             => $page,
         reports_per_page => $rpp,
         latest_plevel    => $data->{latest_plevel},
-        # The fragment emits an OOB update for #latest-summary only on
-        # HTMX requests; on a regular page load the OOB markup would
-        # duplicate the inline element.
-        oob_summary      => $is_htmx,
+        filter           => \%filter,
+        # The rows fragment emits an OOB update for #latest-summary
+        # only on infinite-scroll. On a form-change the whole region
+        # (including the inline summary) is replaced, so no OOB needed.
+        # On a full page load the OOB markup would duplicate the
+        # inline element.
+        oob_summary      => $is_htmx && !$is_form_change,
         stats            => \%stats,
     );
 }

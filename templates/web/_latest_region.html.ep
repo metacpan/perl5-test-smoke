@@ -1,0 +1,56 @@
+% # Filter form + pagination summary + table for /latest. Rendered
+% # inline by web/latest on full page loads, and rendered standalone
+% # on HTMX form-change requests so the form swaps itself in place.
+% #
+% # IMPORTANT: the form's id MUST be "latest-form" -- the controller
+% # uses the HX-Trigger header to distinguish form-change requests
+% # (which return this partial) from infinite-scroll requests (which
+% # return only web/_reports_rows).
+% my $sel_summary = ($filter // {})->{selected_summary} // 'all';
+% $sel_summary = 'all' unless $sel_summary eq 'pass' || $sel_summary eq 'fail';
+% my $summary_options = [
+%   { value => 'all',  label => 'All',          selected => ($sel_summary eq 'all')  },
+%   { value => 'fail', label => 'Fail (any)',   selected => ($sel_summary eq 'fail') },
+%   { value => 'pass', label => 'Pass only',    selected => ($sel_summary eq 'pass') },
+% ];
+<div id="latest-region">
+  <form id="latest-form"
+        class="search-form"
+        hx-get="/latest"
+        hx-trigger="change delay:100ms from:select"
+        hx-target="#latest-region"
+        hx-swap="outerHTML"
+        hx-include="closest form"
+        hx-push-url="true"
+        hx-on::config-request="
+          for (const k of Object.keys(event.detail.parameters)) {
+            const v = event.detail.parameters[k];
+            if (v === 'all' || v === '') delete event.detail.parameters[k];
+          }
+        ">
+    <div class="filter-grid">
+      %= include 'components/form_field', label => 'Summary', name => 'selected_summary', type => 'select', options => $summary_options
+    </div>
+  </form>
+
+  %= include 'components/pagination_summary', shown => scalar @$reports, total => $report_count, noun => 'hosts', id => 'latest-summary'
+
+% if (!@$reports) {
+  %= include 'components/empty_state', title => 'No hosts match this filter', desc => 'Try a different Summary value, or clear the filter to see all hosts.', icon => '&empty;', actions => begin
+    %= btn_link 'Clear filter', '/latest', 'primary', 'sm'
+  % end
+% } else {
+%   my @headers = (
+%     { label => 'Host',         sort => 'host' },
+%     { label => 'Architecture', sort => 'arch' },
+%     { label => 'OS',           sort => 'os' },
+%     { label => 'Perl',         sort => 'perl' },
+%     { label => 'Status',       sort => 'status' },
+%     { label => 'Smoker',       sort => 'smoker' },
+%     { label => 'Smoke date',   sort => 'date' },
+%   );
+  %= include 'components/data_table', headers => \@headers, tbody_id => 'report-rows', body => begin
+    %= include 'web/_reports_rows', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page, filter => $filter
+  % end
+% }
+</div>
