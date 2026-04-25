@@ -13,11 +13,11 @@ sub new ($class, %args) {
 # semicolon-joined distinct list of "<osname>-<osversion>" pairs.
 #
 # Options:
-#   exclude_stdio  => truthy to drop result rows with io_env = 'stdio'
-#                     before counting. Per-letter FAIL semantics: the
-#                     stdio environment is the legacy non-PerlIO path
-#                     and is often noisy on platforms that have moved
-#                     on; hiding it lets users focus on PerlIO/locale
+#   include_stdio  => truthy to count result rows with io_env = 'stdio'.
+#                     Default (false): stdio is excluded. The stdio
+#                     environment is the legacy non-PerlIO path and is
+#                     often noisy on platforms that have moved on; the
+#                     opt-in keeps the matrix focused on PerlIO/locale
 #                     failures.
 sub matrix ($self, %opts) {
     my $db = $self->{sqlite}->db;
@@ -33,7 +33,7 @@ sub matrix ($self, %opts) {
     return { perl_versions => [], rows => [] } unless @$perl_versions;
 
     my $marks      = join ',', ('?') x scalar @$perl_versions;
-    my $stdio_pred = $opts{exclude_stdio} ? "AND rs.io_env <> 'stdio'" : '';
+    my $stdio_pred = $opts{include_stdio} ? '' : "AND rs.io_env <> 'stdio'";
     my $sql = <<~"SQL";
         SELECT f.test,
                r.perl_id,

@@ -1,7 +1,7 @@
 % layout 'default';
 % title 'Failure matrix';
 % my $hot           = stash('hot_failures') // 0;
-% my $exclude_stdio = stash('exclude_stdio') // 0;
+% my $include_stdio = stash('include_stdio') // 0;
 % my @hero_stats = (
 %   { label => 'Tests tracked', value => commify(scalar @$rows) },
 %   { label => 'Perl versions', value => commify(scalar @$perl_versions) },
@@ -12,11 +12,11 @@
 <form class="matrix-filter" method="get" action="/matrix">
   <label class="checkbox-field">
     <input type="checkbox"
-           name="exclude_stdio"
+           name="include_stdio"
            value="1"
-           <%= $exclude_stdio ? 'checked' : '' %>
+           <%= $include_stdio ? 'checked' : '' %>
            onchange="this.form.submit()">
-    Ignore stdio failures
+    Include stdio failures
   </label>
   <noscript><button class="btn btn-secondary btn-sm" type="submit">Apply</button></noscript>
 </form>
