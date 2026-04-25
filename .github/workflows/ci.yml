@@ -38,6 +38,10 @@ jobs:
           # are happy with the latest compatible versions from metacpan.
           snapshot: false
           tests: false
+          # ubuntu-latest has 4 vCPUs; 1.5x oversubscription keeps all
+          # cores busy while individual workers are waiting on the
+          # network or disk.
+          workers: 6
           args: "--with-develop"
           path: local
           sudo: false

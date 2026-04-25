@@ -42,7 +42,7 @@ WORKDIR /build
 # but a slim layer means a slim GHA buildx cache.
 COPY cpanfile cpanfile.snapshot ./
 RUN set -e; \
-    cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb \
+    cpm install --workers=6 --no-test --resolver=snapshot --resolver=metadb \
         > /tmp/cpm.log 2>&1 \
         || { echo '=== cpm install failed; full log: ==='; cat /tmp/cpm.log; exit 1; }; \
     grep -E '^(DONE|FAIL) (install|configure)' /tmp/cpm.log || true; \
