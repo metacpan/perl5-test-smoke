@@ -4,7 +4,7 @@
   <td><%= $r->{architecture} %></td>
   <td><%= $r->{osname} %> <%= $r->{osversion} %></td>
   <td><%= $r->{perl_id} %></td>
-  <td class="summary-<%= lc($r->{summary} // '') %>">
+  <td class="summary-<%= (lc($r->{summary} // '') =~ s/\(.*//r) %>">
     <a href="/report/<%= $r->{id} %>"><%= $r->{summary} %></a>
   </td>
   <td><%= $r->{smoke_date} %></td>
