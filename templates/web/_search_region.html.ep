@@ -6,20 +6,32 @@
 % # available list (e.g. the combination matches zero rows) we pin it
 % # as an extra <option> so the active filter stays visible and can
 % # be cleared.
-% my $arch_opts    = $available->{architectures} // [];
-% my $perl_opts    = $available->{perl_versions} // [];
-% my $branch_opts  = $available->{branches}      // [];
-% my $host_opts    = $available->{hostnames}     // [];
-% my $summary_opts = $available->{summaries}     // [];
+% my $arch_opts    = $available->{architectures}     // [];
+% my $osnm_opts    = $available->{osnames}           // [];
+% my $osvs_opts    = $available->{osversions}        // [];
+% my $perl_opts    = $available->{perl_versions}     // [];
+% my $branch_opts  = $available->{branches}          // [];
+% my $host_opts    = $available->{hostnames}         // [];
+% my $comp_opts    = $available->{compilers}         // [];
+% my $cver_opts    = $available->{compiler_versions} // [];
+% my $summary_opts = $available->{summaries}         // [];
 % my $sel_arch     = $filter->{selected_arch}    // '';
+% my $sel_osnm     = $filter->{selected_osnm}    // '';
+% my $sel_osvs     = $filter->{selected_osvs}    // '';
 % my $sel_perl     = $filter->{selected_perl}    // '';
 % my $sel_branch   = $filter->{selected_branch}  // '';
 % my $sel_host     = $filter->{selected_host}    // '';
+% my $sel_comp     = $filter->{selected_comp}    // '';
+% my $sel_cver     = $filter->{selected_cver}    // '';
 % my $sel_summary  = $filter->{selected_summary} // '';
 % my %arch_have    = map { $_ => 1 } @$arch_opts;
+% my %osnm_have    = map { $_ => 1 } @$osnm_opts;
+% my %osvs_have    = map { $_ => 1 } @$osvs_opts;
 % my %perl_have    = map { $_ => 1 } @$perl_opts;
 % my %branch_have  = map { $_ => 1 } @$branch_opts;
 % my %host_have    = map { $_ => 1 } @$host_opts;
+% my %comp_have    = map { $_ => 1 } @$comp_opts;
+% my %cver_have    = map { $_ => 1 } @$cver_opts;
 % my %summary_have = map { $_ => 1 } @$summary_opts;
 
   <form id="search-form"
@@ -46,6 +58,30 @@
 % }
 % if ($sel_arch ne '' && $sel_arch ne 'all' && !$arch_have{$sel_arch}) {
           <option value="<%= $sel_arch %>" selected><%= $sel_arch %></option>
+% }
+        </select>
+      </label>
+
+      <label>OS name
+        <select name="selected_osnm">
+          <option value="all" <%= selected_if($sel_osnm eq '' || $sel_osnm eq 'all') %>>all</option>
+% for my $v (@$osnm_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_osnm eq $v) %>><%= $v %></option>
+% }
+% if ($sel_osnm ne '' && $sel_osnm ne 'all' && !$osnm_have{$sel_osnm}) {
+          <option value="<%= $sel_osnm %>" selected><%= $sel_osnm %></option>
+% }
+        </select>
+      </label>
+
+      <label>OS version
+        <select name="selected_osvs">
+          <option value="all" <%= selected_if($sel_osvs eq '' || $sel_osvs eq 'all') %>>all</option>
+% for my $v (@$osvs_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_osvs eq $v) %>><%= $v %></option>
+% }
+% if ($sel_osvs ne '' && $sel_osvs ne 'all' && !$osvs_have{$sel_osvs}) {
+          <option value="<%= $sel_osvs %>" selected><%= $sel_osvs %></option>
 % }
         </select>
       </label>
@@ -83,6 +119,30 @@
 % }
 % if ($sel_host ne '' && $sel_host ne 'all' && !$host_have{$sel_host}) {
           <option value="<%= $sel_host %>" selected><%= $sel_host %></option>
+% }
+        </select>
+      </label>
+
+      <label>Compiler
+        <select name="selected_comp">
+          <option value="all" <%= selected_if($sel_comp eq '' || $sel_comp eq 'all') %>>all</option>
+% for my $v (@$comp_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_comp eq $v) %>><%= $v %></option>
+% }
+% if ($sel_comp ne '' && $sel_comp ne 'all' && !$comp_have{$sel_comp}) {
+          <option value="<%= $sel_comp %>" selected><%= $sel_comp %></option>
+% }
+        </select>
+      </label>
+
+      <label>Compiler version
+        <select name="selected_cver">
+          <option value="all" <%= selected_if($sel_cver eq '' || $sel_cver eq 'all') %>>all</option>
+% for my $v (@$cver_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_cver eq $v) %>><%= $v %></option>
+% }
+% if ($sel_cver ne '' && $sel_cver ne 'all' && !$cver_have{$sel_cver}) {
+          <option value="<%= $sel_cver %>" selected><%= $sel_cver %></option>
 % }
         </select>
       </label>

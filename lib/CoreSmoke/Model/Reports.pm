@@ -243,21 +243,35 @@ sub available_filter_values ($self, $filter) {
     }
 
     my %dims = (
-        architectures => { exclude => [qw(selected_arch    andnotsel_arch)],
-                           field   => 'r.architecture',
-                           order   => 'r.architecture' },
-        perl_versions => { exclude => [qw(selected_perl)],
-                           field   => 'r.perl_id',
-                           order   => 'r.perl_id' },
-        branches      => { exclude => [qw(selected_branch  andnotsel_branch)],
-                           field   => 'r.smoke_branch',
-                           order   => 'r.smoke_branch' },
-        hostnames     => { exclude => [qw(selected_host    andnotsel_host)],
-                           field   => 'r.hostname',
-                           order   => 'r.hostname COLLATE NOCASE' },
-        summaries     => { exclude => [qw(selected_summary andnotsel_summary)],
-                           field   => 'r.summary',
-                           order   => 'r.summary' },
+        architectures     => { exclude => [qw(selected_arch    andnotsel_arch)],
+                               field   => 'r.architecture',
+                               order   => 'r.architecture' },
+        osnames           => { exclude => [qw(selected_osnm    andnotsel_osnm)],
+                               field   => 'r.osname',
+                               order   => 'r.osname' },
+        osversions        => { exclude => [qw(selected_osvs    andnotsel_osvs)],
+                               field   => 'r.osversion',
+                               order   => 'r.osversion' },
+        perl_versions     => { exclude => [qw(selected_perl)],
+                               field   => 'r.perl_id',
+                               order   => 'r.perl_id' },
+        branches          => { exclude => [qw(selected_branch  andnotsel_branch)],
+                               field   => 'r.smoke_branch',
+                               order   => 'r.smoke_branch' },
+        hostnames         => { exclude => [qw(selected_host    andnotsel_host)],
+                               field   => 'r.hostname',
+                               order   => 'r.hostname COLLATE NOCASE' },
+        compilers         => { exclude => [qw(selected_comp    andnotsel_comp)],
+                               field   => 'c.cc',
+                               order   => 'c.cc',
+                               config_join => 1 },
+        compiler_versions => { exclude => [qw(selected_cver    andnotsel_cver)],
+                               field   => 'c.ccversion',
+                               order   => 'c.ccversion',
+                               config_join => 1 },
+        summaries         => { exclude => [qw(selected_summary andnotsel_summary)],
+                               field   => 'r.summary',
+                               order   => 'r.summary' },
     );
 
     my %out;
@@ -265,6 +279,9 @@ sub available_filter_values ($self, $filter) {
         my %f = %$filter;
         delete @f{ @{ $dims{$dim}{exclude} } };
         my ($from, $where, $bind) = $search->compile(\%f);
+        if ($dims{$dim}{config_join} && $from !~ /JOIN config/) {
+            $from .= " JOIN config c ON c.report_id = r.id";
+        }
         my $sql = "SELECT DISTINCT $dims{$dim}{field} AS v $from $where ORDER BY $dims{$dim}{order}";
         $out{$dim} = [
             grep { defined && length }
