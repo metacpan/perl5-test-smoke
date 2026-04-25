@@ -17,17 +17,18 @@
   <tbody>
 % for my $row (@$rows) {
     <tr>
-      <td class="test"><%= $row->{test} %></td>
+      <td class="test">
+        <a href="/submatrix?test=<%= url_escape $row->{test} %>"><%= $row->{test} %></a>
+      </td>
 % for my $v (@$perl_versions) {
-%     my $cell = $row->{$v};
-      <td class="<%= $cell ? 'fail' : 'pass' %>"
-%     if ($cell) {
-          title="<%= $cell->{alt} %>">
+%   my $cell = $row->{$v};
+%   if ($cell) {
+      <td class="fail" title="<%= $cell->{alt} %>">
         <a href="/submatrix?test=<%= url_escape $row->{test} %>&pversion=<%= $v %>"><%= $cell->{cnt} %></a>
-%     } else {
-          >0</td>
-%     }
-%     if ($cell) { print '</td>'; }
+      </td>
+%   } else {
+      <td class="pass">0</td>
+%   }
 % }
     </tr>
 % }
