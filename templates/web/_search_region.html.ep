@@ -1,0 +1,79 @@
+<div id="search-region">
+% # `available` is computed against the OTHER active filters, so
+% # picking arch=aarch64 narrows perl_version and branch to only what
+% # exists in aarch64 reports. If a dimension reduces to a single
+% # value the dropdown collapses to just "all" -- nothing to filter
+% # between -- per the user's rule.
+% my $arch_opts   = $available->{architectures} // [];
+% my $perl_opts   = $available->{perl_versions} // [];
+% my $branch_opts = $available->{branches}      // [];
+
+  <form id="search-form"
+        hx-get="/search"
+        hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox]"
+        hx-target="#search-region"
+        hx-swap="outerHTML"
+        hx-include="closest form">
+    <fieldset>
+      <legend>Filters</legend>
+
+      <label>Architecture
+        <select name="selected_arch">
+          <option value="all">all</option>
+% if (@$arch_opts > 1) {
+%   for my $v (@$arch_opts) {
+          <option value="<%= $v %>"
+% if (($filter->{selected_arch} // '') eq $v) { print 'selected'; }
+          ><%= $v %></option>
+%   }
+% }
+        </select>
+      </label>
+
+      <label>Perl version
+        <select name="selected_perl">
+          <option value="all">all</option>
+% if (@$perl_opts > 1) {
+          <option value="latest"
+% if (($filter->{selected_perl} // '') eq 'latest') { print 'selected'; }
+          >latest</option>
+%   for my $v (@$perl_opts) {
+          <option value="<%= $v %>"
+% if (($filter->{selected_perl} // '') eq $v) { print 'selected'; }
+          ><%= $v %></option>
+%   }
+% }
+        </select>
+      </label>
+
+      <label>Branch
+        <select name="selected_branch">
+          <option value="all">all</option>
+% if (@$branch_opts > 1) {
+%   for my $v (@$branch_opts) {
+          <option value="<%= $v %>"
+% if (($filter->{selected_branch} // '') eq $v) { print 'selected'; }
+          ><%= $v %></option>
+%   }
+% }
+        </select>
+      </label>
+    </fieldset>
+  </form>
+
+  <table class="reports">
+    <thead>
+      <tr>
+        <th>Host</th>
+        <th>Architecture</th>
+        <th>OS</th>
+        <th>Perl</th>
+        <th>Summary</th>
+        <th>Smoke date</th>
+      </tr>
+    </thead>
+    <tbody id="report-rows">
+%= include 'web/_reports_rows', path => '/search', reports => $results->{reports}, report_count => $results->{report_count}, page => $page, reports_per_page => $reports_per_page, filter => $filter
+    </tbody>
+  </table>
+</div>

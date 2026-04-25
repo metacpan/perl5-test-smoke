@@ -41,7 +41,22 @@ sub search ($c) {
     my $available = $c->app->reports->available_filter_values(\%filter);
     my $results   = $c->app->reports->searchresults({ %filter, page => $page, reports_per_page => $rpp });
 
-    if (_is_htmx($c)) {
+    # Form changes (HTMX) re-render the whole search region: the form
+    # (so the cascading dropdowns refresh against the new filter) AND
+    # the results table. The form's hx-target is #search-region with
+    # outerHTML swap, so this fragment replaces itself in place.
+    #
+    # Infinite-scroll triggers from inside #report-rows have their own
+    # hx-target=this and hx-swap=outerHTML, so they pull only the rows
+    # fragment. We distinguish via HX-Trigger-Name: form submissions
+    # set it to the input name; the load-more <tr> doesn't have a
+    # name. Easier: distinguish by HX-Trigger ID -- the load-more row
+    # has a class but no id; the form has id="search-form".
+    my $is_form_change = _is_htmx($c)
+        && (($c->req->headers->header('HX-Trigger') // '') eq 'search-form');
+
+    if (_is_htmx($c) && !$is_form_change) {
+        # Infinite-scroll request: only the rows fragment.
         return $c->render(template => 'web/_reports_rows',
             path             => '/search',
             reports          => $results->{reports},
@@ -52,7 +67,8 @@ sub search ($c) {
         );
     }
 
-    return $c->render(template => 'web/search',
+    my $template = _is_htmx($c) ? 'web/_search_region' : 'web/search';
+    return $c->render(template => $template,
         available => $available,
         filter    => \%filter,
         results   => $results,
