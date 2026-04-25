@@ -1,0 +1,3211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MetaCPAN — Design System v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   METACPAN DESIGN SYSTEM — DESIGN TOKENS (CSS VARIABLES)
+   ============================================================ */
+:root {
+  /* ---------- BRAND PRIMITIVES ---------- */
+  --cpan-red-50:  #FFF1F0;
+  --cpan-red-100: #FFD9D6;
+  --cpan-red-200: #FFB3AC;
+  --cpan-red-300: #FF8579;
+  --cpan-red-400: #F25448;
+  --cpan-red-500: #DC2626;  /* PRIMARY — the CPAN dot */
+  --cpan-red-600: #B91C1C;
+  --cpan-red-700: #991B1B;
+  --cpan-red-800: #7A1313;
+  --cpan-red-900: #5C0E0E;
+
+  --teal-50:  #E6F4F7;
+  --teal-100: #BFE2EA;
+  --teal-200: #80C5D4;
+  --teal-300: #40A8BE;
+  --teal-400: #1E8DA8;
+  --teal-500: #0E6B82;  /* SECONDARY — banner teal */
+  --teal-600: #0A566B;
+  --teal-700: #074554;
+  --teal-800: #04323D;
+  --teal-900: #021E25;
+
+  /* ---------- NEUTRAL SCALE ---------- */
+  --ink-50:  #F7F7F8;
+  --ink-100: #EEEEF1;
+  --ink-200: #D9D9DF;
+  --ink-300: #B8B8C2;
+  --ink-400: #8A8A96;
+  --ink-500: #5C5C68;
+  --ink-600: #3F3F49;
+  --ink-700: #2A2A33;
+  --ink-800: #1A1A22;
+  --ink-900: #0E0E14;
+  --ink-950: #050508;
+
+  /* ---------- SEMANTIC ---------- */
+  --success-50:  #ECFDF5;
+  --success-500: #10B981;
+  --success-700: #047857;
+
+  --warning-50:  #FFFBEB;
+  --warning-500: #F59E0B;
+  --warning-700: #B45309;
+
+  --danger-50:  #FEF2F2;
+  --danger-500: #EF4444;
+  --danger-700: #B91C1C;
+
+  --info-50:  #EFF6FF;
+  --info-500: #3B82F6;
+  --info-700: #1D4ED8;
+
+  /* ---------- LIGHT THEME (default) ---------- */
+  --bg-canvas:     #FBFBFC;
+  --bg-surface:    #FFFFFF;
+  --bg-subtle:     var(--ink-50);
+  --bg-muted:      var(--ink-100);
+  --bg-inverse:    var(--ink-900);
+
+  --fg-primary:    var(--ink-900);
+  --fg-secondary:  var(--ink-600);
+  --fg-tertiary:   var(--ink-500);
+  --fg-disabled:   var(--ink-400);
+  --fg-on-brand:   #FFFFFF;
+  --fg-on-inverse: #FFFFFF;
+
+  --border-subtle:  var(--ink-100);
+  --border-default: var(--ink-200);
+  --border-strong:  var(--ink-300);
+  --border-focus:   var(--cpan-red-500);
+
+  --accent:        var(--cpan-red-500);
+  --accent-hover:  var(--cpan-red-600);
+  --accent-press:  var(--cpan-red-700);
+  --accent-soft:   var(--cpan-red-50);
+
+  --link:          var(--teal-500);
+  --link-hover:    var(--teal-600);
+
+  /* ---------- TYPOGRAPHY ---------- */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Type scale — modular, 1.25 ratio */
+  --text-2xs:  0.6875rem;  /* 11px */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.375rem;   /* 22px */
+  --text-2xl:  1.75rem;    /* 28px */
+  --text-3xl:  2.25rem;    /* 36px */
+  --text-4xl:  3rem;       /* 48px */
+  --text-5xl:  3.75rem;    /* 60px */
+  --text-6xl:  4.75rem;    /* 76px */
+
+  --leading-tight:   1.15;
+  --leading-snug:    1.3;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-widest: 0.12em;
+
+  /* ---------- SPACING (8pt base) ---------- */
+  --space-0:   0;
+  --space-1:   0.25rem;  /* 4 */
+  --space-2:   0.5rem;   /* 8 */
+  --space-3:   0.75rem;  /* 12 */
+  --space-4:   1rem;     /* 16 */
+  --space-5:   1.5rem;   /* 24 */
+  --space-6:   2rem;     /* 32 */
+  --space-7:   2.5rem;   /* 40 */
+  --space-8:   3rem;     /* 48 */
+  --space-9:   4rem;     /* 64 */
+  --space-10:  5rem;     /* 80 */
+  --space-11:  6rem;     /* 96 */
+  --space-12:  8rem;     /* 128 */
+
+  /* ---------- RADII ---------- */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* ---------- ELEVATION ---------- */
+  --shadow-xs: 0 1px 2px rgba(14, 14, 20, 0.04);
+  --shadow-sm: 0 1px 3px rgba(14, 14, 20, 0.06), 0 1px 2px rgba(14, 14, 20, 0.04);
+  --shadow-md: 0 4px 8px -2px rgba(14, 14, 20, 0.08), 0 2px 4px -2px rgba(14, 14, 20, 0.04);
+  --shadow-lg: 0 12px 24px -6px rgba(14, 14, 20, 0.10), 0 4px 8px -2px rgba(14, 14, 20, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(14, 14, 20, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(220, 38, 38, 0.18);
+
+  /* ---------- MOTION ---------- */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    120ms;
+  --dur-base:    200ms;
+  --dur-slow:    320ms;
+  --dur-slower:  500ms;
+
+  /* ---------- LAYOUT ---------- */
+  --grid-columns: 12;
+  --grid-gutter:  24px;
+  --grid-margin:  24px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1440px;
+
+  /* ---------- Z-INDEX ---------- */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-toast:    500;
+  --z-tooltip:  600;
+}
+
+/* ---------- DARK THEME ---------- */
+[data-theme="dark"] {
+  --bg-canvas:     #0B0B12;
+  --bg-surface:    #14141C;
+  --bg-subtle:     #1A1A24;
+  --bg-muted:      #22222E;
+  --bg-inverse:    #FFFFFF;
+
+  --fg-primary:    #F5F5F7;
+  --fg-secondary:  #B8B8C2;
+  --fg-tertiary:   #8A8A96;
+  --fg-disabled:   #5C5C68;
+  --fg-on-brand:   #FFFFFF;
+  --fg-on-inverse: #0E0E14;
+
+  --border-subtle:  #22222E;
+  --border-default: #2E2E3A;
+  --border-strong:  #45454F;
+  --border-focus:   var(--cpan-red-400);
+
+  --accent:        var(--cpan-red-400);
+  --accent-hover:  var(--cpan-red-300);
+  --accent-press:  var(--cpan-red-200);
+  --accent-soft:   rgba(242, 84, 72, 0.12);
+
+  --link:          var(--teal-300);
+  --link-hover:    var(--teal-200);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.6), 0 4px 8px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --shadow-focus: 0 0 0 3px rgba(242, 84, 72, 0.32);
+}
+
+/* ============================================================
+   GLOBAL RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--fg-primary);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+}
+img, svg { display: block; max-width: 100%; }
+button { font-family: inherit; }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.shell {
+  display: grid;
+  grid-template-columns: 264px 1fr;
+  min-height: 100vh;
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  padding: var(--space-5) var(--space-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: var(--z-sticky);
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-5);
+}
+.sidebar-logo {
+  width: 36px; height: 36px;
+  background: var(--ink-900);
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.sidebar-logo::before, .sidebar-logo::after {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--cpan-red-500);
+  position: absolute;
+}
+.sidebar-logo::before { top: 13px; left: 13px; box-shadow: 8px 0 var(--cpan-red-500); }
+.sidebar-logo::after  { top: 21px; left: 13px; box-shadow: 8px 0 var(--cpan-red-500); }
+.sidebar-title { display: flex; flex-direction: column; }
+.sidebar-title-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-tight);
+  font-variation-settings: 'opsz' 36;
+}
+.sidebar-title-meta {
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.nav-section { margin-bottom: var(--space-5); }
+.nav-section-label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.nav-link:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.nav-link.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.nav-link.active::before {
+  content: '';
+  width: 3px; height: 16px;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  margin-right: var(--space-1);
+  margin-left: -8px;
+}
+.nav-counter {
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.main { padding: var(--space-7) var(--space-8) var(--space-12); max-width: 1280px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-7);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.topbar-meta { display: flex; align-items: center; gap: var(--space-3); }
+.topbar-version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  padding: 2px 8px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.theme-toggle:hover { border-color: var(--border-strong); color: var(--fg-primary); }
+
+/* ============================================================
+   HERO / SECTION HEADERS
+   ============================================================ */
+.hero {
+  padding: var(--space-8) 0 var(--space-9);
+  position: relative;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--space-4);
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 28px; height: 1px;
+  background: var(--accent);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-4xl), 7vw, var(--text-6xl));
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  margin: 0 0 var(--space-5);
+  font-variation-settings: 'opsz' 144;
+  max-width: 18ch;
+}
+.hero-title em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144;
+  color: var(--accent);
+}
+.hero-lede {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  color: var(--fg-secondary);
+  max-width: 52ch;
+  font-variation-settings: 'opsz' 36;
+}
+.hero-meta {
+  display: flex;
+  gap: var(--space-7);
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.hero-meta-item { display: flex; flex-direction: column; gap: 2px; }
+.hero-meta-label {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  font-weight: 600;
+}
+.hero-meta-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--fg-primary);
+  font-weight: 500;
+}
+
+.section { margin-bottom: var(--space-11); scroll-margin-top: var(--space-5); }
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+.section-header-main { flex: 1; min-width: 280px; }
+.section-number {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-2);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-2);
+  font-variation-settings: 'opsz' 72;
+}
+.section-description {
+  font-size: var(--text-base);
+  color: var(--fg-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 64ch;
+  margin: 0;
+}
+.subsection-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: var(--space-7) 0 var(--space-4);
+  font-variation-settings: 'opsz' 36;
+}
+.subsection-title:first-child { margin-top: 0; }
+
+/* ============================================================
+   PRINCIPLES GRID
+   ============================================================ */
+.principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--border-default);
+}
+.principle {
+  background: var(--bg-surface);
+  padding: var(--space-6);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.principle-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  letter-spacing: var(--tracking-wide);
+  font-weight: 600;
+}
+.principle-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-variation-settings: 'opsz' 36;
+}
+.principle-desc {
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* ============================================================
+   COLOR SYSTEM
+   ============================================================ */
+.color-scale {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+}
+.swatch {
+  aspect-ratio: 1.4;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.swatch:hover { transform: scale(1.02); z-index: 1; box-shadow: var(--shadow-md); }
+.swatch-label { font-weight: 600; letter-spacing: var(--tracking-wide); }
+.swatch-hex { opacity: 0.85; }
+.swatch.light { color: var(--ink-900); }
+.swatch.dark  { color: #FFFFFF; }
+
+.semantic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+.semantic-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.semantic-card-bar { height: 64px; }
+.semantic-card-body { padding: var(--space-4); }
+.semantic-card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.semantic-card-token {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+}
+
+.contrast-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  font-size: var(--text-sm);
+}
+.contrast-table th, .contrast-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.contrast-table th {
+  background: var(--bg-subtle);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.contrast-table tr:last-child td { border-bottom: none; }
+.contrast-pass {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.contrast-pass.aaa { background: var(--success-50); color: var(--success-700); }
+.contrast-pass.aa  { background: var(--info-50);    color: var(--info-700); }
+.contrast-pass.fail { background: var(--danger-50); color: var(--danger-700); }
+[data-theme="dark"] .contrast-pass.aaa { background: rgba(16, 185, 129, 0.15); }
+[data-theme="dark"] .contrast-pass.aa  { background: rgba(59, 130, 246, 0.15); }
+[data-theme="dark"] .contrast-pass.fail { background: rgba(239, 68, 68, 0.15); }
+.contrast-table .ratio {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* ============================================================
+   TYPOGRAPHY SHOWCASE
+   ============================================================ */
+.type-scale {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+}
+.type-row {
+  display: grid;
+  grid-template-columns: 130px 100px 1fr;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: baseline;
+}
+.type-row-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.type-row-name {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.type-row-token {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+}
+.type-row-specs {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+.type-row-sample {
+  font-family: var(--font-display);
+  color: var(--fg-primary);
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 96;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.type-row-sample.body { font-family: var(--font-sans); letter-spacing: 0; }
+.type-row-sample.mono { font-family: var(--font-mono); letter-spacing: 0; }
+
+.font-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+.font-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.font-card-name {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+.font-card-family {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+}
+.font-card-display {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 0;
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+}
+.font-card-display.serif { font-family: var(--font-display); }
+.font-card-display.sans  { font-family: var(--font-sans); }
+.font-card-display.mono  { font-family: var(--font-mono); font-size: clamp(2rem, 5vw, 3.5rem); }
+.font-card-pangram {
+  font-size: var(--text-base);
+  color: var(--fg-secondary);
+  margin-top: var(--space-3);
+}
+
+/* ============================================================
+   GRID & SPACING VISUALIZATIONS
+   ============================================================ */
+.grid-demo {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  position: relative;
+  overflow: hidden;
+}
+.grid-cols {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  height: 200px;
+}
+.grid-col {
+  background: var(--accent-soft);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius-xs);
+  position: relative;
+}
+.grid-col::after {
+  content: attr(data-num);
+  position: absolute;
+  bottom: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--accent);
+  font-weight: 600;
+}
+.grid-meta {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--border-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-secondary);
+  flex-wrap: wrap;
+}
+.grid-meta strong { color: var(--accent); font-weight: 600; }
+
+.spacing-scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.spacing-row {
+  display: grid;
+  grid-template-columns: 60px 80px 1fr;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.spacing-row-token { color: var(--fg-secondary); font-weight: 600; }
+.spacing-row-px { color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.spacing-bar {
+  height: 12px;
+  background: var(--accent);
+  border-radius: var(--radius-xs);
+  position: relative;
+}
+.spacing-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.2) 2px,
+    rgba(255,255,255,0.2) 4px
+  );
+  border-radius: inherit;
+}
+
+/* ============================================================
+   COMPONENT CATALOG
+   ============================================================ */
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: var(--space-5);
+}
+.component {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--dur-base) var(--ease-out);
+}
+.component:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.component-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+}
+.component-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin: 0;
+  font-variation-settings: 'opsz' 14;
+}
+.component-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-wide);
+}
+.component-body {
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 140px;
+  background: var(--bg-canvas);
+}
+.component-states {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.component-states span::before { content: '·'; margin-right: var(--space-2); color: var(--fg-disabled); }
+.component-states span:first-child::before { display: none; }
+
+/* ============================================================
+   COMPONENT — BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  line-height: 1;
+  padding: 0 var(--space-4);
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--fg-on-brand);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:active { background: var(--accent-press); }
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.btn-secondary:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-primary);
+}
+.btn-ghost:hover { background: var(--bg-subtle); }
+
+.btn-danger {
+  background: var(--danger-500);
+  color: white;
+}
+.btn-danger:hover { background: var(--danger-700); }
+
+.btn-link {
+  background: transparent;
+  color: var(--link);
+  padding: 0;
+  height: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn-link:hover { color: var(--link-hover); }
+
+.btn-sm { height: 32px; font-size: var(--text-xs); padding: 0 var(--space-3); }
+.btn-lg { height: 48px; font-size: var(--text-base); padding: 0 var(--space-5); }
+.btn:disabled, .btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ============================================================
+   COMPONENT — INPUTS
+   ============================================================ */
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--fg-primary);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.input::placeholder { color: var(--fg-tertiary); }
+.input:hover { border-color: var(--border-strong); }
+.input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+.input.error { border-color: var(--danger-500); }
+.input.error:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 320px;
+}
+.search-input:focus-within { border-color: var(--border-focus); box-shadow: var(--shadow-focus); }
+.search-input input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--fg-primary);
+}
+.search-input input:focus { outline: none; }
+.search-input kbd {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--fg-tertiary);
+}
+
+.field-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  margin-bottom: var(--space-2);
+}
+.field-help {
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  margin-top: var(--space-2);
+}
+
+.textarea { min-height: 88px; padding: var(--space-3); resize: vertical; line-height: var(--leading-normal); }
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C5C68' stroke-width='2.5'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+/* Checkbox & Radio */
+.checkbox, .radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--fg-primary);
+}
+.checkbox input, .radio input { display: none; }
+.checkbox-box, .radio-box {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-surface);
+  display: grid;
+  place-items: center;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.checkbox-box { border-radius: var(--radius-sm); }
+.radio-box { border-radius: var(--radius-full); }
+.checkbox input:checked + .checkbox-box,
+.radio input:checked + .radio-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.checkbox input:checked + .checkbox-box::after {
+  content: '';
+  width: 10px; height: 6px;
+  border: 2px solid white;
+  border-top: 0; border-right: 0;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.radio input:checked + .radio-box::after {
+  content: '';
+  width: 6px; height: 6px;
+  background: white;
+  border-radius: var(--radius-full);
+}
+
+/* Switch */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.switch input { display: none; }
+.switch-track {
+  width: 36px; height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--ink-300);
+  position: relative;
+  transition: background var(--dur-base) var(--ease-out);
+}
+.switch-track::after {
+  content: '';
+  width: 16px; height: 16px;
+  border-radius: var(--radius-full);
+  background: white;
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: transform var(--dur-base) var(--ease-spring);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.switch input:checked + .switch-track { background: var(--accent); }
+.switch input:checked + .switch-track::after { transform: translateX(16px); }
+
+/* ============================================================
+   COMPONENT — BADGES, CHIPS, TAGS
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+}
+.badge-success { background: var(--success-50); color: var(--success-700); }
+.badge-warning { background: var(--warning-50); color: var(--warning-700); }
+.badge-danger  { background: var(--danger-50);  color: var(--danger-700); }
+.badge-info    { background: var(--info-50);    color: var(--info-700); }
+.badge-accent  { background: var(--accent-soft); color: var(--accent); }
+[data-theme="dark"] .badge-success { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+[data-theme="dark"] .badge-warning { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+[data-theme="dark"] .badge-danger  { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+[data-theme="dark"] .badge-info    { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--fg-primary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.chip:hover { border-color: var(--border-strong); background: var(--bg-muted); }
+.chip-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--fg-tertiary);
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--fg-secondary);
+}
+.tag::before {
+  content: '#';
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ============================================================
+   COMPONENT — CARDS
+   ============================================================ */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: all var(--dur-base) var(--ease-out);
+}
+.card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+
+.card-module {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 320px;
+  text-align: left;
+}
+.module-header { display: flex; align-items: start; justify-content: space-between; gap: var(--space-3); }
+.module-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0;
+  color: var(--fg-primary);
+}
+.module-version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+}
+.module-desc {
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+.module-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  align-items: center;
+}
+.module-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ============================================================
+   COMPONENT — ALERTS
+   ============================================================ */
+.alert {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  font-size: var(--text-sm);
+  align-items: flex-start;
+  width: 100%;
+  max-width: 380px;
+}
+.alert-info    { background: var(--info-50);    border-color: rgba(59,130,246,0.2);  color: var(--info-700); }
+.alert-success { background: var(--success-50); border-color: rgba(16,185,129,0.2);  color: var(--success-700); }
+.alert-warning { background: var(--warning-50); border-color: rgba(245,158,11,0.2);  color: var(--warning-700); }
+.alert-danger  { background: var(--danger-50);  border-color: rgba(239,68,68,0.2);   color: var(--danger-700); }
+[data-theme="dark"] .alert-info    { background: rgba(59,130,246,0.1);  color: #93C5FD; }
+[data-theme="dark"] .alert-success { background: rgba(16,185,129,0.1);  color: #6EE7B7; }
+[data-theme="dark"] .alert-warning { background: rgba(245,158,11,0.1);  color: #FCD34D; }
+[data-theme="dark"] .alert-danger  { background: rgba(239,68,68,0.1);   color: #FCA5A5; }
+.alert-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alert-title { font-weight: 600; margin: 0 0 2px; }
+.alert-desc { margin: 0; opacity: 0.9; line-height: var(--leading-normal); }
+
+/* ============================================================
+   COMPONENT — TABS
+   ============================================================ */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-default);
+  overflow-x: auto;
+  width: 100%;
+}
+.tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--fg-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.tab:hover { color: var(--fg-primary); }
+.tab[aria-selected="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.tab[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ============================================================
+   COMPONENT — BREADCRUMB
+   ============================================================ */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+}
+.breadcrumb a { color: var(--fg-secondary); text-decoration: none; }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb-sep::before { content: '/'; color: var(--fg-disabled); }
+.breadcrumb-current { color: var(--fg-primary); font-weight: 500; }
+
+/* ============================================================
+   COMPONENT — PAGINATION
+   ============================================================ */
+.pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+}
+.page-link {
+  width: 32px; height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.page-link:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.page-link[aria-current="page"] {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+/* ============================================================
+   COMPONENT — PROGRESS, SPINNER
+   ============================================================ */
+.progress {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--dur-slower) var(--ease-out);
+}
+.progress-bar.indeterminate {
+  width: 30%;
+  animation: indeterminate 1.6s var(--ease-in-out) infinite;
+}
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: var(--radius-full);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   COMPONENT — AVATAR
+   ============================================================ */
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: var(--font-display);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.avatar-sm { width: 24px; height: 24px; font-size: var(--text-2xs); }
+.avatar-lg { width: 56px; height: 56px; font-size: var(--text-lg); }
+.avatar-group { display: flex; }
+.avatar-group .avatar { margin-left: -8px; border: 2px solid var(--bg-canvas); }
+.avatar-group .avatar:first-child { margin-left: 0; }
+
+/* ============================================================
+   COMPONENT — TOOLTIP
+   ============================================================ */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: var(--ink-900);
+  color: white;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-tooltip);
+}
+[data-theme="dark"] .tooltip { background: var(--ink-100); color: var(--ink-900); }
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--ink-900);
+}
+[data-theme="dark"] .tooltip::after { border-top-color: var(--ink-100); }
+
+/* ============================================================
+   COMPONENT — TABLE
+   ============================================================ */
+.table-wrap {
+  width: 100%;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.data-table th, .data-table td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.data-table th {
+  background: var(--bg-subtle);
+  font-weight: 600;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--bg-subtle); }
+
+/* ============================================================
+   COMPONENT — CODE BLOCK
+   ============================================================ */
+.code-block {
+  background: var(--ink-950);
+  color: #E2E2E8;
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-x: auto;
+  position: relative;
+  border: 1px solid var(--ink-800);
+}
+.code-block pre { margin: 0; }
+.code-block .tok-keyword { color: #FF8579; }
+.code-block .tok-string  { color: #80C5D4; }
+.code-block .tok-comment { color: #5C5C68; font-style: italic; }
+.code-block .tok-fn      { color: #FBBF24; }
+.code-block .tok-num     { color: #C4B5FD; }
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-800);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.code-block-header + .code-block { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top: none; }
+.code-block-lang {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--bg-muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ============================================================
+   COMPONENT — TOAST
+   ============================================================ */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink-900);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--text-sm);
+  max-width: 400px;
+  border-left: 3px solid var(--success-500);
+}
+[data-theme="dark"] .toast { background: var(--bg-surface); color: var(--fg-primary); border: 1px solid var(--border-default); border-left: 3px solid var(--success-500); }
+
+/* ============================================================
+   COMPONENT — KBD
+   ============================================================ */
+.kbd-key {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-xs);
+  color: var(--fg-secondary);
+  min-width: 22px;
+  justify-content: center;
+}
+
+/* ============================================================
+   COMPONENT — DROPDOWN MENU (visual)
+   ============================================================ */
+.menu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  min-width: 200px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--fg-primary);
+  cursor: pointer;
+}
+.menu-item:hover { background: var(--bg-subtle); }
+.menu-item .shortcut {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-tertiary);
+}
+.menu-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--space-1) 0;
+}
+
+/* ============================================================
+   COMPONENT — STAT
+   ============================================================ */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-label {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  font-weight: 600;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: 'opsz' 36;
+}
+.stat-trend {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.stat-trend.up   { color: var(--success-500); }
+.stat-trend.down { color: var(--danger-500); }
+
+/* ============================================================
+   COMPONENT — DIVIDER
+   ============================================================ */
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  border: none;
+  margin: var(--space-5) 0;
+}
+.divider-labeled {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+.divider-labeled::before, .divider-labeled::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+.divider-labeled-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-tertiary);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   DOS & DONTS
+   ============================================================ */
+.dos-donts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+.dd {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.dd-header {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dd-do .dd-header    { background: var(--success-50); color: var(--success-700); }
+.dd-dont .dd-header  { background: var(--danger-50);  color: var(--danger-700); }
+[data-theme="dark"] .dd-do .dd-header   { background: rgba(16, 185, 129, 0.12); color: #6EE7B7; }
+[data-theme="dark"] .dd-dont .dd-header { background: rgba(239, 68, 68, 0.12);  color: #FCA5A5; }
+.dd-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-4);
+}
+.dd-list li {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  line-height: var(--leading-relaxed);
+}
+.dd-list li:last-child { border-bottom: none; }
+.dd-list li::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  margin-right: var(--space-2);
+}
+.dd-do .dd-list li::before    { content: '✓'; color: var(--success-500); font-weight: 700; }
+.dd-dont .dd-list li::before  { content: '✗'; color: var(--danger-500); font-weight: 700; }
+
+/* ============================================================
+   TOKENS JSON VIEWER
+   ============================================================ */
+.tokens-viewer {
+  background: var(--ink-950);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--ink-800);
+}
+.tokens-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-800);
+}
+.tokens-filename {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: #E2E2E8;
+}
+.tokens-actions { display: flex; gap: var(--space-2); }
+.tokens-action {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--ink-700);
+  color: #B8B8C2;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.tokens-action:hover { background: var(--ink-800); color: white; }
+.tokens-content {
+  max-height: 520px;
+  overflow: auto;
+  padding: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  color: #E2E2E8;
+}
+.tokens-content pre { margin: 0; white-space: pre; }
+
+/* ============================================================
+   HANDOFF SECTION
+   ============================================================ */
+.handoff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+.handoff-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.handoff-card-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-2);
+}
+.handoff-card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+.handoff-card-desc {
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-3);
+}
+
+/* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    overflow-x: auto;
+  }
+  .nav-section { margin-bottom: 0; flex-shrink: 0; }
+  .nav-section-label { display: none; }
+  .sidebar-brand { width: 100%; padding-bottom: var(--space-3); margin-bottom: var(--space-3); }
+  .main { padding: var(--space-5); }
+  .grid-cols { grid-template-columns: repeat(6, 1fr); height: 120px; }
+  .grid-col[data-num="7"], .grid-col[data-num="8"], .grid-col[data-num="9"],
+  .grid-col[data-num="10"], .grid-col[data-num="11"], .grid-col[data-num="12"] { display: none; }
+  .type-row { grid-template-columns: 100px 1fr; }
+  .type-row .type-row-specs { display: none; }
+}
+@media (max-width: 640px) {
+  .main { padding: var(--space-4); }
+  .hero-title { font-size: var(--text-3xl); }
+  .grid-cols { grid-template-columns: repeat(4, 1fr); }
+  .grid-col[data-num="5"], .grid-col[data-num="6"] { display: none; }
+}
+</style>
+</head>
+<body data-theme="light">
+
+<div class="shell">
+
+  <!-- ============================================================
+       SIDEBAR NAV
+       ============================================================ -->
+  <aside class="sidebar" aria-label="Design system navigation">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo" aria-hidden="true"></div>
+      <div class="sidebar-title">
+        <span class="sidebar-title-name">MetaCPAN</span>
+        <span class="sidebar-title-meta">Design System</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Foundations</div>
+      <a class="nav-link active" href="#principles"><span>Principles</span><span class="nav-counter">07</span></a>
+      <a class="nav-link" href="#color"><span>Color</span><span class="nav-counter">42</span></a>
+      <a class="nav-link" href="#typography"><span>Typography</span><span class="nav-counter">11</span></a>
+      <a class="nav-link" href="#grid"><span>Grid</span><span class="nav-counter">12</span></a>
+      <a class="nav-link" href="#spacing"><span>Spacing</span><span class="nav-counter">13</span></a>
+      <a class="nav-link" href="#elevation"><span>Elevation</span><span class="nav-counter">06</span></a>
+      <a class="nav-link" href="#motion"><span>Motion</span><span class="nav-counter">08</span></a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Components</div>
+      <a class="nav-link" href="#components"><span>All components</span><span class="nav-counter">36</span></a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Guidelines</div>
+      <a class="nav-link" href="#patterns"><span>Patterns</span></a>
+      <a class="nav-link" href="#dos-donts"><span>Do's &amp; don'ts</span></a>
+      <a class="nav-link" href="#tokens"><span>Tokens (JSON)</span></a>
+      <a class="nav-link" href="#handoff"><span>Developer handoff</span></a>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main class="main">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="#">Anantys</a>
+        <span class="breadcrumb-sep"></span>
+        <a href="#">Design</a>
+        <span class="breadcrumb-sep"></span>
+        <span class="breadcrumb-current">MetaCPAN DS</span>
+      </div>
+      <div class="topbar-meta">
+        <span class="topbar-version">v1.0.0 · stable</span>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-eyebrow">Design System · 2026</div>
+      <h1 class="hero-title">A search engine, <em>composed.</em></h1>
+      <p class="hero-lede">
+        The MetaCPAN Design System is a complete, production-ready foundation for building consistent, accessible, and unmistakably crafted experiences across the Comprehensive Perl Archive Network. Editorial in voice, monospaced in soul, and rigorously tokenized for the engineers who depend on it.
+      </p>
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <span class="hero-meta-label">Version</span>
+          <span class="hero-meta-value">1.0.0</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-label">Components</span>
+          <span class="hero-meta-value">36</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-label">Tokens</span>
+          <span class="hero-meta-value">214</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-label">WCAG</span>
+          <span class="hero-meta-value">2.2 AA</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-label">Last updated</span>
+          <span class="hero-meta-value">2026.04.25</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         01 — PRINCIPLES
+         ============================================================ -->
+    <section class="section" id="principles">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">01 — Foundations</div>
+          <h2 class="section-title">Core principles</h2>
+          <p class="section-description">Seven commitments that guide every design decision. They protect the legacy, serve the developer, and keep the system honest.</p>
+        </div>
+      </div>
+
+      <div class="principles">
+        <div class="principle">
+          <span class="principle-num">P-01</span>
+          <h3 class="principle-title">Legible above all</h3>
+          <p class="principle-desc">Module names, signatures, and error messages must be unambiguous. We optimize for the developer reading at 3 a.m., not the marketing screenshot.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-02</span>
+          <h3 class="principle-title">Honor the heritage</h3>
+          <p class="principle-desc">Perl is older than most engineers using it. The system carries that weight with editorial typography and a mature, restrained palette — no toy aesthetics.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-03</span>
+          <h3 class="principle-title">Density with air</h3>
+          <p class="principle-desc">Developers scan dense pages of metadata. We use tight vertical rhythm where data lives and generous breathing room where decisions happen.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-04</span>
+          <h3 class="principle-title">Accessible by default</h3>
+          <p class="principle-desc">Every token, every component clears WCAG 2.2 AA at minimum. Focus is visible, motion is respectful, and the keyboard is a first-class citizen.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-05</span>
+          <h3 class="principle-title">One brand, two modes</h3>
+          <p class="principle-desc">Light and dark are equal expressions of the brand — not afterthoughts. Tokens flip; intent never does.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-06</span>
+          <h3 class="principle-title">Tokens, not exceptions</h3>
+          <p class="principle-desc">If you reach for a hex code or a magic pixel value, you've found a gap in the system. Fix the system, not the screen.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">P-07</span>
+          <h3 class="principle-title">Build for the long run</h3>
+          <p class="principle-desc">CPAN has shipped since 1995. Choose patterns that age — not trends that expire. Boring, well-built, and predictable wins.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         02 — COLOR
+         ============================================================ -->
+    <section class="section" id="color">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">02 — Foundations</div>
+          <h2 class="section-title">Color system</h2>
+          <p class="section-description">Built around the iconic CPAN red dot and the heritage teal of the security banner. Eleven steps per family for full UI flexibility, with semantic aliases for intent and a fully derived dark mode.</p>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Primary — CPAN Red</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">The signature mark. Used for accents, primary actions, active states, and the singular moments that demand attention. Never as a body color.</p>
+      <div class="color-scale">
+        <div class="swatch light" style="background:#FFF1F0;"><span class="swatch-label">red/50</span><span class="swatch-hex">#FFF1F0</span></div>
+        <div class="swatch light" style="background:#FFD9D6;"><span class="swatch-label">red/100</span><span class="swatch-hex">#FFD9D6</span></div>
+        <div class="swatch light" style="background:#FFB3AC;"><span class="swatch-label">red/200</span><span class="swatch-hex">#FFB3AC</span></div>
+        <div class="swatch light" style="background:#FF8579;"><span class="swatch-label">red/300</span><span class="swatch-hex">#FF8579</span></div>
+        <div class="swatch dark" style="background:#F25448;"><span class="swatch-label">red/400</span><span class="swatch-hex">#F25448</span></div>
+        <div class="swatch dark" style="background:#DC2626;"><span class="swatch-label">red/500</span><span class="swatch-hex">#DC2626</span></div>
+        <div class="swatch dark" style="background:#B91C1C;"><span class="swatch-label">red/600</span><span class="swatch-hex">#B91C1C</span></div>
+        <div class="swatch dark" style="background:#991B1B;"><span class="swatch-label">red/700</span><span class="swatch-hex">#991B1B</span></div>
+        <div class="swatch dark" style="background:#7A1313;"><span class="swatch-label">red/800</span><span class="swatch-hex">#7A1313</span></div>
+        <div class="swatch dark" style="background:#5C0E0E;"><span class="swatch-label">red/900</span><span class="swatch-hex">#5C0E0E</span></div>
+      </div>
+
+      <h3 class="subsection-title">Secondary — Heritage Teal</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Reserved for informational moments — security advisories, links, neutral system messages. Anchored in the security banner from the original site.</p>
+      <div class="color-scale">
+        <div class="swatch light" style="background:#E6F4F7;"><span class="swatch-label">teal/50</span><span class="swatch-hex">#E6F4F7</span></div>
+        <div class="swatch light" style="background:#BFE2EA;"><span class="swatch-label">teal/100</span><span class="swatch-hex">#BFE2EA</span></div>
+        <div class="swatch light" style="background:#80C5D4;"><span class="swatch-label">teal/200</span><span class="swatch-hex">#80C5D4</span></div>
+        <div class="swatch dark" style="background:#40A8BE;"><span class="swatch-label">teal/300</span><span class="swatch-hex">#40A8BE</span></div>
+        <div class="swatch dark" style="background:#1E8DA8;"><span class="swatch-label">teal/400</span><span class="swatch-hex">#1E8DA8</span></div>
+        <div class="swatch dark" style="background:#0E6B82;"><span class="swatch-label">teal/500</span><span class="swatch-hex">#0E6B82</span></div>
+        <div class="swatch dark" style="background:#0A566B;"><span class="swatch-label">teal/600</span><span class="swatch-hex">#0A566B</span></div>
+        <div class="swatch dark" style="background:#074554;"><span class="swatch-label">teal/700</span><span class="swatch-hex">#074554</span></div>
+        <div class="swatch dark" style="background:#04323D;"><span class="swatch-label">teal/800</span><span class="swatch-hex">#04323D</span></div>
+        <div class="swatch dark" style="background:#021E25;"><span class="swatch-label">teal/900</span><span class="swatch-hex">#021E25</span></div>
+      </div>
+
+      <h3 class="subsection-title">Neutral — Ink</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">The workhorse. Surfaces, text, borders, and the navigation chrome all derive from a single 11-step neutral scale tuned for long-form reading.</p>
+      <div class="color-scale">
+        <div class="swatch light" style="background:#F7F7F8;"><span class="swatch-label">ink/50</span><span class="swatch-hex">#F7F7F8</span></div>
+        <div class="swatch light" style="background:#EEEEF1;"><span class="swatch-label">ink/100</span><span class="swatch-hex">#EEEEF1</span></div>
+        <div class="swatch light" style="background:#D9D9DF;"><span class="swatch-label">ink/200</span><span class="swatch-hex">#D9D9DF</span></div>
+        <div class="swatch light" style="background:#B8B8C2;"><span class="swatch-label">ink/300</span><span class="swatch-hex">#B8B8C2</span></div>
+        <div class="swatch dark" style="background:#8A8A96;"><span class="swatch-label">ink/400</span><span class="swatch-hex">#8A8A96</span></div>
+        <div class="swatch dark" style="background:#5C5C68;"><span class="swatch-label">ink/500</span><span class="swatch-hex">#5C5C68</span></div>
+        <div class="swatch dark" style="background:#3F3F49;"><span class="swatch-label">ink/600</span><span class="swatch-hex">#3F3F49</span></div>
+        <div class="swatch dark" style="background:#2A2A33;"><span class="swatch-label">ink/700</span><span class="swatch-hex">#2A2A33</span></div>
+        <div class="swatch dark" style="background:#1A1A22;"><span class="swatch-label">ink/800</span><span class="swatch-hex">#1A1A22</span></div>
+        <div class="swatch dark" style="background:#0E0E14;"><span class="swatch-label">ink/900</span><span class="swatch-hex">#0E0E14</span></div>
+        <div class="swatch dark" style="background:#050508;"><span class="swatch-label">ink/950</span><span class="swatch-hex">#050508</span></div>
+      </div>
+
+      <h3 class="subsection-title">Semantic intent</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Intent is decoupled from color. Use these tokens — never raw hue families — when building components that communicate state.</p>
+      <div class="semantic-grid">
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#10B981;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Success</h4><div class="semantic-card-token">--success-500 · #10B981</div></div></div>
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#F59E0B;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Warning</h4><div class="semantic-card-token">--warning-500 · #F59E0B</div></div></div>
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#EF4444;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Danger</h4><div class="semantic-card-token">--danger-500 · #EF4444</div></div></div>
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#3B82F6;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Info</h4><div class="semantic-card-token">--info-500 · #3B82F6</div></div></div>
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#DC2626;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Accent (brand)</h4><div class="semantic-card-token">--accent · CPAN red/500</div></div></div>
+        <div class="semantic-card"><div class="semantic-card-bar" style="background:#0E6B82;"></div><div class="semantic-card-body"><h4 class="semantic-card-name">Link</h4><div class="semantic-card-token">--link · teal/500</div></div></div>
+      </div>
+
+      <h3 class="subsection-title">Contrast & accessibility</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Every foreground/background pairing in the system is verified against WCAG 2.2. No combination falls below AA. Body text and primary actions reach AAA wherever feasible.</p>
+      <table class="contrast-table">
+        <thead>
+          <tr><th>Foreground</th><th>Background</th><th>Ratio</th><th>Normal text</th><th>Large text</th><th>UI / Graphics</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="code-inline">--fg-primary</code></td><td><code class="code-inline">--bg-canvas</code></td><td class="ratio">17.92 : 1</td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">--fg-secondary</code></td><td><code class="code-inline">--bg-canvas</code></td><td class="ratio">8.84 : 1</td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">--fg-tertiary</code></td><td><code class="code-inline">--bg-canvas</code></td><td class="ratio">5.42 : 1</td><td><span class="contrast-pass aa">AA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">white</code></td><td><code class="code-inline">--accent</code> (red/500)</td><td class="ratio">5.74 : 1</td><td><span class="contrast-pass aa">AA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">white</code></td><td><code class="code-inline">teal/500</code></td><td class="ratio">7.61 : 1</td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">--link</code></td><td><code class="code-inline">--bg-canvas</code></td><td class="ratio">7.34 : 1</td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td><td><span class="contrast-pass aaa">AAA</span></td></tr>
+          <tr><td><code class="code-inline">--fg-disabled</code></td><td><code class="code-inline">--bg-canvas</code></td><td class="ratio">3.21 : 1</td><td><span class="contrast-pass fail">FAIL</span></td><td><span class="contrast-pass aa">AA</span></td><td><span class="contrast-pass aa">AA</span></td></tr>
+        </tbody>
+      </table>
+      <p class="field-help" style="margin-top: var(--space-2);">Disabled foreground intentionally fails AA for normal text — that's the visual signal of disablement. Never use it for active content.</p>
+
+      <h3 class="subsection-title">Usage guidelines</h3>
+      <div class="dos-donts">
+        <div class="dd dd-do">
+          <div class="dd-header">Do — Color</div>
+          <ul class="dd-list">
+            <li>Use <code class="code-inline">--accent</code> for the single most important action per view.</li>
+            <li>Pair semantic tokens with iconography — color alone never conveys meaning.</li>
+            <li>Use <code class="code-inline">teal/500</code> for links and security-related communications.</li>
+            <li>Reserve <code class="code-inline">red/700+</code> for the dark sidebar surface or dense data tables.</li>
+            <li>Test every new color pair against contrast tokens before shipping.</li>
+          </ul>
+        </div>
+        <div class="dd dd-dont">
+          <div class="dd-header">Don't — Color</div>
+          <ul class="dd-list">
+            <li>Don't use <code class="code-inline">--accent</code> for body text or large fills.</li>
+            <li>Don't introduce new hex values — extend the system instead.</li>
+            <li>Don't mix red and danger semantically; danger is its own token family.</li>
+            <li>Don't tint dark mode by inverting light mode — use the dark theme tokens.</li>
+            <li>Don't rely on red/green pairings without textual or iconographic backup.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         03 — TYPOGRAPHY
+         ============================================================ -->
+    <section class="section" id="typography">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">03 — Foundations</div>
+          <h2 class="section-title">Typography</h2>
+          <p class="section-description">A three-family system: a variable serif for editorial headlines and the heritage voice, a humanist sans for the interface, and a code-grade monospace for everything that needs to look like Perl. Eleven scale steps from caption to display.</p>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-card-header">
+          <span class="font-card-name">Display · Editorial</span>
+          <span class="font-card-family">Fraunces — variable, opsz 9–144</span>
+        </div>
+        <p class="font-card-display serif">Comprehensive Perl Archive</p>
+        <p class="font-card-pangram">Used for hero titles, section headers, and statistical figures. Optical-size axis is set per scale step — the larger the size, the more dramatic the contrast.</p>
+      </div>
+
+      <div class="font-card">
+        <div class="font-card-header">
+          <span class="font-card-name">Body · Interface</span>
+          <span class="font-card-family">Inter — 400 / 500 / 600 / 700</span>
+        </div>
+        <p class="font-card-display sans" style="font-weight:600;">Search the CPAN, find the rest.</p>
+        <p class="font-card-pangram">Default for all interface chrome, controls, body copy, and labels. Tuned for screen at 14–18px.</p>
+      </div>
+
+      <div class="font-card">
+        <div class="font-card-header">
+          <span class="font-card-name">Mono · Code</span>
+          <span class="font-card-family">JetBrains Mono — 400 / 500 / 600</span>
+        </div>
+        <p class="font-card-display mono">Plack::Middleware::Auth</p>
+        <p class="font-card-pangram">For module names, version strings, code blocks, paths, and any time the literal characters matter. Numerals are tabular by default.</p>
+      </div>
+
+      <h3 class="subsection-title">Scale</h3>
+      <div class="type-scale">
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Display 2XL</span><span class="type-row-token">--text-6xl · 76px</span></div>
+          <div class="type-row-specs">76 / 75<br/>700 · -3.5%</div>
+          <div class="type-row-sample" style="font-size:var(--text-6xl); line-height:0.98; font-weight:700;">Archive</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Display XL</span><span class="type-row-token">--text-5xl · 60px</span></div>
+          <div class="type-row-specs">60 / 60<br/>700 · -3%</div>
+          <div class="type-row-sample" style="font-size:var(--text-5xl); line-height:1; font-weight:700;">Modules</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Display L</span><span class="type-row-token">--text-4xl · 48px</span></div>
+          <div class="type-row-specs">48 / 52<br/>600 · -2.5%</div>
+          <div class="type-row-sample" style="font-size:var(--text-4xl); line-height:1.08; font-weight:600;">Distributions</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Heading 1</span><span class="type-row-token">--text-3xl · 36px</span></div>
+          <div class="type-row-specs">36 / 42<br/>600 · -2%</div>
+          <div class="type-row-sample" style="font-size:var(--text-3xl); line-height:1.16; font-weight:600;">Section title</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Heading 2</span><span class="type-row-token">--text-2xl · 28px</span></div>
+          <div class="type-row-specs">28 / 34<br/>600 · -1.5%</div>
+          <div class="type-row-sample" style="font-size:var(--text-2xl); line-height:1.21; font-weight:600;">Subsection title</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Heading 3</span><span class="type-row-token">--text-xl · 22px</span></div>
+          <div class="type-row-specs">22 / 28<br/>600 · -1%</div>
+          <div class="type-row-sample" style="font-size:var(--text-xl); line-height:1.27; font-weight:600;">Card or block heading</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Body L</span><span class="type-row-token">--text-lg · 18px</span></div>
+          <div class="type-row-specs">18 / 28<br/>400 · 0%</div>
+          <div class="type-row-sample body" style="font-size:var(--text-lg); line-height:1.55; font-weight:400;">A search engine for CPAN, since 2010.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Body M</span><span class="type-row-token">--text-base · 16px</span></div>
+          <div class="type-row-specs">16 / 24<br/>400 · 0%</div>
+          <div class="type-row-sample body" style="font-size:var(--text-base); line-height:1.5; font-weight:400;">Default body copy across the interface.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Body S</span><span class="type-row-token">--text-sm · 14px</span></div>
+          <div class="type-row-specs">14 / 20<br/>400 · 0%</div>
+          <div class="type-row-sample body" style="font-size:var(--text-sm); line-height:1.43; font-weight:400;">Used for inputs, controls, and table cells.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Caption</span><span class="type-row-token">--text-xs · 12px</span></div>
+          <div class="type-row-specs">12 / 16<br/>500 · +0.5%</div>
+          <div class="type-row-sample body" style="font-size:var(--text-xs); line-height:1.33; font-weight:500;">Labels, helper text, breadcrumbs.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-row-meta"><span class="type-row-name">Mono</span><span class="type-row-token">--text-sm · mono</span></div>
+          <div class="type-row-specs">14 / 22<br/>500 · 0%</div>
+          <div class="type-row-sample mono" style="font-size:var(--text-sm); line-height:1.57; font-weight:500;">use Plack::Builder;</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Responsive behavior</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Display sizes use <code class="code-inline">clamp()</code> to scale fluidly between viewport breakpoints. Body sizes are fixed — readability is non-negotiable. The <code class="code-inline">opsz</code> axis on Fraunces is bound to the literal pixel size, so optical compensation happens automatically.</p>
+      <div class="code-block">
+        <pre><span class="tok-comment">/* Fluid display, fixed body */</span>
+<span class="tok-keyword">.hero-title</span> {
+  font-size: <span class="tok-fn">clamp</span>(<span class="tok-num">3rem</span>, <span class="tok-num">7vw</span>, <span class="tok-num">4.75rem</span>);
+  font-variation-settings: <span class="tok-string">'opsz'</span> <span class="tok-num">144</span>;
+}
+
+<span class="tok-keyword">.body</span> { font-size: <span class="tok-num">1rem</span>; <span class="tok-comment">/* never scales */</span> }</pre>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         04 — GRID
+         ============================================================ -->
+    <section class="section" id="grid">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">04 — Foundations</div>
+          <h2 class="section-title">Grid system</h2>
+          <p class="section-description">A 12-column responsive grid with a 24px gutter and adaptive margins. Built on CSS Grid — no framework, no fragility. Columns collapse predictably from desktop down to mobile.</p>
+        </div>
+      </div>
+
+      <div class="grid-demo">
+        <div class="grid-cols">
+          <div class="grid-col" data-num="1"></div>
+          <div class="grid-col" data-num="2"></div>
+          <div class="grid-col" data-num="3"></div>
+          <div class="grid-col" data-num="4"></div>
+          <div class="grid-col" data-num="5"></div>
+          <div class="grid-col" data-num="6"></div>
+          <div class="grid-col" data-num="7"></div>
+          <div class="grid-col" data-num="8"></div>
+          <div class="grid-col" data-num="9"></div>
+          <div class="grid-col" data-num="10"></div>
+          <div class="grid-col" data-num="11"></div>
+          <div class="grid-col" data-num="12"></div>
+        </div>
+        <div class="grid-meta">
+          <span><strong>12</strong> columns</span>
+          <span><strong>24px</strong> gutter</span>
+          <span><strong>24–48px</strong> margin</span>
+          <span><strong>1280px</strong> max content</span>
+          <span><strong>1440px</strong> max canvas</span>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Breakpoints</h3>
+      <table class="contrast-table">
+        <thead>
+          <tr><th>Token</th><th>Min width</th><th>Columns</th><th>Gutter</th><th>Margin</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="code-inline">xs</code></td><td>0</td><td>4</td><td>16px</td><td>16px</td><td>Phones (portrait)</td></tr>
+          <tr><td><code class="code-inline">sm</code></td><td>640px</td><td>6</td><td>16px</td><td>24px</td><td>Phones (landscape) / small tablets</td></tr>
+          <tr><td><code class="code-inline">md</code></td><td>768px</td><td>8</td><td>20px</td><td>32px</td><td>Tablets</td></tr>
+          <tr><td><code class="code-inline">lg</code></td><td>1024px</td><td>12</td><td>24px</td><td>32px</td><td>Laptops · default canvas</td></tr>
+          <tr><td><code class="code-inline">xl</code></td><td>1280px</td><td>12</td><td>24px</td><td>48px</td><td>Desktops</td></tr>
+          <tr><td><code class="code-inline">2xl</code></td><td>1440px</td><td>12</td><td>32px</td><td>auto</td><td>Wide displays · max content width</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================
+         05 — SPACING
+         ============================================================ -->
+    <section class="section" id="spacing">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">05 — Foundations</div>
+          <h2 class="section-title">Spacing</h2>
+          <p class="section-description">An 8-point base scale with 4px micro-steps for fine-grained control. Thirteen total values cover everything from icon padding to page-level rhythm. No exceptions, no off-grid magic numbers.</p>
+        </div>
+      </div>
+
+      <div class="spacing-scale">
+        <div class="spacing-row"><span class="spacing-row-token">--space-0</span><span class="spacing-row-px">0px</span><div class="spacing-bar" style="width:0;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-1</span><span class="spacing-row-px">4px</span><div class="spacing-bar" style="width:4px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-2</span><span class="spacing-row-px">8px</span><div class="spacing-bar" style="width:8px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-3</span><span class="spacing-row-px">12px</span><div class="spacing-bar" style="width:12px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-4</span><span class="spacing-row-px">16px</span><div class="spacing-bar" style="width:16px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-5</span><span class="spacing-row-px">24px</span><div class="spacing-bar" style="width:24px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-6</span><span class="spacing-row-px">32px</span><div class="spacing-bar" style="width:32px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-7</span><span class="spacing-row-px">40px</span><div class="spacing-bar" style="width:40px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-8</span><span class="spacing-row-px">48px</span><div class="spacing-bar" style="width:48px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-9</span><span class="spacing-row-px">64px</span><div class="spacing-bar" style="width:64px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-10</span><span class="spacing-row-px">80px</span><div class="spacing-bar" style="width:80px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-11</span><span class="spacing-row-px">96px</span><div class="spacing-bar" style="width:96px;"></div></div>
+        <div class="spacing-row"><span class="spacing-row-token">--space-12</span><span class="spacing-row-px">128px</span><div class="spacing-bar" style="width:128px;"></div></div>
+      </div>
+
+      <h3 class="subsection-title">Density rules</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Use <strong>1–4</strong> for component-internal spacing (padding, gaps inside a card). Use <strong>5–7</strong> for related-element spacing within a section. Use <strong>8+</strong> for section-level rhythm and page-level breathing room.</p>
+    </section>
+
+    <!-- ============================================================
+         06 — ELEVATION
+         ============================================================ -->
+    <section class="section" id="elevation">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">06 — Foundations</div>
+          <h2 class="section-title">Elevation</h2>
+          <p class="section-description">Six elevation steps. Light mode uses inkblue-tinted shadows for warmth; dark mode swaps to true blacks for depth. Never combine more than two elevations in the same view.</p>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:var(--space-4);">
+        <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:none;"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-none</div><div style="font-family:var(--font-display); font-weight:600;">Flat</div></div>
+        <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--shadow-xs);"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-xs</div><div style="font-family:var(--font-display); font-weight:600;">Hairline</div></div>
+        <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--shadow-sm);"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-sm</div><div style="font-family:var(--font-display); font-weight:600;">Lift</div></div>
+        <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--shadow-md);"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-md</div><div style="font-family:var(--font-display); font-weight:600;">Hover</div></div>
+        <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--shadow-lg);"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-lg</div><div style="font-family:var(--font-display); font-weight:600;">Popover</div></div>
+        <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:var(--space-5); height:140px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--shadow-xl);"><div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">--shadow-xl</div><div style="font-family:var(--font-display); font-weight:600;">Modal</div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         07 — MOTION
+         ============================================================ -->
+    <section class="section" id="motion">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">07 — Foundations</div>
+          <h2 class="section-title">Motion</h2>
+          <p class="section-description">Motion in MetaCPAN is functional, never decorative. Four durations, three easing curves, and a strict <code class="code-inline">prefers-reduced-motion</code> contract.</p>
+        </div>
+      </div>
+      <table class="contrast-table">
+        <thead><tr><th>Token</th><th>Value</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td><code class="code-inline">--dur-fast</code></td><td class="ratio">120ms</td><td>Hover, focus, micro-feedback</td></tr>
+          <tr><td><code class="code-inline">--dur-base</code></td><td class="ratio">200ms</td><td>Default UI transitions, theme swap</td></tr>
+          <tr><td><code class="code-inline">--dur-slow</code></td><td class="ratio">320ms</td><td>Page-level enter/exit, modal lift</td></tr>
+          <tr><td><code class="code-inline">--dur-slower</code></td><td class="ratio">500ms</td><td>Progress fills, large reveals</td></tr>
+          <tr><td><code class="code-inline">--ease-out</code></td><td class="ratio">cubic-bezier(.22, 1, .36, 1)</td><td>Things appearing</td></tr>
+          <tr><td><code class="code-inline">--ease-in-out</code></td><td class="ratio">cubic-bezier(.65, 0, .35, 1)</td><td>Things moving between two states</td></tr>
+          <tr><td><code class="code-inline">--ease-spring</code></td><td class="ratio">cubic-bezier(.34, 1.56, .64, 1)</td><td>Switches, success confirmations</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================
+         08 — COMPONENTS
+         ============================================================ -->
+    <section class="section" id="components">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">08 — Components</div>
+          <h2 class="section-title">Component library</h2>
+          <p class="section-description">Thirty-six production-ready components. Every component documents its anatomy, states, accessibility contract, and code spec. Built on tokens — restyle the whole system by editing one file.</p>
+        </div>
+      </div>
+
+      <div class="component-grid">
+
+        <!-- 01 BUTTON PRIMARY -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Button — Primary</h3><span class="component-num">C-01</span></div>
+          <div class="component-body">
+            <button class="btn btn-primary btn-sm">Install</button>
+            <button class="btn btn-primary">Install module</button>
+            <button class="btn btn-primary btn-lg">Install module</button>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>active</span><span>focus</span><span>disabled</span><span>loading</span></div>
+        </div>
+
+        <!-- 02 BUTTON SECONDARY -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Button — Secondary</h3><span class="component-num">C-02</span></div>
+          <div class="component-body">
+            <button class="btn btn-secondary btn-sm">Cancel</button>
+            <button class="btn btn-secondary">View source</button>
+            <button class="btn btn-secondary" disabled>Disabled</button>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 03 BUTTON GHOST -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Button — Ghost</h3><span class="component-num">C-03</span></div>
+          <div class="component-body">
+            <button class="btn btn-ghost"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download .tar.gz</button>
+            <button class="btn btn-ghost">Skip</button>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>focus</span></div>
+        </div>
+
+        <!-- 04 BUTTON DANGER -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Button — Danger</h3><span class="component-num">C-04</span></div>
+          <div class="component-body">
+            <button class="btn btn-danger">Delete favorite</button>
+            <button class="btn btn-danger btn-sm">Remove</button>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>focus</span></div>
+        </div>
+
+        <!-- 05 LINK -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Link</h3><span class="component-num">C-05</span></div>
+          <div class="component-body" style="flex-direction:column; gap:var(--space-2); align-items:flex-start; padding-left:var(--space-5);">
+            <a class="btn-link" href="#">Plack::Middleware::Auth</a>
+            <a class="btn-link" href="#" style="color:var(--accent);">Read changelog →</a>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>visited</span><span>focus</span></div>
+        </div>
+
+        <!-- 06 INPUT -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Text input</h3><span class="component-num">C-06</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:stretch; padding:var(--space-5);">
+            <label class="field-label">Module name</label>
+            <input class="input" type="text" value="Plack::Builder" />
+            <span class="field-help">Use the canonical Perl namespace.</span>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>focus</span><span>filled</span><span>error</span><span>disabled</span></div>
+        </div>
+
+        <!-- 07 SEARCH -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Search input</h3><span class="component-num">C-07</span></div>
+          <div class="component-body">
+            <div class="search-input">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--fg-tertiary);"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Search the CPAN" />
+              <kbd>⌘K</kbd>
+            </div>
+          </div>
+          <div class="component-states"><span>idle</span><span>focus</span><span>typing</span><span>cleared</span></div>
+        </div>
+
+        <!-- 08 TEXTAREA -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Textarea</h3><span class="component-num">C-08</span></div>
+          <div class="component-body" style="padding:var(--space-5);">
+            <textarea class="input textarea" placeholder="Describe the issue you'd like to report..."></textarea>
+          </div>
+          <div class="component-states"><span>default</span><span>focus</span><span>error</span><span>disabled</span></div>
+        </div>
+
+        <!-- 09 SELECT -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Select</h3><span class="component-num">C-09</span></div>
+          <div class="component-body" style="padding:var(--space-5);">
+            <select class="input select"><option>Sort: Most popular</option><option>Sort: Newest</option><option>Sort: A–Z</option></select>
+          </div>
+          <div class="component-states"><span>default</span><span>open</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 10 CHECKBOX -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Checkbox</h3><span class="component-num">C-10</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:flex-start; gap:var(--space-3); padding-left:var(--space-7);">
+            <label class="checkbox"><input type="checkbox" checked /><span class="checkbox-box"></span><span>Include deprecated</span></label>
+            <label class="checkbox"><input type="checkbox" /><span class="checkbox-box"></span><span>Show beta releases</span></label>
+          </div>
+          <div class="component-states"><span>unchecked</span><span>checked</span><span>indeterminate</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 11 RADIO -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Radio</h3><span class="component-num">C-11</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:flex-start; gap:var(--space-3); padding-left:var(--space-7);">
+            <label class="radio"><input type="radio" name="r" checked /><span class="radio-box"></span><span>Stable releases</span></label>
+            <label class="radio"><input type="radio" name="r" /><span class="radio-box"></span><span>All releases</span></label>
+          </div>
+          <div class="component-states"><span>unselected</span><span>selected</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 12 SWITCH -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Switch</h3><span class="component-num">C-12</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:flex-start; gap:var(--space-3); padding-left:var(--space-7);">
+            <label class="switch"><input type="checkbox" /><span class="switch-track"></span><span>Watch this distribution</span></label>
+            <label class="switch"><input type="checkbox" checked /><span class="switch-track"></span><span>Email me on new releases</span></label>
+          </div>
+          <div class="component-states"><span>off</span><span>on</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 13 BADGE -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Badge</h3><span class="component-num">C-13</span></div>
+          <div class="component-body">
+            <span class="badge">v2.4.1</span>
+            <span class="badge badge-success">Pass</span>
+            <span class="badge badge-warning">Fail</span>
+            <span class="badge badge-danger">Yanked</span>
+            <span class="badge badge-info">River 5</span>
+            <span class="badge badge-accent">Featured</span>
+          </div>
+          <div class="component-states"><span>default</span><span>success</span><span>warning</span><span>danger</span><span>info</span><span>accent</span></div>
+        </div>
+
+        <!-- 14 CHIP -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Chip — removable</h3><span class="component-num">C-14</span></div>
+          <div class="component-body">
+            <span class="chip">web<button class="chip-close" aria-label="Remove web filter"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
+            <span class="chip">testing<button class="chip-close" aria-label="Remove"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
+            <span class="chip">async</span>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>focus</span><span>removable</span></div>
+        </div>
+
+        <!-- 15 TAG -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Tag</h3><span class="component-num">C-15</span></div>
+          <div class="component-body">
+            <span class="tag">moose</span>
+            <span class="tag">async</span>
+            <span class="tag">web-framework</span>
+            <span class="tag">database</span>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>active</span></div>
+        </div>
+
+        <!-- 16 ALERT -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Alert / Banner</h3><span class="component-num">C-16</span></div>
+          <div class="component-body" style="flex-direction:column; gap:var(--space-2); padding:var(--space-4);">
+            <div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div><p class="alert-title">Security tip</p><p class="alert-desc">Add a SECURITY.md to your distribution.</p></div></div>
+            <div class="alert alert-danger"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><div><p class="alert-title">CVE-2025-1234</p><p class="alert-desc">This release has been yanked.</p></div></div>
+          </div>
+          <div class="component-states"><span>info</span><span>success</span><span>warning</span><span>danger</span><span>dismissible</span></div>
+        </div>
+
+        <!-- 17 CARD MODULE -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Card — Module</h3><span class="component-num">C-17</span></div>
+          <div class="component-body" style="padding:var(--space-4);">
+            <div class="card card-module">
+              <div class="module-header">
+                <h3 class="module-title">Plack::Middleware::Auth</h3>
+                <span class="badge badge-success">v1.0.4</span>
+              </div>
+              <p class="module-desc">A minimal HTTP basic auth middleware for PSGI applications.</p>
+              <div class="module-meta">
+                <span class="module-meta-item">⭐ 1,284</span>
+                <span class="module-meta-item">⬇ 4.2M / mo</span>
+                <span class="module-meta-item">River 7</span>
+              </div>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span><span>selected</span><span>loading</span></div>
+        </div>
+
+        <!-- 18 CARD AUTHOR -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Card — Author</h3><span class="component-num">C-18</span></div>
+          <div class="component-body" style="padding:var(--space-4);">
+            <div class="card" style="display:flex; gap:var(--space-3); align-items:center; width:100%; max-width:320px;">
+              <div class="avatar avatar-lg">SR</div>
+              <div>
+                <div style="font-family:var(--font-display); font-weight:600; font-size:var(--text-base);">Sébastien Roy</div>
+                <div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">SUKRIA · 142 distributions</div>
+              </div>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>hover</span></div>
+        </div>
+
+        <!-- 19 BREADCRUMB -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Breadcrumb</h3><span class="component-num">C-19</span></div>
+          <div class="component-body">
+            <nav class="breadcrumb"><a href="#">CPAN</a><span class="breadcrumb-sep"></span><a href="#">Plack</a><span class="breadcrumb-sep"></span><span class="breadcrumb-current">Middleware::Auth</span></nav>
+          </div>
+          <div class="component-states"><span>default</span><span>truncated</span></div>
+        </div>
+
+        <!-- 20 TABS -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Tabs</h3><span class="component-num">C-20</span></div>
+          <div class="component-body" style="align-items:flex-start; padding:var(--space-4);">
+            <div class="tabs" role="tablist">
+              <button class="tab" role="tab" aria-selected="true">Documentation</button>
+              <button class="tab" role="tab" aria-selected="false">Source</button>
+              <button class="tab" role="tab" aria-selected="false">Changes</button>
+              <button class="tab" role="tab" aria-selected="false">Tests</button>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>selected</span><span>hover</span><span>focus</span><span>disabled</span></div>
+        </div>
+
+        <!-- 21 PAGINATION -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Pagination</h3><span class="component-num">C-21</span></div>
+          <div class="component-body">
+            <nav class="pagination" aria-label="Search pagination">
+              <button class="page-link" aria-label="Previous"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="page-link">1</button>
+              <button class="page-link" aria-current="page">2</button>
+              <button class="page-link">3</button>
+              <button class="page-link">…</button>
+              <button class="page-link">42</button>
+              <button class="page-link" aria-label="Next"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </nav>
+          </div>
+          <div class="component-states"><span>default</span><span>current</span><span>hover</span><span>disabled</span></div>
+        </div>
+
+        <!-- 22 PROGRESS -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Progress bar</h3><span class="component-num">C-22</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:stretch; padding:var(--space-5); gap:var(--space-3);">
+            <div class="progress"><div class="progress-bar" style="width:65%;"></div></div>
+            <div class="progress"><div class="progress-bar indeterminate"></div></div>
+          </div>
+          <div class="component-states"><span>determinate</span><span>indeterminate</span></div>
+        </div>
+
+        <!-- 23 SPINNER -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Spinner</h3><span class="component-num">C-23</span></div>
+          <div class="component-body">
+            <div class="spinner"></div>
+            <div class="spinner" style="width:32px; height:32px; border-width:3px;"></div>
+            <div class="spinner" style="width:14px; height:14px; border-width:2px;"></div>
+          </div>
+          <div class="component-states"><span>sm</span><span>md</span><span>lg</span></div>
+        </div>
+
+        <!-- 24 AVATAR -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Avatar</h3><span class="component-num">C-24</span></div>
+          <div class="component-body">
+            <div class="avatar avatar-sm">N</div>
+            <div class="avatar">NL</div>
+            <div class="avatar avatar-lg">NR</div>
+            <div class="avatar-group"><div class="avatar avatar-sm">A</div><div class="avatar avatar-sm">B</div><div class="avatar avatar-sm">C</div></div>
+          </div>
+          <div class="component-states"><span>initials</span><span>image</span><span>fallback</span><span>group</span></div>
+        </div>
+
+        <!-- 25 TOOLTIP -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Tooltip</h3><span class="component-num">C-25</span></div>
+          <div class="component-body" style="padding-top:var(--space-9);">
+            <div class="tooltip-wrap">
+              <button class="btn btn-secondary btn-sm">Hover me</button>
+              <div class="tooltip" role="tooltip">River score: 7</div>
+            </div>
+          </div>
+          <div class="component-states"><span>top</span><span>right</span><span>bottom</span><span>left</span></div>
+        </div>
+
+        <!-- 26 TABLE -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Data table</h3><span class="component-num">C-26</span></div>
+          <div class="component-body" style="padding:var(--space-3); align-items:stretch;">
+            <div class="table-wrap" style="width:100%;">
+              <table class="data-table">
+                <thead><tr><th>Module</th><th>Version</th><th>Tests</th></tr></thead>
+                <tbody>
+                  <tr><td><code class="code-inline">Plack</code></td><td>1.0050</td><td><span class="badge badge-success">Pass</span></td></tr>
+                  <tr><td><code class="code-inline">Mojolicious</code></td><td>9.36</td><td><span class="badge badge-success">Pass</span></td></tr>
+                  <tr><td><code class="code-inline">Dancer2</code></td><td>1.1.2</td><td><span class="badge badge-warning">Flaky</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>hover-row</span><span>selected</span><span>sortable</span><span>empty</span></div>
+        </div>
+
+        <!-- 27 CODE BLOCK -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Code block</h3><span class="component-num">C-27</span></div>
+          <div class="component-body" style="padding:var(--space-3); align-items:stretch;">
+            <div style="width:100%;">
+              <div class="code-block-header"><span class="code-block-lang">Perl</span><span class="code-block-lang">install</span></div>
+              <div class="code-block"><pre><span class="tok-keyword">use</span> <span class="tok-fn">Plack::Builder</span>;
+<span class="tok-keyword">my</span> $app = <span class="tok-keyword">sub</span> { [<span class="tok-num">200</span>, [], [<span class="tok-string">'ok'</span>]] };
+<span class="tok-fn">builder</span> { <span class="tok-fn">enable</span> <span class="tok-string">'Auth::Basic'</span>; $app; };</pre></div>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>copyable</span><span>line-numbers</span><span>diff</span></div>
+        </div>
+
+        <!-- 28 INLINE CODE -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Inline code</h3><span class="component-num">C-28</span></div>
+          <div class="component-body">
+            <p style="font-size:var(--text-sm); margin:0; max-width:300px;">Run <code class="code-inline">cpanm Plack</code> to install the latest stable.</p>
+          </div>
+          <div class="component-states"><span>default</span><span>linkable</span></div>
+        </div>
+
+        <!-- 29 TOAST -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Toast</h3><span class="component-num">C-29</span></div>
+          <div class="component-body" style="padding:var(--space-4);">
+            <div class="toast">
+              <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Distribution favorited.</span>
+            </div>
+          </div>
+          <div class="component-states"><span>info</span><span>success</span><span>warning</span><span>danger</span><span>auto-dismiss</span></div>
+        </div>
+
+        <!-- 30 KBD -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Keyboard shortcut</h3><span class="component-num">C-30</span></div>
+          <div class="component-body">
+            <span style="display:inline-flex; gap:4px; align-items:center;"><kbd class="kbd-key">⌘</kbd>+<kbd class="kbd-key">K</kbd></span>
+            <span style="display:inline-flex; gap:4px; align-items:center;"><kbd class="kbd-key">/</kbd></span>
+            <span style="display:inline-flex; gap:4px; align-items:center;"><kbd class="kbd-key">esc</kbd></span>
+          </div>
+          <div class="component-states"><span>default</span><span>combo</span></div>
+        </div>
+
+        <!-- 31 DROPDOWN -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Dropdown menu</h3><span class="component-num">C-31</span></div>
+          <div class="component-body" style="padding:var(--space-4);">
+            <div class="menu">
+              <div class="menu-item">View source<span class="shortcut">⌘O</span></div>
+              <div class="menu-item">Copy install command<span class="shortcut">⌘C</span></div>
+              <div class="menu-item">Add to favorites</div>
+              <div class="menu-divider"></div>
+              <div class="menu-item" style="color:var(--danger-500);">Report module</div>
+            </div>
+          </div>
+          <div class="component-states"><span>closed</span><span>open</span><span>hover</span><span>keyboard-nav</span></div>
+        </div>
+
+        <!-- 32 STAT -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Stat</h3><span class="component-num">C-32</span></div>
+          <div class="component-body" style="gap:var(--space-7);">
+            <div class="stat"><span class="stat-label">Distributions</span><span class="stat-value">42,108</span><span class="stat-trend up">↑ 2.4%</span></div>
+            <div class="stat"><span class="stat-label">Authors</span><span class="stat-value">14,396</span><span class="stat-trend down">↓ 0.1%</span></div>
+          </div>
+          <div class="component-states"><span>default</span><span>up</span><span>down</span><span>neutral</span></div>
+        </div>
+
+        <!-- 33 DIVIDER -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Divider</h3><span class="component-num">C-33</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:stretch; padding:0 var(--space-5);">
+            <hr class="divider" />
+            <div class="divider-labeled"><span class="divider-labeled-text">Older releases</span></div>
+          </div>
+          <div class="component-states"><span>plain</span><span>labeled</span><span>vertical</span></div>
+        </div>
+
+        <!-- 34 HEADER NAV -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Header / topbar</h3><span class="component-num">C-34</span></div>
+          <div class="component-body" style="padding:0; align-items:stretch;">
+            <div style="background:var(--ink-900); width:100%; padding:var(--space-3) var(--space-4); display:flex; align-items:center; gap:var(--space-4);">
+              <div style="display:flex; align-items:center; gap:var(--space-2);">
+                <div style="width:24px; height:24px; background:var(--cpan-red-500); border-radius:var(--radius-sm);"></div>
+                <span style="color:white; font-family:var(--font-display); font-weight:700; font-size:var(--text-sm);">metacpan</span>
+              </div>
+              <div style="flex:1; max-width:280px;"><div class="search-input" style="background:rgba(255,255,255,0.08); border-color:transparent; height:32px;"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:rgba(255,255,255,0.5);"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="search" placeholder="Search" style="color:white;" /></div></div>
+              <button class="btn btn-ghost btn-sm" style="color:white;">Authors</button>
+              <button class="btn btn-ghost btn-sm" style="color:white;">About</button>
+            </div>
+          </div>
+          <div class="component-states"><span>default</span><span>scrolled</span><span>compact</span></div>
+        </div>
+
+        <!-- 35 EMPTY STATE -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Empty state</h3><span class="component-num">C-35</span></div>
+          <div class="component-body" style="flex-direction:column; padding:var(--space-5); gap:var(--space-3);">
+            <div style="width:48px; height:48px; border-radius:var(--radius-full); background:var(--bg-subtle); display:grid; place-items:center; color:var(--fg-tertiary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div style="text-align:center;"><div style="font-family:var(--font-display); font-weight:600;">No matches</div><div style="font-size:var(--text-xs); color:var(--fg-tertiary); margin-top:2px;">Try a broader query.</div></div>
+          </div>
+          <div class="component-states"><span>no-results</span><span>first-use</span><span>error</span></div>
+        </div>
+
+        <!-- 36 SKELETON -->
+        <div class="component">
+          <div class="component-header"><h3 class="component-name">Skeleton loader</h3><span class="component-num">C-36</span></div>
+          <div class="component-body" style="flex-direction:column; align-items:stretch; padding:var(--space-4); gap:var(--space-2);">
+            <div style="height:18px; width:60%; background:linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-subtle) 50%, var(--bg-muted) 100%); background-size:200% 100%; animation:shimmer 1.4s linear infinite; border-radius:var(--radius-sm);"></div>
+            <div style="height:14px; width:90%; background:linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-subtle) 50%, var(--bg-muted) 100%); background-size:200% 100%; animation:shimmer 1.4s linear infinite .15s; border-radius:var(--radius-sm);"></div>
+            <div style="height:14px; width:75%; background:linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-subtle) 50%, var(--bg-muted) 100%); background-size:200% 100%; animation:shimmer 1.4s linear infinite .3s; border-radius:var(--radius-sm);"></div>
+          </div>
+          <div class="component-states"><span>line</span><span>block</span><span>circle</span><span>card</span></div>
+        </div>
+      </div>
+
+      <style>@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }</style>
+
+      <h3 class="subsection-title">Component anatomy — primary button (canonical example)</h3>
+      <p class="section-description" style="margin-bottom: var(--space-4);">Every component in the library is documented to this depth. Below is the canonical reference: anatomy, states, accessibility contract, and code spec.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); margin-bottom: var(--space-5);">
+        <div class="card">
+          <div class="font-card-name" style="margin-bottom: var(--space-3);">Anatomy</div>
+          <ul style="margin:0; padding-left:var(--space-4); font-size:var(--text-sm); color:var(--fg-secondary); line-height:var(--leading-relaxed);">
+            <li><strong>Container</strong> — bg <code class="code-inline">--accent</code>, radius <code class="code-inline">--radius-md</code>, height 40px</li>
+            <li><strong>Label</strong> — Inter 500, <code class="code-inline">--text-sm</code>, <code class="code-inline">--fg-on-brand</code></li>
+            <li><strong>Icon</strong> (optional) — 16×16, currentColor, gap <code class="code-inline">--space-2</code></li>
+            <li><strong>Padding</strong> — <code class="code-inline">--space-4</code> horizontal</li>
+            <li><strong>Focus ring</strong> — <code class="code-inline">--shadow-focus</code> on <code class="code-inline">:focus-visible</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="font-card-name" style="margin-bottom: var(--space-3);">Accessibility</div>
+          <ul style="margin:0; padding-left:var(--space-4); font-size:var(--text-sm); color:var(--fg-secondary); line-height:var(--leading-relaxed);">
+            <li>Native <code class="code-inline">&lt;button&gt;</code> element required (or <code class="code-inline">role="button"</code> + key handlers)</li>
+            <li>Min target 40×40px (44 on touch)</li>
+            <li>Contrast ≥ 5.74:1 (white on red/500) — WCAG AAA for large text</li>
+            <li>Disabled state uses <code class="code-inline">aria-disabled</code>, not just opacity</li>
+            <li>Loading state uses <code class="code-inline">aria-busy="true"</code> with visible spinner</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code-block-header"><span class="code-block-lang">React · button.tsx</span><span class="code-block-lang">canonical</span></div>
+      <div class="code-block"><pre><span class="tok-keyword">import</span> { forwardRef } <span class="tok-keyword">from</span> <span class="tok-string">'react'</span>;
+<span class="tok-keyword">import</span> { cva, <span class="tok-keyword">type</span> VariantProps } <span class="tok-keyword">from</span> <span class="tok-string">'class-variance-authority'</span>;
+
+<span class="tok-keyword">const</span> button = <span class="tok-fn">cva</span>(
+  <span class="tok-string">'inline-flex items-center justify-center gap-2 rounded-md font-medium transition focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/30 disabled:opacity-45 disabled:pointer-events-none'</span>,
+  {
+    variants: {
+      variant: {
+        primary:   <span class="tok-string">'bg-accent text-on-brand hover:bg-accent-hover active:bg-accent-press'</span>,
+        secondary: <span class="tok-string">'bg-surface text-fg border border-default hover:border-strong'</span>,
+        ghost:     <span class="tok-string">'bg-transparent text-fg hover:bg-subtle'</span>,
+        danger:    <span class="tok-string">'bg-danger-500 text-white hover:bg-danger-700'</span>,
+      },
+      size: { sm: <span class="tok-string">'h-8 px-3 text-xs'</span>, md: <span class="tok-string">'h-10 px-4 text-sm'</span>, lg: <span class="tok-string">'h-12 px-5 text-base'</span> },
+    },
+    defaultVariants: { variant: <span class="tok-string">'primary'</span>, size: <span class="tok-string">'md'</span> },
+  }
+);
+
+<span class="tok-keyword">export const</span> Button = <span class="tok-fn">forwardRef</span>&lt;HTMLButtonElement, ButtonProps&gt;(
+  ({ variant, size, loading, children, ...props }, ref) =&gt; (
+    &lt;button ref={ref} className={<span class="tok-fn">button</span>({ variant, size })}
+      aria-busy={loading} disabled={props.disabled || loading} {...props}&gt;
+      {loading && &lt;Spinner /&gt;}
+      {children}
+    &lt;/button&gt;
+  )
+);</pre></div>
+    </section>
+
+    <!-- ============================================================
+         09 — PATTERNS
+         ============================================================ -->
+    <section class="section" id="patterns">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">09 — Guidelines</div>
+          <h2 class="section-title">Design patterns</h2>
+          <p class="section-description">Repeated solutions to recurring product problems. Each pattern is composed entirely of primitive components and follows the principles set in section 01.</p>
+        </div>
+      </div>
+
+      <div class="handoff-grid">
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 01</div>
+          <h3 class="handoff-card-title">Search-first navigation</h3>
+          <p class="handoff-card-desc">The search input is the dominant element on every primary surface — never demoted. <kbd class="kbd-key">⌘K</kbd> opens it from anywhere. Filter chips appear below the input, never above.</p>
+        </div>
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 02</div>
+          <h3 class="handoff-card-title">Module result row</h3>
+          <p class="handoff-card-desc">Module name (mono) → tagline (sans) → metadata strip (mono, tertiary). The eye lands on the namespace first, every time.</p>
+        </div>
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 03</div>
+          <h3 class="handoff-card-title">Code-first documentation</h3>
+          <p class="handoff-card-desc">Every doc page leads with an install command and a 5-line synopsis. Prose comes after. The developer can leave with what they need in 10 seconds.</p>
+        </div>
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 04</div>
+          <h3 class="handoff-card-title">Form layout</h3>
+          <p class="handoff-card-desc">Single column. Labels above fields. Helper text below. Errors inline with red border + icon + message — never red text alone.</p>
+        </div>
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 05</div>
+          <h3 class="handoff-card-title">Empty state recovery</h3>
+          <p class="handoff-card-desc">Every empty state proposes a next action: a broader query, a featured module, or a link to the docs. We never strand the user.</p>
+        </div>
+        <div class="handoff-card">
+          <div class="handoff-card-num">PATTERN · 06</div>
+          <h3 class="handoff-card-title">Destructive confirmation</h3>
+          <p class="handoff-card-desc">Two-step confirmation for permanent actions. The destructive button is always on the right; cancel is always neutral and on the left.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         10 — DOS & DONTS
+         ============================================================ -->
+    <section class="section" id="dos-donts">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">10 — Guidelines</div>
+          <h2 class="section-title">Do's &amp; don'ts</h2>
+          <p class="section-description">A consolidated reference covering the most common decision points. When in doubt, return here.</p>
+        </div>
+      </div>
+
+      <div class="dos-donts">
+        <div class="dd dd-do">
+          <div class="dd-header">Do — Typography</div>
+          <ul class="dd-list">
+            <li>Use Fraunces only for headings, hero copy, and statistical figures.</li>
+            <li>Use JetBrains Mono for module names, code, and CLI commands — always.</li>
+            <li>Limit body line-length to ~64 characters for readability.</li>
+            <li>Apply <code class="code-inline">opsz</code> on Fraunces matching the rendered px size.</li>
+          </ul>
+        </div>
+        <div class="dd dd-dont">
+          <div class="dd-header">Don't — Typography</div>
+          <ul class="dd-list">
+            <li>Don't use Fraunces for body — it's display-only.</li>
+            <li>Don't render module names in proportional fonts — characters matter.</li>
+            <li>Don't use uppercase for body or paragraph text.</li>
+            <li>Don't introduce new font families.</li>
+          </ul>
+        </div>
+        <div class="dd dd-do">
+          <div class="dd-header">Do — Components</div>
+          <ul class="dd-list">
+            <li>Compose pages from existing components — extend before you replace.</li>
+            <li>Provide focus-visible states for every interactive element.</li>
+            <li>Use semantic colors via tokens, not raw hue values.</li>
+            <li>Test every component in dark mode before shipping.</li>
+          </ul>
+        </div>
+        <div class="dd dd-dont">
+          <div class="dd-header">Don't — Components</div>
+          <ul class="dd-list">
+            <li>Don't fork components — file an RFC if the system is missing something.</li>
+            <li>Don't suppress focus rings, even on hover.</li>
+            <li>Don't combine more than two elevation levels in one view.</li>
+            <li>Don't use motion durations longer than 500ms for UI transitions.</li>
+          </ul>
+        </div>
+        <div class="dd dd-do">
+          <div class="dd-header">Do — Layout</div>
+          <ul class="dd-list">
+            <li>Stick to the 12-column grid for page-level layout.</li>
+            <li>Use the 8pt scale for all spacing values.</li>
+            <li>Maintain consistent vertical rhythm across sections.</li>
+            <li>Honor the 1280px max content width on wide displays.</li>
+          </ul>
+        </div>
+        <div class="dd dd-dont">
+          <div class="dd-header">Don't — Layout</div>
+          <ul class="dd-list">
+            <li>Don't use arbitrary pixel values like 7px or 22px.</li>
+            <li>Don't break out of the grid for "design moments" — use space, not chaos.</li>
+            <li>Don't full-bleed text content past 80 characters wide.</li>
+            <li>Don't nest containers with the same elevation.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         11 — TOKENS JSON
+         ============================================================ -->
+    <section class="section" id="tokens">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">11 — Guidelines</div>
+          <h2 class="section-title">Design tokens</h2>
+          <p class="section-description">A single source of truth, distributable as JSON, importable into Figma Tokens, transformable to CSS / iOS / Android via Style Dictionary. This is the atomic layer — every other token in the system flows from here.</p>
+        </div>
+      </div>
+
+      <div class="tokens-viewer">
+        <div class="tokens-header">
+          <span class="tokens-filename">tokens.json</span>
+          <div class="tokens-actions">
+            <button class="tokens-action" id="copyTokens">Copy</button>
+            <button class="tokens-action" id="downloadTokens">Download</button>
+          </div>
+        </div>
+        <div class="tokens-content"><pre id="tokensPre">{
+  "$schema": "https://schemas.metacpan.org/tokens/v1.0.0",
+  "name": "MetaCPAN Design Tokens",
+  "version": "1.0.0",
+
+  "color": {
+    "brand": {
+      "cpan-red": {
+        "50":  { "value": "#FFF1F0" },
+        "100": { "value": "#FFD9D6" },
+        "200": { "value": "#FFB3AC" },
+        "300": { "value": "#FF8579" },
+        "400": { "value": "#F25448" },
+        "500": { "value": "#DC2626", "description": "Primary — the CPAN dot" },
+        "600": { "value": "#B91C1C" },
+        "700": { "value": "#991B1B" },
+        "800": { "value": "#7A1313" },
+        "900": { "value": "#5C0E0E" }
+      },
+      "teal": {
+        "50":  { "value": "#E6F4F7" },
+        "100": { "value": "#BFE2EA" },
+        "200": { "value": "#80C5D4" },
+        "300": { "value": "#40A8BE" },
+        "400": { "value": "#1E8DA8" },
+        "500": { "value": "#0E6B82", "description": "Secondary — security banner" },
+        "600": { "value": "#0A566B" },
+        "700": { "value": "#074554" },
+        "800": { "value": "#04323D" },
+        "900": { "value": "#021E25" }
+      }
+    },
+    "neutral": {
+      "ink": {
+        "50": "#F7F7F8", "100": "#EEEEF1", "200": "#D9D9DF", "300": "#B8B8C2",
+        "400": "#8A8A96", "500": "#5C5C68", "600": "#3F3F49", "700": "#2A2A33",
+        "800": "#1A1A22", "900": "#0E0E14", "950": "#050508"
+      }
+    },
+    "semantic": {
+      "success": { "50": "#ECFDF5", "500": "#10B981", "700": "#047857" },
+      "warning": { "50": "#FFFBEB", "500": "#F59E0B", "700": "#B45309" },
+      "danger":  { "50": "#FEF2F2", "500": "#EF4444", "700": "#B91C1C" },
+      "info":    { "50": "#EFF6FF", "500": "#3B82F6", "700": "#1D4ED8" }
+    },
+    "alias": {
+      "light": {
+        "bg":     { "canvas": "#FBFBFC", "surface": "#FFFFFF", "subtle": "{color.neutral.ink.50}" },
+        "fg":     { "primary": "{color.neutral.ink.900}", "secondary": "{color.neutral.ink.600}", "tertiary": "{color.neutral.ink.500}" },
+        "border": { "subtle": "{color.neutral.ink.100}", "default": "{color.neutral.ink.200}", "strong": "{color.neutral.ink.300}" },
+        "accent": "{color.brand.cpan-red.500}",
+        "link":   "{color.brand.teal.500}"
+      },
+      "dark": {
+        "bg":     { "canvas": "#0B0B12", "surface": "#14141C", "subtle": "#1A1A24" },
+        "fg":     { "primary": "#F5F5F7", "secondary": "#B8B8C2", "tertiary": "#8A8A96" },
+        "border": { "subtle": "#22222E", "default": "#2E2E3A", "strong": "#45454F" },
+        "accent": "{color.brand.cpan-red.400}",
+        "link":   "{color.brand.teal.300}"
+      }
+    }
+  },
+
+  "typography": {
+    "family": {
+      "display": "Fraunces, Georgia, 'Times New Roman', serif",
+      "sans":    "Inter, -apple-system, 'Segoe UI', sans-serif",
+      "mono":    "'JetBrains Mono', 'SF Mono', Menlo, monospace"
+    },
+    "size": {
+      "2xs":  { "value": "0.6875rem", "px": 11 },
+      "xs":   { "value": "0.75rem",   "px": 12 },
+      "sm":   { "value": "0.875rem",  "px": 14 },
+      "base": { "value": "1rem",      "px": 16 },
+      "lg":   { "value": "1.125rem",  "px": 18 },
+      "xl":   { "value": "1.375rem",  "px": 22 },
+      "2xl":  { "value": "1.75rem",   "px": 28 },
+      "3xl":  { "value": "2.25rem",   "px": 36 },
+      "4xl":  { "value": "3rem",      "px": 48 },
+      "5xl":  { "value": "3.75rem",   "px": 60 },
+      "6xl":  { "value": "4.75rem",   "px": 76 }
+    },
+    "leading":  { "tight": 1.15, "snug": 1.3, "normal": 1.5, "relaxed": 1.65 },
+    "tracking": { "tight": "-0.02em", "normal": "0", "wide": "0.04em", "widest": "0.12em" }
+  },
+
+  "spacing": {
+    "0": "0", "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "24px",
+    "6": "32px", "7": "40px", "8": "48px", "9": "64px", "10": "80px", "11": "96px", "12": "128px"
+  },
+
+  "radius": {
+    "none": "0", "xs": "2px", "sm": "4px", "md": "6px", "lg": "10px",
+    "xl": "16px", "2xl": "24px", "full": "9999px"
+  },
+
+  "elevation": {
+    "xs": "0 1px 2px rgba(14,14,20,.04)",
+    "sm": "0 1px 3px rgba(14,14,20,.06), 0 1px 2px rgba(14,14,20,.04)",
+    "md": "0 4px 8px -2px rgba(14,14,20,.08), 0 2px 4px -2px rgba(14,14,20,.04)",
+    "lg": "0 12px 24px -6px rgba(14,14,20,.10), 0 4px 8px -2px rgba(14,14,20,.06)",
+    "xl": "0 24px 48px -12px rgba(14,14,20,.16)",
+    "focus": "0 0 0 3px rgba(220,38,38,.18)"
+  },
+
+  "motion": {
+    "duration": { "fast": "120ms", "base": "200ms", "slow": "320ms", "slower": "500ms" },
+    "easing": {
+      "out":    "cubic-bezier(0.22, 1, 0.36, 1)",
+      "in-out": "cubic-bezier(0.65, 0, 0.35, 1)",
+      "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    }
+  },
+
+  "layout": {
+    "grid":      { "columns": 12, "gutter": "24px", "margin": "24px" },
+    "container": { "sm": "640px", "md": "768px", "lg": "1024px", "xl": "1280px", "2xl": "1440px" },
+    "z-index":   { "base": 0, "raised": 10, "dropdown": 100, "sticky": 200, "overlay": 300, "modal": 400, "toast": 500, "tooltip": 600 }
+  }
+}</pre></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         12 — HANDOFF
+         ============================================================ -->
+    <section class="section" id="handoff">
+      <div class="section-header">
+        <div class="section-header-main">
+          <div class="section-number">12 — Guidelines</div>
+          <h2 class="section-title">Developer handoff</h2>
+          <p class="section-description">Everything an engineering team needs to ship MetaCPAN UI in production. Steps are ordered; skipping ahead breaks downstream guarantees.</p>
+        </div>
+      </div>
+
+      <div class="handoff-grid">
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 01</div>
+          <h3 class="handoff-card-title">Install tokens</h3>
+          <p class="handoff-card-desc">Pull <code class="code-inline">@metacpan/tokens</code> via npm. Run Style Dictionary at build time to generate platform-specific outputs (CSS variables, JS module, iOS plist, Android XML).</p>
+          <div class="code-block" style="margin-top:var(--space-3);"><pre><span class="tok-comment">$</span> pnpm add @metacpan/tokens
+<span class="tok-comment">$</span> pnpm tokens:build</pre></div>
+        </div>
+
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 02</div>
+          <h3 class="handoff-card-title">Wire CSS variables</h3>
+          <p class="handoff-card-desc">Import the generated <code class="code-inline">tokens.css</code> at the application root. Toggle dark mode via <code class="code-inline">[data-theme="dark"]</code> on <code class="code-inline">&lt;html&gt;</code> — no class swaps, no JS needed for the theme to apply.</p>
+        </div>
+
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 03</div>
+          <h3 class="handoff-card-title">Use the React kit</h3>
+          <p class="handoff-card-desc">Components ship as <code class="code-inline">@metacpan/ui</code>. Each is fully typed, server-render-safe, and uses CVA for variant management. Tree-shakable per-component imports.</p>
+          <div class="code-block" style="margin-top:var(--space-3);"><pre><span class="tok-keyword">import</span> { Button, SearchInput } <span class="tok-keyword">from</span> <span class="tok-string">'@metacpan/ui'</span>;</pre></div>
+        </div>
+
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 04</div>
+          <h3 class="handoff-card-title">Verify accessibility</h3>
+          <p class="handoff-card-desc">Run <code class="code-inline">axe-core</code> in CI for every PR touching UI. Manual keyboard pass is required for any new pattern. Screen-reader pass on VoiceOver + NVDA before promotion to <code class="code-inline">main</code>.</p>
+        </div>
+
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 05</div>
+          <h3 class="handoff-card-title">Document deviations</h3>
+          <p class="handoff-card-desc">If a screen requires a token or component the system doesn't yet provide, file an RFC in <code class="code-inline">@metacpan/ds-rfcs</code>. Bypassing the system is a P1 design debt.</p>
+        </div>
+
+        <div class="handoff-card">
+          <div class="handoff-card-num">STEP · 06</div>
+          <h3 class="handoff-card-title">Versioning</h3>
+          <p class="handoff-card-desc">SemVer strict. Token renames or color value changes are <strong>major</strong>. Component prop additions are <strong>minor</strong>. Bug fixes are <strong>patch</strong>. Migration codemods are shipped with every major.</p>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Quick reference</h3>
+      <div class="code-block-header"><span class="code-block-lang">CSS</span><span class="code-block-lang">consume tokens</span></div>
+      <div class="code-block"><pre><span class="tok-comment">/* Importing the system in your app entry */</span>
+<span class="tok-keyword">@import</span> <span class="tok-string">'@metacpan/tokens/dist/tokens.css'</span>;
+<span class="tok-keyword">@import</span> <span class="tok-string">'@metacpan/ui/dist/styles.css'</span>;
+
+<span class="tok-keyword">.module-card</span> {
+  background: <span class="tok-fn">var</span>(--bg-surface);
+  padding: <span class="tok-fn">var</span>(--space-5);
+  border-radius: <span class="tok-fn">var</span>(--radius-lg);
+  box-shadow: <span class="tok-fn">var</span>(--shadow-sm);
+  transition: box-shadow <span class="tok-fn">var</span>(--dur-fast) <span class="tok-fn">var</span>(--ease-out);
+}
+<span class="tok-keyword">.module-card</span>:hover { box-shadow: <span class="tok-fn">var</span>(--shadow-md); }</pre></div>
+
+      <hr class="divider" style="margin-top: var(--space-7);" />
+
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3); padding-top: var(--space-3);">
+        <div style="display:flex; align-items:center; gap:var(--space-3);">
+          <div class="sidebar-logo" aria-hidden="true" style="width:28px; height:28px;"></div>
+          <div>
+            <div style="font-family:var(--font-display); font-weight:600; font-size:var(--text-sm);">MetaCPAN Design System</div>
+            <div style="font-family:var(--font-mono); font-size:var(--text-xs); color:var(--fg-tertiary);">v1.0.0 · MIT · maintained by the Anantys design team</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:var(--space-2);">
+          <button class="btn btn-secondary btn-sm">Figma library</button>
+          <button class="btn btn-secondary btn-sm">GitHub</button>
+          <button class="btn btn-primary btn-sm">Get started</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ----- THEME TOGGLE ----- */
+const root = document.body;
+const toggle = document.getElementById('themeToggle');
+const label = document.getElementById('themeLabel');
+toggle.addEventListener('click', () => {
+  const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  label.textContent = next === 'dark' ? 'Light' : 'Dark';
+});
+
+/* ----- ACTIVE NAV ON SCROLL ----- */
+const links = document.querySelectorAll('.nav-link[href^="#"]');
+const sections = [...document.querySelectorAll('main section[id], main header[id]')];
+const setActive = (id) => {
+  links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+};
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+}, { rootMargin: '-30% 0px -65% 0px' });
+sections.forEach(s => obs.observe(s));
+
+/* ----- SMOOTH ANCHORS ----- */
+links.forEach(l => l.addEventListener('click', (e) => {
+  const id = l.getAttribute('href');
+  if (!id || !id.startsWith('#')) return;
+  const target = document.querySelector(id);
+  if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}));
+
+/* ----- TOKENS COPY / DOWNLOAD ----- */
+const tokensText = document.getElementById('tokensPre').textContent;
+document.getElementById('copyTokens').addEventListener('click', () => {
+  navigator.clipboard.writeText(tokensText).then(() => {
+    const btn = document.getElementById('copyTokens');
+    const old = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = old, 1400);
+  });
+});
+document.getElementById('downloadTokens').addEventListener('click', () => {
+  const blob = new Blob([tokensText], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'metacpan-tokens.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
