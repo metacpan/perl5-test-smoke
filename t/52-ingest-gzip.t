@@ -37,9 +37,9 @@ $t->post_ok('/api/report' =>
     "not actually gzipped"
 )->status_is(400);
 
-# --- Streaming decompression (no default size limit) ---
+# --- Streaming decompression (default 10 MB limit) ---
 
-# Default (no max_decompressed_size set) should handle large payloads
+# Default max_decompressed_size (10 MB) should handle normal payloads
 # without 413.  The body is still invalid JSON / not a real report,
 # so the controller rejects it -- but the hook must let it through.
 my $big_body = 'x' x 200_000;
@@ -55,7 +55,7 @@ $t->post_ok('/api/report' =>
     $gz_big
 )->status_isnt(413);
 
-# --- Optional decompressed-size limit (opt-in bomb protection) ---
+# --- Explicit decompressed-size limit (override default) ---
 
 $h->app->config->{max_decompressed_size} = 1024;
 
