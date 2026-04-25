@@ -186,7 +186,7 @@ sub startup ($self) {
         require IO::Uncompress::Gunzip;
         require Mojo::Asset::File;
         my $body  = $c->req->body;
-        my $limit = $c->app->config->{max_decompressed_size} // 0;
+        my $limit = $c->app->config->{max_decompressed_size} // 10_000_000;
         my $z = IO::Uncompress::Gunzip->new(\$body)
             or return $c->render(status => 400, json => { error => 'Bad gzip body' });
         my $asset = Mojo::Asset::File->new;
