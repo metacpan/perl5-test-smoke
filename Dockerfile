@@ -1,20 +1,8 @@
-# NOTE on the base image: decision #15 chose Alpine, but DockerHub does not
-# yet publish a perl:5.42-alpine image (and apk's perl tends to lag a few
-# versions behind 5.42). We use perl:5.42-slim (Debian-slim) for now.
-# Switch to perl:5.42-alpine when it becomes available; the apk equivalents
-# are documented in comments below for that transition.
 ARG PERL_VERSION=5.42
 
 # ---------- builder ----------------------------------------------------------
 FROM perl:${PERL_VERSION}-slim AS builder
 
-# Build deps:
-#   build-essential       -> Alpine: build-base
-#   libsqlite3-dev        -> Alpine: sqlite-dev
-#   liblzma-dev           -> Alpine: xz-dev
-#   libssl-dev            -> Alpine: openssl-dev
-#   ca-certificates       -> Alpine: ca-certificates
-#   curl                  -> Alpine: curl
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \
@@ -40,11 +28,7 @@ RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
 # ---------- runtime ----------------------------------------------------------
 FROM perl:${PERL_VERSION}-slim AS runtime
 
-# Runtime deps only (no headers / build tools):
-#   libsqlite3-0          -> Alpine: sqlite-libs
-#   liblzma5              -> Alpine: xz-libs
-#   libssl3               -> Alpine: openssl
-#   tini                  -> Alpine: tini
+# Runtime deps only (no headers / build tools).
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         libsqlite3-0 \

@@ -2,14 +2,16 @@
 
 ## Goal
 
-Build the entire 2.0 stack into one Alpine-based Docker image (decision #15). `smoke.db` and the `data/reports/` tree live outside the container and are mounted in as a directory volume so data survives image rebuilds.
+Build the entire 2.0 stack into one Docker image based on `perl:5.42-slim` (Debian-slim). `smoke.db` and the `data/reports/` tree live outside the container and are mounted in as a directory volume so data survives image rebuilds.
 
 ## Image strategy
 
 Multi-stage build:
 
-- **Stage 1 (`builder`)** — Alpine perl + build tools + xz dev headers; install CPAN deps to `/build/local/`.
-- **Stage 2 (`runtime`)** — slim Alpine perl; copy `local/` and app source; non-root user; expose 3000; run Hypnotoad in foreground.
+- **Stage 1 (`builder`)** — `perl:5.42-slim` + `build-essential` + sqlite/xz/ssl dev headers; install CPAN deps to `/build/local/` and vendor htmx.
+- **Stage 2 (`runtime`)** — `perl:5.42-slim` with only the runtime libs; copy `local/` and app source; non-root user (uid 1000); expose 3000; run Hypnotoad in foreground.
+
+(Decision #15 originally said Alpine, but DockerHub doesn't publish a `perl:5.42-alpine` image and apk's perl lags behind 5.42. Slim Debian gives us the same "lean and lockable" properties without compiling perl from source.)
 
 ## `Dockerfile`
 
@@ -18,36 +20,35 @@ ARG PERL_VERSION=5.42
 
 # ---------- builder ----------
 FROM perl:${PERL_VERSION}-slim AS builder
-# (If perl:5.42-alpine isn't published, switch FROM to alpine:3 + apk add perl)
 
-RUN apk add --no-cache \
-        build-base \
-        sqlite-dev \
-        sqlite-libs \
-        xz-dev \
-        xz-libs \
-        openssl-dev \
-        ca-certificates \
-        curl \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        build-essential libsqlite3-dev liblzma-dev libssl-dev zlib1g-dev \
+        ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
  && cpan -T App::cpm
 
 WORKDIR /build
 COPY cpanfile cpanfile.snapshot ./
-RUN cpm install --workers=4 --no-test --resolver=metadb --show-build-log-on-failure --resolver=snapshot
+RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb
+
+# Vendor htmx so the runtime image has a real release rather than the placeholder.
+RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js -o /build/htmx.min.js
 
 # ---------- runtime ----------
 FROM perl:${PERL_VERSION}-slim AS runtime
 
-RUN apk add --no-cache \
-        sqlite-libs \
-        xz-libs \
-        openssl \
-        ca-certificates \
-        tini \
- && adduser -D -u 1000 smoke
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        libsqlite3-0 liblzma5 libssl3 ca-certificates tini wget \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --create-home --uid 1000 smoke
 
-COPY --from=builder /build/local /app/local
+COPY --from=builder /build/local       /app/local
+COPY --from=builder /build/htmx.min.js /app/public/htmx.min.js
 COPY --chown=smoke:smoke . /app
+
+RUN mkdir -p /data && chown -R smoke:smoke /app /data
 
 WORKDIR /app
 USER smoke
@@ -66,19 +67,19 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget -qO- http://127.0.0.1:3000/healthz || exit 1
 
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["script/smoke", "prefork", "--listen", "http://*:3000"]
 ```
 
 Notes:
 
 - Listen port **3000** (decision #13). EXPOSE matches.
-- `tini` is PID 1 so signals propagate cleanly. `/sbin/tini` is the Alpine path.
+- `tini` is PID 1 so signals propagate cleanly. `/usr/bin/tini` is the Debian path.
 - `--no-test` during dep build keeps the layer fast; CI runs the full test suite separately.
-- Runtime image does **not** include `build-base` or dev headers — keeps the image slim.
+- Runtime image does **not** include `build-essential` or dev headers — keeps the image lean.
 - `MOJO_MODE=production` selects `etc/coresmoke.production.conf` which sets `workers => 2` (decision #14).
 - `TZ=UTC` (decision #27) — both for log timestamps and any DateTime defaults.
-- `HEALTHCHECK` calls the new `/healthz` endpoint (decision #34) so `docker ps` and orchestrators see liveness.
+- `HEALTHCHECK` calls the `/healthz` endpoint (decision #34) so `docker ps` and orchestrators see liveness.
 
 ## Volume mount contract
 
@@ -183,7 +184,7 @@ For development without Docker: `script/smoke morbo` (decision #43).
 ## Verification
 
 1. `docker build -t coresmoke:test .` succeeds in under 10 minutes on a cold cache.
-2. Image size is reasonable (< 200 MB target on Alpine).
+2. Image size is reasonable (< 300 MB target on slim Debian).
 3. `docker run --rm coresmoke:test perl -V` reports 5.42.x.
 4. `docker compose up` starts; `curl localhost:3000/system/ping` returns `pong`.
 5. `docker inspect --format '{{.State.Health.Status}}' <container>` returns `healthy` after the start period.

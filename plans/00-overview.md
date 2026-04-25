@@ -39,7 +39,7 @@ Operating three repos, two languages, two web stacks, and a heavy Postgres depen
 | RSS/Atom | None |
 | Health endpoints | `GET /healthz` and `GET /readyz` |
 | Logging | Mojo::Log to STDERR |
-| Container base | Alpine perl |
+| Container base | `perl:5.42-slim` (Debian-slim) |
 | Listen port | 3000 |
 | Hypnotoad workers | 2 |
 | Container user | non-root, fixed UID 1000 |
@@ -88,7 +88,7 @@ perl5-smoke/
 ├── data/                           # gitignored: smoke.db, smoke.db-wal, smoke.db-shm, reports/
 ├── cpanfile
 ├── cpanfile.snapshot
-├── Dockerfile                      # Alpine multi-stage
+├── Dockerfile                      # multi-stage on perl:5.42-slim
 ├── docker-compose.yml
 ├── .perlcriticrc
 ├── .github/workflows/ci.yml
@@ -144,7 +144,7 @@ External clients (Test::Smoke installs, scrapers) hit these. Shapes must match t
 | 05 | `05-ingest.md` | `POST /api/report` + `old_format_reports` + `/report` alias; gzip request, xz-on-disk files. |
 | 06 | `06-business-logic.md` | Search filter, failure matrix, `Model::ReportFiles` for on-disk file I/O. |
 | 07 | `07-web-templates.md` | Server-rendered EP pages with HTMX + infinite scroll, restyled CSS. |
-| 08 | `08-docker.md` | Alpine multi-stage Dockerfile + compose; multi-arch + ghcr.io + Trivy. |
+| 08 | `08-docker.md` | Multi-stage Dockerfile on perl:5.42-slim + compose; multi-arch + ghcr.io + Trivy. |
 | 09 | `09-testing.md` | Test::Mojo strategy, REST/JSONRPC parity, perlcritic, Devel::Cover. |
 | 10 | `10-deferred-migration.md` | Stub for importing legacy PG data + files. |
 
