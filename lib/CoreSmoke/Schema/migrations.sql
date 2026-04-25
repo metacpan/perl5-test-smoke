@@ -109,3 +109,11 @@ DROP TABLE config;
 DROP TABLE report;
 DROP TABLE smoke_config;
 DROP TABLE tsgateway_config;
+
+-- 2 up
+
+CREATE INDEX report_smoke_branch_idx ON report(smoke_branch);
+
+-- 2 down
+
+DROP INDEX report_smoke_branch_idx;
