@@ -418,12 +418,15 @@ sub available_filter_values ($self, $filter) {
 #
 #   * Anything starting with "PASS" -> single "PASS" option
 #     (matches r.summary GLOB 'PASS*' downstream).
-#   * Each "FAIL(letters)" string contributes one option PER LETTER
-#     inside the parens, case-sensitive: "FAIL(XF)" yields both
-#     "FAIL(X)" and "FAIL(F)"; "FAIL(Mm)" yields "FAIL(M)" AND
-#     "FAIL(m)" (uppercase M for missing-test, lowercase m for
-#     mistaken-test, etc.).
+#   * Any "FAIL(...)" string contributes a "FAIL(*)" umbrella option
+#     (matches every FAIL(...) downstream) AND one option PER LETTER
+#     inside the parens, case-sensitive: "FAIL(XF)" yields "FAIL(*)",
+#     "FAIL(X)", "FAIL(F)"; "FAIL(Mm)" yields "FAIL(M)" AND "FAIL(m)"
+#     (uppercase M for missing-test, lowercase m for mistaken-test).
 #   * Anything else passes through verbatim.
+#
+# Order: PASS first, then FAIL(*), then individual FAIL(x) lexically,
+# then anything else lexically.
 sub _summary_buckets ($raw) {
     my %seen;
     for my $s (@$raw) {
@@ -432,19 +435,21 @@ sub _summary_buckets ($raw) {
             $seen{'PASS'} = 1;
         }
         elsif ($s =~ /^FAIL\(([^)]*)\)/) {
+            $seen{'FAIL(*)'} = 1;
             $seen{"FAIL($_)"} = 1 for split //, $1;
         }
         else {
             $seen{$s} = 1;
         }
     }
-    # PASS first, then everything else lexically (uppercase before
-    # lowercase under default cmp, which is what we want here).
+    my $rank = sub ($v) {
+        return 0 if $v eq 'PASS';
+        return 1 if $v eq 'FAIL(*)';
+        return 2 if $v =~ /^FAIL\(/;
+        return 3;
+    };
     return [
-        sort {
-            ($a eq 'PASS' ? 0 : 1) <=> ($b eq 'PASS' ? 0 : 1)
-            || $a cmp $b
-        } keys %seen
+        sort { $rank->($a) <=> $rank->($b) || $a cmp $b } keys %seen
     ];
 }
 

@@ -58,6 +58,7 @@ sub compile ($self, $params) {
 
     # Summary: bucketed match.
     #   selected_summary = "PASS"     -> r.summary GLOB 'PASS*'
+    #   selected_summary = "FAIL(*)"  -> r.summary GLOB 'FAIL(*'   (any FAIL)
     #   selected_summary = "FAIL(F)"  -> r.summary GLOB 'FAIL(*F*)'
     #   selected_summary = "FAIL(m)"  -> r.summary GLOB 'FAIL(*m*)'
     # GLOB is case-sensitive in SQLite, so M and m are distinct as the
@@ -67,6 +68,10 @@ sub compile ($self, $params) {
         if ($sum eq 'PASS') {
             push @where, "r.summary GLOB ?";
             push @bind, 'PASS*';
+        }
+        elsif ($sum eq 'FAIL(*)') {
+            push @where, "r.summary GLOB ?";
+            push @bind, 'FAIL(*';
         }
         elsif ($sum =~ /^FAIL\((.+)\)$/) {
             push @where, "r.summary GLOB ?";

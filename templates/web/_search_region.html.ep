@@ -88,7 +88,7 @@
       %= include 'components/form_field', label => 'Compiler',         name => 'selected_comp',    type => 'select', options => $comp_options,    extra => $pinned->($sel_comp,    \%comp_have)
       %= include 'components/form_field', label => 'Compiler version', name => 'selected_cver',    type => 'select', options => $cver_options,    extra => $pinned->($sel_cver,    \%cver_have)
       %= include 'components/form_field', label => 'Smoker',           name => 'selected_smkv',    type => 'select', options => $smkv_options,    extra => $pinned->($sel_smkv,    \%smkv_have)
-      %= include 'components/form_field', label => 'Summary',          name => 'selected_summary', type => 'select', options => $summary_options, extra => $pinned->($sel_summary, \%summary_have)
+      %= include 'components/form_field', label => 'Status',           name => 'selected_summary', type => 'select', options => $summary_options, extra => $pinned->($sel_summary, \%summary_have)
     </div>
   </form>
 
