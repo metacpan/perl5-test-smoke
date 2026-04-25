@@ -23,13 +23,7 @@
 %   my $cell = $row->{$v};
 %   if ($cell) {
 %     my $cnt = $cell->{cnt} // 0;
-%     # Log-scale intensity so a few failures still read, but huge counts
-%     # don't saturate every cell. cnt=1 -> ~10%, cnt=10 -> ~30%,
-%     # cnt=100 -> ~50%, cnt=1000 -> ~70%, capped at 80%.
-%     use POSIX ();
-%     my $ratio = $cnt > 0 ? POSIX::floor(10 + 20 * POSIX::log10($cnt)) : 0;
-%     $ratio = 80 if $ratio > 80;
-%     $ratio = 10 if $ratio < 10 && $cnt > 0;
+%     my $ratio = heatmap_ratio($cnt);
 %     my $intense = $ratio >= 55 ? ' intense' : '';
       <td class="heatmap-cell heatmap-fail<%= $intense %>" style="--ratio: <%= $ratio %>%" title="<%= $cnt %> failure(s)">
         <a href="/submatrix?test=<%= url_escape $row->{test} %>&amp;pversion=<%= $v %>"><%= commify($cnt) %></a>
