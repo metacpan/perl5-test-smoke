@@ -96,14 +96,20 @@ cpan-deps:
 dev:
 	exec $(MORBO) $(APP)
 
+# `make start` is for running the app on a developer's machine (mac or
+# linux) from a normal repo checkout. Force MOJO_MODE=development so we
+# load etc/coresmoke.development.conf and resolve paths under the repo's
+# own data/ directory. Docker production runs script/smoke prefork
+# directly via the image's CMD, never make, so it independently picks
+# MOJO_MODE=production via Hypnotoad's default.
 start:
-	$(HYPNOTOAD) $(APP)
+	MOJO_MODE=development $(HYPNOTOAD) $(APP)
 
 stop:
-	$(HYPNOTOAD) -s $(APP)
+	MOJO_MODE=development $(HYPNOTOAD) -s $(APP)
 
 reload:
-	$(HYPNOTOAD) $(APP)
+	MOJO_MODE=development $(HYPNOTOAD) $(APP)
 
 # ---------------------------------------------------------------------------
 # Test, lint, coverage

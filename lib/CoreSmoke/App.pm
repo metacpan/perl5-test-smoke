@@ -17,8 +17,8 @@ sub startup ($self) {
     $self->log->level($cfg->{log_level} // 'info');
 
     my $home = $self->home;
-    my $db_path     = $ENV{SMOKE_DB_PATH}     // $cfg->{db_path}     // $home->child('data/smoke.db');
-    my $reports_dir = $ENV{SMOKE_REPORTS_DIR} // $cfg->{reports_dir} // $home->child('data/reports');
+    my $db_path     = _resolve_path($home, $ENV{SMOKE_DB_PATH}     // $cfg->{db_path}     // 'data/smoke.db');
+    my $reports_dir = _resolve_path($home, $ENV{SMOKE_REPORTS_DIR} // $cfg->{reports_dir} // 'data/reports');
 
     $self->max_request_size(16 * 1024 * 1024);
 
@@ -128,6 +128,18 @@ sub _config_file ($self) {
     my $mode_file = $home->child("etc/coresmoke.$mode.conf");
     return "$mode_file" if -e $mode_file;
     return $home->child('etc/coresmoke.conf')->to_string;
+}
+
+# Resolve a path against MOJO_HOME if it's relative. Absolute paths
+# (e.g. `/data/smoke.db` set by the container's ENV) pass through
+# unchanged. This lets the same config work both inside the Docker
+# image and on a plain repo checkout where the cwd may not be the
+# repo root (hypnotoad in particular doesn't preserve a useful cwd).
+sub _resolve_path ($home, $path) {
+    require File::Spec;
+    return File::Spec->file_name_is_absolute($path)
+        ? $path
+        : $home->child($path)->to_string;
 }
 
 1;
