@@ -125,3 +125,11 @@ CREATE INDEX report_branch_arch_perl_summary ON report(smoke_branch, architectur
 -- 3 down
 
 DROP INDEX report_branch_arch_perl_summary;
+
+-- 4 up
+
+CREATE INDEX failures_for_env_failure_id_idx ON failures_for_env(failure_id);
+
+-- 4 down
+
+DROP INDEX failures_for_env_failure_id_idx;
