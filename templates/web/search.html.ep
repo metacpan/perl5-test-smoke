@@ -14,7 +14,12 @@
     <label>Architecture
       <select name="selected_arch">
         <option value="all">all</option>
+% # sel_arch_os_ver is a flat list of (architecture, osname, osversion)
+% # triples, kept that way so a future cascading filter can use it.
+% # Dedupe to distinct architectures for this dropdown.
+% my %seen_arch;
 % for my $row (@{ $params->{sel_arch_os_ver} }) {
+%   next if $seen_arch{ $row->{architecture} }++;
         <option value="<%= $row->{architecture} %>"
 % if (($filter->{selected_arch} // '') eq $row->{architecture}) { print 'selected'; }
         ><%= $row->{architecture} %></option>
