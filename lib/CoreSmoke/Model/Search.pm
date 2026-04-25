@@ -106,7 +106,9 @@ sub compile ($self, $params) {
 sub run ($self, $params) {
     my ($from, $where, $bind) = $self->compile($params);
     my $rpp    = int($params->{reports_per_page} || 25);
+    $rpp = 500 if $rpp > 500;
     my $page   = int($params->{page} || 1);
+    $page = 1 if $page < 1;
     my $offset = ($page - 1) * $rpp;
 
     my $db = $self->{sqlite}->db;
