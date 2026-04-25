@@ -26,12 +26,14 @@ sub new ($class, %args) {
 }
 
 my %REPORT_FIELD = (
-    arch    => 'r.architecture',
-    osnm    => 'r.osname',
-    osvs    => 'r.osversion',
-    host    => 'r.hostname',
-    branch  => 'r.smoke_branch',
-    summary => 'r.summary',
+    arch   => 'r.architecture',
+    osnm   => 'r.osname',
+    osvs   => 'r.osversion',
+    host   => 'r.hostname',
+    branch => 'r.smoke_branch',
+    # `summary` is intentionally NOT in this map -- it's matched via
+    # GLOB patterns ("PASS*" or "FAIL(*X*)") rather than equality, so
+    # it gets its own branch in compile() below.
 );
 my %CONFIG_FIELD = (
     comp => 'c.cc',
@@ -50,7 +52,31 @@ sub compile ($self, $params) {
         push @bind, $v;
     };
 
-    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch summary);
+    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch);
+
+    # Summary: bucketed match.
+    #   selected_summary = "PASS"     -> r.summary GLOB 'PASS*'
+    #   selected_summary = "FAIL(F)"  -> r.summary GLOB 'FAIL(*F*)'
+    #   selected_summary = "FAIL(m)"  -> r.summary GLOB 'FAIL(*m*)'
+    # GLOB is case-sensitive in SQLite, so M and m are distinct as the
+    # user spec'd.
+    my $sum = $params->{selected_summary};
+    if (defined $sum && length $sum && $sum ne 'all') {
+        if ($sum eq 'PASS') {
+            push @where, "r.summary GLOB ?";
+            push @bind, 'PASS*';
+        }
+        elsif ($sum =~ /^FAIL\((.+)\)$/) {
+            push @where, "r.summary GLOB ?";
+            push @bind, "FAIL(*$1*)";
+        }
+        else {
+            # Unknown bucket: fall back to equality so a stale URL doesn't
+            # silently match everything.
+            push @where, "r.summary = ?";
+            push @bind, $sum;
+        }
+    }
 
     my $needs_config_join = 0;
     for my $key (qw(comp cver)) {

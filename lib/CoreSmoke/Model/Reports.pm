@@ -257,8 +257,44 @@ sub available_filter_values ($self, $filter) {
     }
 
     $out{perl_versions} = _sort_perl_ids_desc($out{perl_versions});
+    $out{summaries}     = _summary_buckets($out{summaries});
 
     return \%out;
+}
+
+# Bucket the raw distinct summaries from the DB into user-facing
+# dropdown options:
+#
+#   * Anything starting with "PASS" -> single "PASS" option
+#     (matches r.summary GLOB 'PASS*' downstream).
+#   * Each "FAIL(letters)" string contributes one option PER LETTER
+#     inside the parens, case-sensitive: "FAIL(XF)" yields both
+#     "FAIL(X)" and "FAIL(F)"; "FAIL(Mm)" yields "FAIL(M)" AND
+#     "FAIL(m)" (uppercase M for missing-test, lowercase m for
+#     mistaken-test, etc.).
+#   * Anything else passes through verbatim.
+sub _summary_buckets ($raw) {
+    my %seen;
+    for my $s (@$raw) {
+        next unless defined $s && length $s;
+        if ($s =~ /^PASS/) {
+            $seen{'PASS'} = 1;
+        }
+        elsif ($s =~ /^FAIL\(([^)]*)\)/) {
+            $seen{"FAIL($_)"} = 1 for split //, $1;
+        }
+        else {
+            $seen{$s} = 1;
+        }
+    }
+    # PASS first, then everything else lexically (uppercase before
+    # lowercase under default cmp, which is what we want here).
+    return [
+        sort {
+            ($a eq 'PASS' ? 0 : 1) <=> ($b eq 'PASS' ? 0 : 1)
+            || $a cmp $b
+        } keys %seen
+    ];
 }
 
 # Sort "M.m.p" perl_id strings highest-to-lowest, RPM-style: split on
