@@ -40,11 +40,12 @@ my $s     = CoreSmoke::Model::Search->new(sqlite => $sqlite);
     is_deeply $bind, ['x86_64'], 'bind value';
 }
 
-# selected_perl=latest produces the MAX(plevel) subquery
+# `latest` is resolved by Reports::searchresults / available_filter_values
+# into a concrete perl_id (via RPM-style sort) before Search::compile is
+# called, so the compiler treats `latest` as a no-op and emits no clause.
 {
     my ($from, $where, $bind) = $s->compile({ selected_perl => 'latest' });
-    like $where, qr/r\.plevel = \(SELECT MAX\(plevel\) FROM report\)/,
-         'selected_perl=latest';
+    is $where, '', 'compile leaves bare `latest` untouched';
     is_deeply $bind, [], 'no bind for latest';
 }
 

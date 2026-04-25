@@ -59,11 +59,11 @@ sub compile ($self, $params) {
         $emit->($CONFIG_FIELD{$_}, $_) for qw(comp cver);
     }
 
+    # `latest` is resolved into a concrete perl_id by callers in
+    # CoreSmoke::Model::Reports (searchresults / available_filter_values)
+    # using RPM-style version sort, before reaching this compiler.
     my $perl = $params->{selected_perl} // 'all';
-    if ($perl eq 'latest') {
-        push @where, "r.plevel = (SELECT MAX(plevel) FROM report)";
-    }
-    elsif ($perl ne 'all' && length $perl) {
+    if ($perl ne 'all' && $perl ne 'latest' && length $perl) {
         push @where, "r.perl_id = ?";
         push @bind, $perl;
     }

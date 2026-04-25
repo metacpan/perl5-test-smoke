@@ -186,7 +186,24 @@ sub searchparameters ($self) {
 }
 
 sub searchresults ($self, $params) {
-    return $self->_search->run($params);
+    my %p = %$params;
+    if (($p{selected_perl} // '') eq 'latest') {
+        $p{selected_perl} = $self->latest_perl_id // 'all';
+    }
+    return $self->_search->run(\%p);
+}
+
+# RPM-style "latest" perl_id: highest version by numeric component
+# compare. Replaces the legacy MAX(plevel) approach, which is a string
+# compare and was returning bogus rows whose plevel was malformed.
+sub latest_perl_id ($self) {
+    my $ids = [
+        map { $_->{perl_id} }
+        @{ $self->{sqlite}->db->query(
+            "SELECT DISTINCT perl_id FROM report"
+        )->hashes->to_array }
+    ];
+    return _sort_perl_ids_desc($ids)->[0];
 }
 
 # For the /search UI: given the user's current $filter, return the
@@ -201,6 +218,12 @@ sub searchresults ($self, $params) {
 sub available_filter_values ($self, $filter) {
     my $search = $self->_search;
     my $db     = $self->{sqlite}->db;
+
+    if (($filter->{selected_perl} // '') eq 'latest') {
+        my %resolved = %$filter;
+        $resolved{selected_perl} = $self->latest_perl_id // 'all';
+        $filter = \%resolved;
+    }
 
     my %dims = (
         architectures => { exclude => [qw(selected_arch   andnotsel_arch)],

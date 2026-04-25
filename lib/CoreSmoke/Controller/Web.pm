@@ -38,8 +38,18 @@ sub search ($c) {
     }
     my $page    = int($filter{page}             || 1);
     my $rpp     = int($filter{reports_per_page} || 25);
-    my $available = $c->app->reports->available_filter_values(\%filter);
-    my $results   = $c->app->reports->searchresults({ %filter, page => $page, reports_per_page => $rpp });
+
+    # Resolve `selected_perl=latest` once for the whole request via the
+    # RPM-style version sort, then feed the same concrete perl_id into
+    # both the cascading-dropdown query and the result query. The
+    # template still gets the original \%filter so the dropdown renders
+    # with `latest` selected.
+    my %effective = %filter;
+    if (($effective{selected_perl} // '') eq 'latest') {
+        $effective{selected_perl} = $c->app->reports->latest_perl_id // 'all';
+    }
+    my $available = $c->app->reports->available_filter_values(\%effective);
+    my $results   = $c->app->reports->searchresults({ %effective, page => $page, reports_per_page => $rpp });
 
     # Form changes (HTMX) re-render the whole search region: the form
     # (so the cascading dropdowns refresh against the new filter) AND
