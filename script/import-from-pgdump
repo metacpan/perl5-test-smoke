@@ -49,7 +49,11 @@ my $migrations = "$FindBin::Bin/../lib/CoreSmoke/Schema/migrations.sql";
 -r $migrations or die "cannot read migrations file: $migrations\n";
 
 my $sql = Mojo::SQLite->new("sqlite:$opt{target}");
-$sql->migrations->from_file($migrations)->migrate;
+# Track name must match CoreSmoke::Model::DB so the runtime app and
+# `script/migrate` see the same migration history. Without this, the
+# default 'migrations' track is recorded and the next migrate run
+# tries to replay from scratch against tables that already exist.
+$sql->migrations->from_file($migrations)->name('coresmoke')->migrate;
 say "[migrate] schema applied";
 
 my $db  = $sql->db;
