@@ -11,7 +11,7 @@
 ARG PERL_VERSION=5.42
 
 # ---------- builder (build tools, NOT shipped) ------------------------------
-FROM perl:${PERL_VERSION}-slim AS builder
+FROM perl:${PERL_VERSION} AS builder
 
 # Build-time only. ARG keeps DEBIAN_FRONTEND out of the final image's env.
 ARG DEBIAN_FRONTEND=noninteractive
