@@ -88,22 +88,38 @@ sub report_data ($self, $rid) {
         "SELECT * FROM config WHERE report_id = ? ORDER BY id", $rid
     )->hashes->to_array;
 
-    for my $cfg (@$configs) {
-        my $results = $db->query(
-            "SELECT * FROM result WHERE config_id = ? ORDER BY id", $cfg->{id}
-        )->hashes->to_array;
+    my $all_results = $db->query(<<~'SQL', $rid)->hashes->to_array;
+        SELECT r.*
+          FROM result r
+          JOIN config c ON c.id = r.config_id
+         WHERE c.report_id = ?
+         ORDER BY r.config_id, r.id
+        SQL
 
-        for my $res (@$results) {
-            my $failures = $db->query(<<~'SQL', $res->{id})->hashes->to_array;
-                SELECT f.test, f.status, f.extra
-                  FROM failures_for_env ffe
-                  JOIN failure f ON f.id = ffe.failure_id
-                 WHERE ffe.result_id = ?
-                 ORDER BY f.test
-                SQL
-            $res->{failures} = $failures;
-        }
-        $cfg->{results} = $results;
+    my $all_failures = $db->query(<<~'SQL', $rid)->hashes->to_array;
+        SELECT ffe.result_id, f.test, f.status, f.extra
+          FROM failures_for_env ffe
+          JOIN failure f  ON f.id  = ffe.failure_id
+          JOIN result  r  ON r.id  = ffe.result_id
+          JOIN config  c  ON c.id  = r.config_id
+         WHERE c.report_id = ?
+         ORDER BY f.test
+        SQL
+
+    my %failures_by_result;
+    for my $f (@$all_failures) {
+        my $result_id = delete $f->{result_id};
+        push @{ $failures_by_result{$result_id} }, $f;
+    }
+
+    my %results_by_config;
+    for my $res (@$all_results) {
+        $res->{failures} = $failures_by_result{ $res->{id} } // [];
+        push @{ $results_by_config{ $res->{config_id} } }, $res;
+    }
+
+    for my $cfg (@$configs) {
+        $cfg->{results} = $results_by_config{ $cfg->{id} } // [];
     }
     $report->{configs} = $configs;
 
