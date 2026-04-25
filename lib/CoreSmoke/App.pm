@@ -150,6 +150,15 @@ sub startup ($self) {
         return $s;
     });
 
+    require POSIX;
+    $self->helper(heatmap_ratio => sub ($c, $count) {
+        return 0 unless $count && $count > 0;
+        my $ratio = POSIX::floor(10 + 20 * POSIX::log10($count));
+        $ratio = 80 if $ratio > 80;
+        $ratio = 10 if $ratio < 10;
+        return $ratio;
+    });
+
     $self->helper(duration_hms => sub ($c, $seconds) {
         return '0s' unless $seconds && $seconds > 0;
         my $h = int($seconds / 3600);
