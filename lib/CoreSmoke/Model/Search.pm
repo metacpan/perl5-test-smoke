@@ -18,6 +18,8 @@ use experimental qw(signatures);
 #   selected_branch                      -> r.smoke_branch
 #   selected_smkv                        -> r.smoke_version
 #   selected_summary                     -> r.summary     ("PASS" | "FAIL(F)" | ...)
+#   date_from                            -> r.smoke_date >= (inclusive, YYYY-MM-DD)
+#   date_to                              -> r.smoke_date <  next day  (inclusive, YYYY-MM-DD)
 #   page                                 -> 1-based, default 1
 #   reports_per_page                     -> default 25
 
@@ -55,6 +57,20 @@ sub compile ($self, $params) {
     };
 
     $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch smkv);
+
+    # Date range: date_from/date_to filter on r.smoke_date (ISO 8601 TEXT).
+    # date_from is inclusive (>=), date_to is inclusive of the whole day
+    # (< next day via SQLite date() arithmetic).
+    my $date_from = $params->{date_from};
+    if (defined $date_from && length $date_from) {
+        push @where, "r.smoke_date >= ?";
+        push @bind, $date_from;
+    }
+    my $date_to = $params->{date_to};
+    if (defined $date_to && length $date_to) {
+        push @where, "r.smoke_date < date(?, '+1 day')";
+        push @bind, $date_to;
+    }
 
     # Summary: bucketed match.
     #   selected_summary = "PASS"     -> r.summary GLOB 'PASS*'

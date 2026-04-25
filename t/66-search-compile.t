@@ -75,6 +75,39 @@ my $s     = CoreSmoke::Model::Search->new(sqlite => $sqlite);
     is_deeply $bind, [], 'all -> no bind';
 }
 
+# date_from produces >= on smoke_date
+{
+    my ($from, $where, $bind) = $s->compile({ date_from => '2024-06-01' });
+    is $from, "FROM report r", 'date_from: no config join';
+    like $where, qr/r\.smoke_date >= \?/, 'date_from >=';
+    is_deeply $bind, ['2024-06-01'], 'date_from bind value';
+}
+
+# date_to produces < date(?, '+1 day') for end-of-day inclusivity
+{
+    my ($from, $where, $bind) = $s->compile({ date_to => '2024-06-30' });
+    like $where, qr/r\.smoke_date < date\(\?, '\+1 day'\)/, 'date_to < next day';
+    is_deeply $bind, ['2024-06-30'], 'date_to bind value';
+}
+
+# Both date_from and date_to together
+{
+    my ($from, $where, $bind) = $s->compile({
+        date_from => '2024-01-01',
+        date_to   => '2024-12-31',
+    });
+    like $where, qr/r\.smoke_date >= \?/, 'range: date_from >=';
+    like $where, qr/r\.smoke_date < date/, 'range: date_to <';
+    is_deeply $bind, ['2024-01-01', '2024-12-31'], 'range: both bind values';
+}
+
+# Empty date params are ignored
+{
+    my (undef, $where, $bind) = $s->compile({ date_from => '', date_to => '' });
+    is $where, '', 'empty date params: no where';
+    is_deeply $bind, [], 'empty date params: no bind';
+}
+
 # run() against an empty DB returns the empty shape
 {
     my $out = $s->run({});

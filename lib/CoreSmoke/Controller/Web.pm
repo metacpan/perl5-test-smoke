@@ -77,6 +77,7 @@ sub search ($c) {
         selected_arch selected_osnm selected_osvs selected_host
         selected_comp selected_cver selected_perl selected_branch
         selected_smkv selected_summary
+        date_from date_to
         andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
         andnotsel_comp andnotsel_cver andnotsel_smkv andnotsel_summary
         page reports_per_page

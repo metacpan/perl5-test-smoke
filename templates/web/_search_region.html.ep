@@ -24,6 +24,8 @@
 % my $sel_cver     = $filter->{selected_cver}    // '';
 % my $sel_smkv     = $filter->{selected_smkv}    // '';
 % my $sel_summary  = $filter->{selected_summary} // '';
+% my $date_from    = $filter->{date_from}        // '';
+% my $date_to      = $filter->{date_to}          // '';
 % my %arch_have    = map { $_ => 1 } @$arch_opts;
 % my %osnm_have    = map { $_ => 1 } @$osnm_opts;
 % my %osvs_have    = map { $_ => 1 } @$osvs_opts;
@@ -67,7 +69,7 @@
   <form id="search-form"
         class="search-form"
         hx-get="/search"
-        hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox]"
+        hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox], change delay:200ms from:input[type=date]"
         hx-target="#search-region"
         hx-swap="outerHTML"
         hx-include="closest form"
@@ -89,6 +91,8 @@
       %= include 'components/form_field', label => 'Compiler version', name => 'selected_cver',    type => 'select', options => $cver_options,    extra => $pinned->($sel_cver,    \%cver_have)
       %= include 'components/form_field', label => 'Smoker',           name => 'selected_smkv',    type => 'select', options => $smkv_options,    extra => $pinned->($sel_smkv,    \%smkv_have)
       %= include 'components/form_field', label => 'Status',           name => 'selected_summary', type => 'select', options => $summary_options, extra => $pinned->($sel_summary, \%summary_have)
+      %= include 'components/form_field', label => 'From date',        name => 'date_from',        type => 'date',   value => $date_from
+      %= include 'components/form_field', label => 'To date',          name => 'date_to',          type => 'date',   value => $date_to
     </div>
   </form>
 
