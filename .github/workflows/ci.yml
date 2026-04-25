@@ -92,6 +92,12 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: ${{ github.ref == 'refs/heads/main' }}
+          # Override the Dockerfile's default BASE_IMAGE (metacpan) so the
+          # FROM resolves to the base image we actually publish from this
+          # repo. base.yml builds and pushes coresmoke-base; ci.yml pulls
+          # it here.
+          build-args: |
+            BASE_IMAGE=ghcr.io/${{ steps.owner.outputs.name }}/coresmoke-base:latest
           tags: ghcr.io/${{ steps.owner.outputs.name }}/coresmoke:latest
           cache-from: type=gha
           cache-to:   type=gha,mode=max
