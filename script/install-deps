@@ -1,0 +1,107 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+
+# Reads cpanfile, finds modules that are not yet installed (or below the
+# required version), and installs them via the active perl's `cpan`. Native
+# library paths for darwin homebrew xz are exported so XS modules like
+# Compress::Raw::Lzma can find lzma.h / liblzma during build.
+
+use FindBin;
+chdir "$FindBin::Bin/.." or die "chdir: $!";
+
+# ---------------------------------------------------------------------------
+# Bootstrap Module::CPANfile (used to parse cpanfile)
+# ---------------------------------------------------------------------------
+
+unless (eval { require Module::CPANfile; 1 }) {
+    say "[install-deps] bootstrapping Module::CPANfile via cpan";
+    system('cpan', '-T', 'Module::CPANfile') == 0
+        or die "[install-deps] failed to install Module::CPANfile\n";
+    require Module::CPANfile;
+}
+
+# ---------------------------------------------------------------------------
+# Set native-lib paths so XS modules can build on macOS homebrew
+# ---------------------------------------------------------------------------
+
+if ($^O eq 'darwin') {
+    my $xz = '/opt/homebrew/opt/xz';
+    if (-d "$xz/include") {
+        # PERL_MM_OPT propagates INC/LIBS into every subsequent
+        # `perl Makefile.PL` invocation. Pure-perl dists ignore it;
+        # XS dists that need lzma now find it without per-module hacks.
+        my $mm_opt = qq{INC=-I$xz/include LIBS=-L$xz/lib -llzma};
+        $ENV{PERL_MM_OPT} = $mm_opt;
+        $ENV{LDFLAGS}     = "-L$xz/lib " . ($ENV{LDFLAGS} // '');
+        $ENV{CPPFLAGS}    = "-I$xz/include " . ($ENV{CPPFLAGS} // '');
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Collect requirements from cpanfile
+# ---------------------------------------------------------------------------
+
+my $cpanfile = Module::CPANfile->load('cpanfile');
+my $prereqs  = $cpanfile->prereqs;
+
+my %wanted;
+for my $phase (qw(configure build runtime test develop)) {
+    my $reqs = $prereqs->requirements_for($phase, 'requires');
+    for my $mod ($reqs->required_modules) {
+        next if $mod eq 'perl';
+        my $want = $reqs->requirements_for_module($mod);
+        $wanted{$mod} = $want if !exists $wanted{$mod} || ($want // '') ne '0';
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Determine what is missing
+# ---------------------------------------------------------------------------
+
+my @missing;
+for my $mod (sort keys %wanted) {
+    my $want_str = $wanted{$mod} // '';
+    (my $pm_path = "$mod.pm") =~ s{::}{/}g;
+    my $loaded = eval { require $pm_path; 1 };
+    if (!$loaded) {
+        push @missing, $mod;
+        next;
+    }
+    if ($want_str && $want_str ne '0') {
+        # Take the first numeric requirement out of strings like ">= 9.34"
+        my ($want_ver) = $want_str =~ /([\d.]+)/;
+        my $have_ver   = eval { $mod->VERSION };
+        if (defined $want_ver && defined $have_ver && $have_ver < $want_ver) {
+            push @missing, $mod;
+        }
+    }
+}
+
+if (!@missing) {
+    say "[install-deps] all dependencies satisfied";
+    exit 0;
+}
+
+say "[install-deps] installing " . scalar(@missing) . " modules:";
+say "  - $_" for @missing;
+
+# ---------------------------------------------------------------------------
+# Install each missing module via cpan -T (skip tests for speed)
+# ---------------------------------------------------------------------------
+
+my @failed;
+for my $mod (@missing) {
+    say "\n[install-deps] cpan -T $mod";
+    my $rc = system('cpan', '-T', $mod);
+    push @failed, $mod if $rc != 0;
+}
+
+if (@failed) {
+    say "\n[install-deps] FAILED for:";
+    say "  - $_" for @failed;
+    exit 1;
+}
+
+say "\n[install-deps] done";
+exit 0;

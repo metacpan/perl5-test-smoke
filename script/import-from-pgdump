@@ -383,7 +383,7 @@ sub build_insert_sth ($dbh, $target) {
 # ---------------------------------------------------------------------------
 
 sub decode_copy_field ($f) {
-    return undef if $f eq '\\N';
+    return if $f eq '\\N';
     return $f unless index($f, '\\') >= 0;
     $f =~ s{\\(.)}{
           $1 eq 'n' ? "\n"
@@ -405,7 +405,7 @@ sub decode_copy_field ($f) {
 # ---------------------------------------------------------------------------
 
 sub pg_ts_to_iso ($ts) {
-    return undef unless defined $ts && length $ts;
+    return unless defined $ts && length $ts;
 
     if ($ts =~ /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)([+-])(\d{1,2})(?::?(\d{2}))?$/) {
         my ($date, $time, $sign, $h, $m) = ($1, $2, $3, $4, $5 // 0);
