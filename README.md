@@ -53,6 +53,32 @@ curl http://localhost:3000/api/version              # -> {"version":"2.0",...}
 The host directory `./data/` is mounted into the container at `/data`,
 holding `smoke.db`, the WAL/SHM sidecars, and the `reports/` tree.
 
+### Two-image build (base + prod)
+
+The heavy CPAN + apt install lives in a **base image**
+(`ghcr.io/<owner>/coresmoke-base:latest`, built from `Dockerfile.base`)
+that's rebuilt only when `cpanfile`, `cpanfile.snapshot`, or
+`Dockerfile.base` change. The **prod image** (`Dockerfile`) just
+`FROM`s the base and copies the source on top, so a per-commit build
+finishes in seconds.
+
+CI handles this with two workflows:
+
+- `.github/workflows/base.yml` — builds and pushes the multi-arch base
+  image. Triggers: pushes to main that touch `cpanfile` /
+  `cpanfile.snapshot` / `Dockerfile.base`, weekly cron (for upstream
+  `perl:5.42-slim` CVE pickups), and manual `workflow_dispatch`.
+- `.github/workflows/ci.yml` — runs `prove` + `perlcritic`, then
+  builds + pushes the multi-arch prod image. Pulls the latest base
+  image rather than rebuilding it.
+
+To build locally without ghcr access, build the base first:
+
+```sh
+docker build -f Dockerfile.base -t coresmoke-base:local .
+docker build --build-arg BASE_IMAGE=coresmoke-base:local -t coresmoke:dev .
+```
+
 ## Repository layout
 
 ```

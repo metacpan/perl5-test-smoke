@@ -1,0 +1,33 @@
+#  =========================================================================
+#  coresmoke-base
+#  -------------------------------------------------------------------------
+#  Heavy CPAN + apt deps for the prod image. Rebuilt only when cpanfile,
+#  cpanfile.snapshot, or this file change (see .github/workflows/base.yml).
+#  The prod Dockerfile FROMs the resulting image and just adds the source,
+#  so per-commit builds finish in seconds instead of minutes.
+#  =========================================================================
+ARG PERL_VERSION=5.42
+
+FROM perl:${PERL_VERSION}-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        build-essential \
+        libsqlite3-dev \
+        liblzma-dev \
+        libssl-dev \
+        zlib1g-dev \
+        ca-certificates \
+        curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && cpan -T App::cpm
+
+WORKDIR /build
+
+# Snapshot-pinned install for reproducibility (decision #20).
+COPY cpanfile cpanfile.snapshot ./
+RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --show-build-log-on-failure
+
+# Vendor htmx -- decision #17. Pinned to a stable major release.
+RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
+        -o /build/htmx.min.js

@@ -1,0 +1,62 @@
+name: build base image
+
+# Rebuild coresmoke-base only when its inputs change. Everything else (the
+# per-commit prod image) FROMs this and finishes in seconds.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cpanfile'
+      - 'cpanfile.snapshot'
+      - 'Dockerfile.base'
+      - '.github/workflows/base.yml'
+  schedule:
+    - cron: '0 7 * * 1'      # weekly UTC -- pick up upstream perl:5.42-slim CVE fixes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-base:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: lowercase repository owner
+        id: owner
+        run: echo "name=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: log in to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Hash the inputs that determine the base image's content. Used as an
+      # extra immutable tag alongside :latest so a specific prod build can
+      # pin to a known-good base if it ever needs to.
+      - name: deps content hash
+        id: hash
+        run: |
+          h=$(sha256sum cpanfile cpanfile.snapshot Dockerfile.base | sha256sum | cut -c1-12)
+          echo "tag=deps-$h" >> "$GITHUB_OUTPUT"
+
+      - name: build + push multi-arch base
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.base
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.name }}/coresmoke-base:latest
+            ghcr.io/${{ steps.owner.outputs.name }}/coresmoke-base:${{ steps.hash.outputs.tag }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
