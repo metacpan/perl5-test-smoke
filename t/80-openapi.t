@@ -1,0 +1,50 @@
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+use Test::More;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../local/lib/perl5";
+use lib "$FindBin::Bin/lib";
+
+use TestApp;
+use YAML::PP qw();
+
+my $h = TestApp->new;
+my $t = $h->t;
+
+# YAML form
+my $yaml_resp = $t->get_ok('/api/openapi/web.yaml')->status_is(200)->tx->res->body;
+my $spec = eval { YAML::PP::Load($yaml_resp) };
+ok !$@, "YAML parses without error: $@";
+is $spec->{openapi}, '3.0.3', 'OpenAPI version is 3.0.3';
+is $spec->{info}{title}, 'Perl 5 Core Smoke DB', 'title';
+
+# JSON form
+my $json_spec = $t->get_ok('/api/openapi/web.json')->status_is(200)->tx->res->json;
+is $json_spec->{openapi}, '3.0.3', 'JSON spec parses';
+is_deeply $json_spec->{info}, $spec->{info}, 'JSON and YAML match';
+
+# Plain text form
+$t->get_ok('/api/openapi/web')->status_is(200);
+
+# Every documented path is registered (or aliased) in the actual app.
+my %routes;
+for my $r (@{ $h->app->routes->children }) {
+    _walk_route($r, '', \%routes);
+}
+
+for my $path (sort keys %{ $spec->{paths} }) {
+    my $route_pattern = $path =~ s/\{(\w+)\}/:$1/gr;   # OpenAPI {x} -> Mojo :x
+    ok exists $routes{$route_pattern}, "spec path $path is registered (as $route_pattern)";
+}
+
+sub _walk_route ($node, $prefix, $store) {
+    my $pattern = $node->pattern->unparsed // '';
+    my $here    = $prefix . $pattern;
+    $here = "/$here" if $here ne '' && $here !~ m{^/};
+    $store->{$here} = 1 if $node->is_endpoint;
+    _walk_route($_, $here, $store) for @{ $node->children };
+}
+
+done_testing;

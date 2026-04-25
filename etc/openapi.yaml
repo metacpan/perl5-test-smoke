@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: Perl 5 Core Smoke DB
+  version: "2.0"
+  description: |
+    Public, anonymous, read-mostly API for the Perl 5 core smoke-test
+    database. Every method is also reachable as a JSONRPC 2.0 call at
+    `POST /api`.
+
+servers:
+  - url: /
+    description: same-origin
+
+paths:
+  /system/ping:
+    get:
+      summary: Liveness check
+      responses:
+        "200":
+          description: pong
+          content:
+            text/plain:
+              schema: { type: string, example: pong }
+
+  /system/version:
+    get:
+      summary: Software version
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  software_version: { type: string, example: "2.0" }
+
+  /system/status:
+    get:
+      summary: Process status
+      responses:
+        "200":
+          description: ok
+
+  /system/methods:
+    get:
+      summary: List all RPC methods
+      responses: { "200": { description: ok } }
+
+  /system/methods/{plugin}:
+    get:
+      summary: List RPC methods for one plugin
+      parameters:
+        - in: path
+          name: plugin
+          schema: { type: string }
+          required: true
+      responses: { "200": { description: ok } }
+
+  /healthz:
+    get:
+      summary: Liveness probe (always 200)
+      responses: { "200": { description: ok } }
+
+  /readyz:
+    get:
+      summary: Readiness probe (200 only if DB is queryable)
+      responses:
+        "200": { description: ready }
+        "503": { description: db unavailable }
+
+  /api/version:
+    get:
+      summary: API + schema + DB version triple
+      responses: { "200": { description: ok } }
+
+  /api/latest:
+    get:
+      summary: Latest report per hostname
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: reports_per_page
+          schema: { type: integer, default: 25 }
+      responses: { "200": { description: ok } }
+
+  /api/full_report_data/{rid}:
+    get:
+      summary: Full expanded report
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: ok }
+        "404": { description: not found }
+
+  /api/report_data/{rid}:
+    get:
+      summary: Report tree (configs / results / failures)
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: ok }
+        "404": { description: not found }
+
+  /api/logfile/{rid}:
+    get:
+      summary: Decoded log_file content for a report
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: ok }
+        "404": { description: not found }
+
+  /api/outfile/{rid}:
+    get:
+      summary: Decoded out_file content for a report
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: ok }
+        "404": { description: not found }
+
+  /api/matrix:
+    get:
+      summary: Failure matrix across the last 5 perl versions
+      responses: { "200": { description: ok } }
+
+  /api/submatrix:
+    get:
+      summary: Reports failing one specific test
+      parameters:
+        - in: query
+          name: test
+          required: true
+          schema: { type: string }
+        - in: query
+          name: pversion
+          schema: { type: string }
+      responses:
+        "200": { description: ok }
+        "422": { description: missing test param }
+
+  /api/searchparameters:
+    get:
+      summary: Filter dropdown data
+      responses: { "200": { description: ok } }
+
+  /api/searchresults:
+    get:
+      summary: Search reports with filter and pagination
+      responses: { "200": { description: ok } }
+    post:
+      summary: Search reports with filter (POST)
+      responses: { "200": { description: ok } }
+
+  /api/reports_from_id/{rid}:
+    get:
+      summary: Report ids >= rid (capped by limit)
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+      responses: { "200": { description: ok } }
+
+  /api/reports_from_date/{epoch}:
+    get:
+      summary: Report ids since a Unix epoch
+      parameters:
+        - in: path
+          name: epoch
+          required: true
+          schema: { type: integer }
+      responses: { "200": { description: ok } }
+
+  /api/report:
+    post:
+      summary: Ingest a Test::Smoke report (modern format)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                report_data: { type: object }
+      responses:
+        "200": { description: ok }
+        "409": { description: duplicate }
+        "422": { description: missing report_data }
+
+  /api/old_format_reports:
+    post:
+      summary: Ingest a Test::Smoke report (pre-1.81 form-encoded format)
+      responses:
+        "200": { description: ok }
+        "409": { description: duplicate }
+
+  /report:
+    post:
+      summary: Built-in alias for /api/old_format_reports (for proxy-less deploys)
+      responses: { "200": { description: ok } }
+
+  /api:
+    post:
+      summary: JSONRPC 2.0 dispatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses: { "200": { description: ok } }
+
+  /api/openapi/web.json:
+    get:
+      summary: This OpenAPI spec, as JSON
+      responses: { "200": { description: ok } }
+
+  /api/openapi/web.yaml:
+    get:
+      summary: This OpenAPI spec, as YAML
+      responses: { "200": { description: ok } }
+
+  /api/openapi/web:
+    get:
+      summary: This OpenAPI spec, as plain text
+      responses: { "200": { description: ok } }

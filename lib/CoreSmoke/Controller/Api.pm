@@ -1,28 +1,108 @@
 package CoreSmoke::Controller::Api;
 use v5.42;
+use warnings;
 use experimental qw(signatures);
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-# Stubs. Plan 03 fills these in.
+use Mojo::File qw(path);
+use Mojo::JSON qw(encode_json);
 
-sub _stub ($c, $name) {
-    return $c->render(status => 501, json => { error => "Not implemented yet: Api#$name" });
+sub version ($c) {
+    return $c->render(json => $c->app->reports->version);
 }
 
-sub version          ($c) { return $c->render(json => $c->app->reports->version) }
-sub latest           ($c) { _stub($c, 'latest') }
-sub full_report_data ($c) { _stub($c, 'full_report_data') }
-sub report_data      ($c) { _stub($c, 'report_data') }
-sub logfile          ($c) { _stub($c, 'logfile') }
-sub outfile          ($c) { _stub($c, 'outfile') }
-sub matrix           ($c) { _stub($c, 'matrix') }
-sub submatrix        ($c) { _stub($c, 'submatrix') }
-sub searchparameters ($c) { _stub($c, 'searchparameters') }
-sub searchresults    ($c) { _stub($c, 'searchresults') }
-sub reports_from_id  ($c) { _stub($c, 'reports_from_id') }
-sub reports_from_epoch ($c) { _stub($c, 'reports_from_epoch') }
-sub openapi_json     ($c) { _stub($c, 'openapi_json') }
-sub openapi_yaml     ($c) { _stub($c, 'openapi_yaml') }
-sub openapi_text     ($c) { _stub($c, 'openapi_text') }
+sub latest ($c) {
+    return $c->render(json => $c->app->reports->latest({
+        page             => $c->param('page'),
+        reports_per_page => $c->param('reports_per_page'),
+    }));
+}
+
+sub full_report_data ($c) {
+    my $data = $c->app->reports->full_report_data($c->stash('rid'))
+        // return $c->render(status => 404, json => { error => 'Report not found.' });
+    return $c->render(json => $data);
+}
+
+sub report_data ($c) {
+    my $data = $c->app->reports->report_data($c->stash('rid'))
+        // return $c->render(status => 404, json => { error => 'Report not found.' });
+    return $c->render(json => $data);
+}
+
+sub logfile ($c) {
+    my $data = $c->app->reports->logfile($c->stash('rid'))
+        // return $c->render(status => 404, json => { error => 'Log file not found.' });
+    return $c->render(json => $data);
+}
+
+sub outfile ($c) {
+    my $data = $c->app->reports->outfile($c->stash('rid'))
+        // return $c->render(status => 404, json => { error => 'Out file not found.' });
+    return $c->render(json => $data);
+}
+
+sub matrix ($c) {
+    return $c->render(json => $c->app->reports->matrix);
+}
+
+sub submatrix ($c) {
+    my $test = $c->param('test')
+        // return $c->render(status => 422, json => { error => 'Missing test param.' });
+    return $c->render(json => $c->app->reports->submatrix($test, $c->param('pversion')));
+}
+
+sub searchparameters ($c) {
+    return $c->render(json => $c->app->reports->searchparameters);
+}
+
+sub searchresults ($c) {
+    my %params;
+    for my $key (qw(
+        selected_arch selected_osnm selected_osvs selected_host
+        selected_comp selected_cver selected_perl selected_branch
+        andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
+        andnotsel_comp andnotsel_cver
+        page reports_per_page
+    )) {
+        my $v = $c->param($key);
+        $params{$key} = $v if defined $v;
+    }
+    return $c->render(json => $c->app->reports->searchresults(\%params));
+}
+
+sub reports_from_id ($c) {
+    return $c->render(json => $c->app->reports->reports_from_id(
+        $c->stash('rid'), $c->param('limit') // 100,
+    ));
+}
+
+sub reports_from_epoch ($c) {
+    return $c->render(json => $c->app->reports->reports_from_epoch($c->stash('epoch')));
+}
+
+# OpenAPI spec served from etc/openapi.yaml. The yaml file is the source of
+# truth; we render it as json or yaml or plain text on demand.
+
+sub _spec_path ($c) {
+    return $c->app->home->child('etc', 'openapi.yaml');
+}
+
+sub openapi_yaml ($c) {
+    return $c->render(text => path(_spec_path($c))->slurp,
+                      format => 'yaml',
+                      'Content-Type' => 'application/yaml');
+}
+
+sub openapi_json ($c) {
+    require YAML::PP;
+    my $spec = YAML::PP::Load(path(_spec_path($c))->slurp);
+    return $c->render(json => $spec);
+}
+
+sub openapi_text ($c) {
+    return $c->render(text => path(_spec_path($c))->slurp,
+                      format => 'txt');
+}
 
 1;
