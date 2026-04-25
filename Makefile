@@ -26,6 +26,12 @@ DB_PATH     ?= data/smoke.db
 REPORTS_DIR ?= data/reports
 SRC         ?=
 
+# Every target in this Makefile is for local-dev use (developer machine,
+# repo checkout). The Docker image runs script/smoke prefork directly
+# from CMD and is unaffected. Tests override MOJO_MODE=test inside
+# TestApp.pm before constructing Test::Mojo.
+export MOJO_MODE := development
+
 .DEFAULT_GOAL := help
 
 .PHONY: help build deps brew-deps cpan-deps \
@@ -96,20 +102,14 @@ cpan-deps:
 dev:
 	exec $(MORBO) $(APP)
 
-# `make start` is for running the app on a developer's machine (mac or
-# linux) from a normal repo checkout. Force MOJO_MODE=development so we
-# load etc/coresmoke.development.conf and resolve paths under the repo's
-# own data/ directory. Docker production runs script/smoke prefork
-# directly via the image's CMD, never make, so it independently picks
-# MOJO_MODE=production via Hypnotoad's default.
 start:
-	MOJO_MODE=development $(HYPNOTOAD) $(APP)
+	$(HYPNOTOAD) $(APP)
 
 stop:
-	MOJO_MODE=development $(HYPNOTOAD) -s $(APP)
+	$(HYPNOTOAD) -s $(APP)
 
 reload:
-	MOJO_MODE=development $(HYPNOTOAD) $(APP)
+	$(HYPNOTOAD) $(APP)
 
 # ---------------------------------------------------------------------------
 # Test, lint, coverage
