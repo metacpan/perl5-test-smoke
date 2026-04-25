@@ -36,4 +36,11 @@ is $rf->path_for($hash),
 $rf->write($hash, { not_a_field => 'whatever' });
 is $rf->read_by_hash($hash, 'not_a_field'), undef, 'unknown field not written';
 
+# has_file: true for written fields, false for missing
+is $rf->has_file($hash, 'log_file'),      1, 'has_file true for existing file';
+is $rf->has_file($hash, 'manifest_msgs'), 1, 'has_file true for another existing file';
+is $rf->has_file($hash, 'out_file'),      0, 'has_file false for unwritten field';
+is $rf->has_file('0' x 32, 'log_file'),   0, 'has_file false for missing hash';
+is $rf->has_file($hash, 'not_a_field'), undef, 'has_file undef for unknown field';
+
 done_testing;

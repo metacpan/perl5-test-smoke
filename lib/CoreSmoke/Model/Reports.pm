@@ -228,8 +228,8 @@ sub full_report_data ($self, $rid) {
     $report->{compiler_msgs_text} = $on_disk->('compiler_msgs');
     $report->{manifest_msgs_text} = $on_disk->('manifest_msgs');
     $report->{nonfatal_msgs_text} = $on_disk->('nonfatal_msgs');
-    $report->{has_log_file}    = defined $on_disk->('log_file') ? 1 : 0;
-    $report->{has_out_file}    = defined $on_disk->('out_file') ? 1 : 0;
+    $report->{has_log_file}    = ($rf && defined $hash) ? $rf->has_file($hash, 'log_file') : 0;
+    $report->{has_out_file}    = ($rf && defined $hash) ? $rf->has_file($hash, 'out_file') : 0;
 
     # ---- Formatted durations ----------------------------------------------
     my $total = 0;
