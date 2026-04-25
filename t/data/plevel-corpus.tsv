@@ -1,0 +1,53 @@
+# Hand-curated plevel parity corpus.
+# Each line: <git_describe>\t<expected_plevel>.
+# Output must be byte-identical to the legacy PG public.git_describe_as_plevel().
+# Add new entries here (and keep them passing) whenever a real-world
+# git_describe surfaces that breaks the Perl port.
+
+# Plain releases
+5.42.0	5.042000zzz000
+5.41.10	5.041010zzz000
+5.40.2	5.040002zzz000
+5.40.0	5.040000zzz000
+5.38.4	5.038004zzz000
+5.36.3	5.036003zzz000
+
+# Releases with leading 'v'
+v5.42.0	5.042000zzz000
+v5.41.10	5.041010zzz000
+v5.40.0	5.040000zzz000
+v5.38.0	5.038000zzz000
+
+# Release candidates. The legacy PG function appends `vparts[4]` ("RC1") *and*
+# then `lpad(vparts[array_upper], 3, '0')` — which for a plain RC is the same
+# RC string again (already 3 chars wide). So `v5.42.0-RC1` ends up with the
+# RC tag doubled. We preserve the exact legacy bytes.
+v5.42.0-RC1	5.042000RC1RC1
+v5.42.0-RC2	5.042000RC2RC2
+v5.40.0-RC1	5.040000RC1RC1
+v5.40.0-RC2	5.040000RC2RC2
+v5.40.0-RC3	5.040000RC3RC3
+
+# Tagged with N commits ahead, abbreviated SHA
+v5.41.10-12-gabc1234	5.041010zzz012
+v5.41.10-1-gdeadbee	5.041010zzz001
+v5.41.10-99-gfeedface	5.041010zzz099
+v5.41.10-100-gabcdef0	5.041010zzz100
+v5.42.0-7-g0123456	5.042000zzz007
+
+# RC with commits ahead
+v5.40.0-RC3-5-gdef5678	5.040000RC3005
+v5.40.0-RC1-1-gaaaaaaa	5.040000RC1001
+v5.42.0-RC2-42-gbeefdad	5.042000RC2042
+
+# Edge: dev releases (odd minor)
+v5.41.0	5.041000zzz000
+v5.39.10-3-g1234567	5.039010zzz003
+
+# Edge: very old release-style strings still passing through
+v5.36.0	5.036000zzz000
+v5.32.1	5.032001zzz000
+
+# (Edge: shorter inputs like `v5.42` are malformed for the legacy PG
+# function — it would return NULL via NULL-propagating lpad. We don't
+# emit those, so we don't pin them in the corpus.)

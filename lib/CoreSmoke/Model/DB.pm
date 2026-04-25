@@ -22,6 +22,10 @@ sub sqlite ($self) {
         require File::Path;
         File::Path::make_path($dir) if length $dir && !-d $dir;
         my $s = Mojo::SQLite->new("sqlite:$path");
+        $s->on(connection => sub ($sqlite, $dbh) {
+            $dbh->do('PRAGMA foreign_keys = ON');
+            $dbh->do('PRAGMA journal_mode = WAL');
+        });
         $s->migrations->from_file("$self->{migrations_sql}")->name('coresmoke');
         $s;
     };
