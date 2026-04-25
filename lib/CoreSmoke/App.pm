@@ -72,11 +72,29 @@ sub startup ($self) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';
         require IO::Uncompress::Gunzip;
-        my $body = $c->req->body;
-        my $out;
-        unless (IO::Uncompress::Gunzip::gunzip(\$body => \$out)) {
-            return $c->render(status => 400, json => { error => 'Bad gzip body' });
+        my $body  = $c->req->body;
+        my $limit = $c->app->config->{max_decompressed_size} // (64 * 1024 * 1024);
+        my $z = IO::Uncompress::Gunzip->new(\$body)
+            or return $c->render(status => 400, json => { error => 'Bad gzip body' });
+        my $out   = '';
+        my $total = 0;
+        my $buf;
+        while (1) {
+            my $n = $z->read($buf, 65536);
+            last if !$n;
+            if ($n < 0) {
+                $z->close;
+                return $c->render(status => 400, json => { error => 'Bad gzip body' });
+            }
+            $total += $n;
+            if ($total > $limit) {
+                $z->close;
+                return $c->render(status => 413,
+                    json => { error => 'Decompressed body too large' });
+            }
+            $out .= $buf;
         }
+        $z->close;
         $c->req->body($out);
         $c->req->headers->remove('Content-Encoding');
     });
