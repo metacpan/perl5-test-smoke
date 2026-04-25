@@ -6,6 +6,7 @@ use experimental qw(signatures);
 use IO::Compress::Xz     qw(xz   $XzError);
 use IO::Uncompress::UnXz qw(unxz $UnXzError);
 use File::Path qw(make_path);
+use File::Temp ();
 
 # The five fields we externalize from the legacy report.bytea columns.
 my @FIELDS = qw(log_file out_file manifest_msgs compiler_msgs nonfatal_msgs);
@@ -48,12 +49,21 @@ sub write ($self, $hash, $files) {
         }
 
         my $path = "$dir/$field.xz";
-        if (open my $fh, '>:raw', $path) {
-            print {$fh} $compressed;
-            close $fh;
+        my $tmp  = File::Temp->new(
+            DIR    => $dir,
+            SUFFIX => '.tmp',
+            UNLINK => 0,
+        );
+        binmode $tmp;
+        print {$tmp} $compressed;
+        if (!close $tmp) {
+            warn "[report_files] write ${\$tmp->filename}: $!";
+            unlink $tmp->filename;
+            next;
         }
-        else {
-            warn "[report_files] write $path: $!";
+        if (!rename($tmp->filename, $path)) {
+            warn "[report_files] rename ${\$tmp->filename} -> $path: $!";
+            unlink $tmp->filename;
         }
     }
     return;

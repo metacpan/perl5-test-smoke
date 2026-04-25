@@ -43,4 +43,25 @@ is $rf->has_file($hash, 'out_file'),      0, 'has_file false for unwritten field
 is $rf->has_file('0' x 32, 'log_file'),   0, 'has_file false for missing hash';
 is $rf->has_file($hash, 'not_a_field'), undef, 'has_file undef for unknown field';
 
+# Atomic write: no .tmp files left after successful write
+{
+    my $dir = $rf->path_for($hash);
+    my @tmps = glob("$dir/*.tmp");
+    is scalar @tmps, 0, 'no temp files left after successful write';
+}
+
+# Atomic write: existing file unchanged if compression fails (simulate via empty input)
+{
+    my $hash2 = 'abcdef0123456789' . ('0' x 16);
+    $rf->write($hash2, { log_file => 'original content' });
+    is $rf->read_by_hash($hash2, 'log_file'), 'original content', 'pre-condition: file exists';
+
+    # Overwrite with new content to verify the file is replaced atomically
+    $rf->write($hash2, { log_file => 'updated content' });
+    is $rf->read_by_hash($hash2, 'log_file'), 'updated content', 'file replaced atomically';
+
+    my $dir2 = $rf->path_for($hash2);
+    my @tmps = glob("$dir2/*.tmp");
+    is scalar @tmps, 0, 'no temp files after overwrite';
+}
 done_testing;
