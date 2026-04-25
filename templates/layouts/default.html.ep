@@ -33,5 +33,30 @@
     </span>
   </small>
 </footer>
+<script>
+(function () {
+  var fmt = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    timeZoneName: 'short'
+  });
+
+  function localise(root) {
+    var els = (root || document).querySelectorAll('time.utc-date');
+    for (var i = 0; i < els.length; i++) {
+      var dt = els[i].getAttribute('datetime');
+      if (!dt) continue;
+      var d = new Date(dt);
+      if (isNaN(d)) continue;
+      els[i].textContent = fmt.format(d);
+    }
+  }
+
+  localise();
+  document.body.addEventListener('htmx:afterSettle', function (e) {
+    localise(e.detail.elt);
+  });
+})();
+</script>
 </body>
 </html>

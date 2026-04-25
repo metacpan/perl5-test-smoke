@@ -9,7 +9,7 @@
   <dt>OS</dt>        <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
   <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
   <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
-  <dt>Smoke date</dt><dd><%= $report->{smoke_date} %></dd>
+  <dt>Smoke date</dt><dd><time datetime="<%= $report->{smoke_date} %>" class="utc-date"><%= $report->{smoke_date} %></time></dd>
   <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><%= $report->{summary} %></dd>
   <dt>Duration</dt>  <dd><%= duration_hms($report->{durations}) %></dd>
 % if ($report->{user_note}) {
