@@ -21,7 +21,8 @@
         hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox]"
         hx-target="#search-region"
         hx-swap="outerHTML"
-        hx-include="closest form">
+        hx-include="closest form"
+        hx-push-url="true">
     <fieldset>
       <legend>Filters</legend>
 
