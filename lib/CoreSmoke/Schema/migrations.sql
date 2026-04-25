@@ -117,3 +117,11 @@ CREATE INDEX report_smoke_branch_idx ON report(smoke_branch);
 -- 2 down
 
 DROP INDEX report_smoke_branch_idx;
+
+-- 3 up
+
+CREATE INDEX report_branch_arch_perl_summary ON report(smoke_branch, architecture, perl_id, summary);
+
+-- 3 down
+
+DROP INDEX report_branch_arch_perl_summary;
