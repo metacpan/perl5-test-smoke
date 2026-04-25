@@ -225,23 +225,15 @@ sub _insert_failures ($self, $result_id, $failures) {
         my $extra = $f->{extra};
         $extra = join("\n", @$extra) if ref $extra eq 'ARRAY';
 
-        # find_or_create on the unique (test, status, extra) tuple.
-        my $existing = $db->query(<<~'SQL', $f->{test}, $f->{status}, $extra)->hash;
-            SELECT id FROM failure
-             WHERE test = ? AND status = ? AND COALESCE(extra,'') = COALESCE(?,'')
-            SQL
+        $extra //= '';
 
-        my $fid;
-        if ($existing) {
-            $fid = $existing->{id};
-        }
-        else {
-            $db->query(
-                "INSERT INTO failure (test, status, extra) VALUES (?, ?, ?)",
-                $f->{test}, $f->{status}, $extra,
-            );
-            $fid = $db->dbh->last_insert_id(undef, undef, 'failure', undef);
-        }
+        $db->query(
+            "INSERT OR IGNORE INTO failure (test, status, extra) VALUES (?, ?, ?)",
+            $f->{test}, $f->{status}, $extra,
+        );
+        my $fid = $db->query(<<~'SQL', $f->{test}, $f->{status}, $extra)->hash->{id};
+            SELECT id FROM failure WHERE test = ? AND status = ? AND extra = ?
+            SQL
 
         $db->query(
             "INSERT OR IGNORE INTO failures_for_env (result_id, failure_id) VALUES (?, ?)",
