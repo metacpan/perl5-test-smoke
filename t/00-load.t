@@ -12,6 +12,8 @@ use_ok 'CoreSmoke::Model::Plevel';
 use_ok 'CoreSmoke::Model::Reports';
 use_ok 'CoreSmoke::Model::Ingest';
 use_ok 'CoreSmoke::Model::ReportFiles';
+use_ok 'CoreSmoke::Model::Search';
+use_ok 'CoreSmoke::Model::Matrix';
 use_ok 'CoreSmoke::Controller::Api';
 use_ok 'CoreSmoke::Controller::JsonRpc';
 use_ok 'CoreSmoke::Controller::System';

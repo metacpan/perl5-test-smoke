@@ -28,15 +28,23 @@ sub startup ($self) {
     );
     $sqlite->migrate;
 
+    my $report_files = CoreSmoke::Model::ReportFiles->new(
+        root   => $reports_dir,
+        sqlite => $sqlite,
+    );
+    my $reports = CoreSmoke::Model::Reports->new(
+        sqlite       => $sqlite,
+        report_files => $report_files,
+    );
+    my $ingest = CoreSmoke::Model::Ingest->new(
+        sqlite       => $sqlite,
+        report_files => $report_files,
+    );
+
     $self->helper(sqlite       => sub ($c) { $sqlite });
-    $self->helper(reports      => sub ($c) { state $r = CoreSmoke::Model::Reports->new(sqlite => $sqlite) });
-    $self->helper(report_files => sub ($c) { state $f = CoreSmoke::Model::ReportFiles->new(root => $reports_dir, sqlite => $sqlite) });
-    $self->helper(ingest       => sub ($c) {
-        state $i = CoreSmoke::Model::Ingest->new(
-            sqlite       => $sqlite,
-            report_files => $c->app->report_files,
-        );
-    });
+    $self->helper(report_files => sub ($c) { $report_files });
+    $self->helper(reports      => sub ($c) { $reports });
+    $self->helper(ingest       => sub ($c) { $ingest });
 
     $self->hook(before_dispatch => sub ($c) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
