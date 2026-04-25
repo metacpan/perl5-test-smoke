@@ -25,7 +25,7 @@ RUN apt-get update \
         zlib1g-dev \
         ca-certificates \
         curl \
- && cpan -T App::cpm \
+ && cpm install -g --show-build-log-on-failure Carton~'>=1.0.35' \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /var/log/apt /tmp/cpan_install_*
 
