@@ -1,0 +1,442 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Getopt::Long qw(GetOptions);
+use File::Spec;
+use Digest::MD5 qw(md5_hex);
+use Time::Piece;
+use Mojo::SQLite;
+
+use CoreSmoke::Model::Plevel;
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+my %opt = (
+    source => undef,
+    target => undef,
+    batch  => 1000,
+    fresh  => 0,
+);
+GetOptions(
+    'source=s' => \$opt{source},
+    'target=s' => \$opt{target},
+    'batch=i'  => \$opt{batch},
+    'fresh!'   => \$opt{fresh},
+    'help'     => sub { _usage(); exit 0 },
+) or do { _usage(); exit 2 };
+
+defined $opt{source} or die "missing --source <pg_dump.sql>\n";
+defined $opt{target} or die "missing --target <smoke.db>\n";
+-r $opt{source} or die "cannot read source: $opt{source}\n";
+
+if ($opt{fresh} && -e $opt{target}) {
+    say "[fresh] removing existing $opt{target} (and -wal/-shm)";
+    unlink $opt{target}, "$opt{target}-wal", "$opt{target}-shm";
+}
+
+# ---------------------------------------------------------------------------
+# Open target SQLite, run migrations
+# ---------------------------------------------------------------------------
+
+my $migrations = "$FindBin::Bin/../lib/CoreSmoke/Schema/migrations.sql";
+-r $migrations or die "cannot read migrations file: $migrations\n";
+
+my $sql = Mojo::SQLite->new("sqlite:$opt{target}");
+$sql->migrations->from_file($migrations)->migrate;
+say "[migrate] schema applied";
+
+my $db  = $sql->db;
+my $dbh = $db->dbh;
+
+# Tune for bulk import. Restored at the end.
+$dbh->do("PRAGMA synchronous = OFF");
+$dbh->do("PRAGMA journal_mode = MEMORY");
+$dbh->do("PRAGMA foreign_keys = OFF");
+$dbh->do("PRAGMA temp_store = MEMORY");
+$dbh->do("PRAGMA cache_size = -200000");   # ~200MB
+
+# ---------------------------------------------------------------------------
+# Per-table column lists for the target schema (order matters)
+# ---------------------------------------------------------------------------
+
+# Bytea columns from legacy report are dropped in 2.0 (their content
+# lives on disk under data/reports/<sharded-hash>/ per plan 02/05).
+
+my @REPORT_TARGET_COLS = qw(
+    id sconfig_id duration config_count reporter reporter_version
+    smoke_perl smoke_revision smoke_version smoker_version smoke_date
+    perl_id git_id git_describe applied_patches hostname architecture
+    osname osversion cpu_count cpu_description username test_jobs
+    lc_all lang user_note skipped_tests harness_only harness3opts
+    summary smoke_branch plevel report_hash
+);
+
+# ---------------------------------------------------------------------------
+# Streaming pg_dump COPY parser
+# ---------------------------------------------------------------------------
+
+open my $fh, '<:raw', $opt{source} or die "open $opt{source}: $!\n";
+
+my $current_table;
+my @current_cols;
+my $row_buf;        # arrayref [ [vals...], ... ] for current batch
+my $batch_count = 0;
+my $row_count   = 0;
+my $insert_sth;
+my $insert_sql_string;
+my %totals;
+
+# Per-table state
+my $started_tx = 0;
+
+# Tables we know how to import. Anything else in the dump is logged + skipped.
+my %TABLES = (
+    'public.smoke_config'     => { handler => \&row_smoke_config,     target => 'smoke_config' },
+    'public.report'           => { handler => \&row_report,           target => 'report' },
+    'public.config'           => { handler => \&row_config,           target => 'config' },
+    'public.result'           => { handler => \&row_result,           target => 'result' },
+    'public.failure'          => { handler => \&row_failure,          target => 'failure' },
+    'public.failures_for_env' => { handler => \&row_failures_for_env, target => 'failures_for_env' },
+    'public.tsgateway_config' => { handler => undef, target => undef }, # skip; migration sets dbversion=4
+);
+
+while (defined (my $line = <$fh>)) {
+    chomp $line;
+
+    if (!defined $current_table) {
+        if ($line =~ /^COPY\s+(\S+)\s*\(([^)]+)\)\s+FROM\s+stdin;\s*$/) {
+            my ($tbl, $cols) = ($1, $2);
+            @current_cols = map { s/^\s+|\s+$//gr } split /,/, $cols;
+            if (!exists $TABLES{$tbl}) {
+                warn "[skip] unknown table $tbl in dump\n";
+                $current_table = '__skip__';
+                next;
+            }
+            if (!$TABLES{$tbl}{handler}) {
+                say "[skip] $tbl (handled by migration)";
+                $current_table = '__skip__';
+                next;
+            }
+            $current_table = $tbl;
+            $row_count = 0;
+            $batch_count = 0;
+            ($insert_sth, $insert_sql_string) = build_insert_sth($dbh, $TABLES{$tbl}{target});
+            $dbh->begin_work;
+            $started_tx = 1;
+            say "[load] $tbl";
+        }
+        next;
+    }
+
+    # In a COPY block.
+    if ($line eq '\\.') {
+        if ($current_table ne '__skip__') {
+            $dbh->commit if $started_tx;
+            $started_tx = 0;
+            $totals{$current_table} = $row_count;
+            say sprintf "[done] %s: %d rows", $current_table, $row_count;
+            $insert_sth = undef;
+        }
+        $current_table = undef;
+        @current_cols = ();
+        next;
+    }
+
+    next if $current_table eq '__skip__';
+
+    my @raw = split /\t/, $line, -1;
+    if (@raw != @current_cols) {
+        die sprintf "row col count mismatch in %s at line %d: got %d, want %d\n",
+            $current_table, $., scalar(@raw), scalar(@current_cols);
+    }
+    my %row;
+    @row{@current_cols} = map { decode_copy_field($_) } @raw;
+
+    my $values = $TABLES{$current_table}{handler}->(\%row);
+    next unless defined $values;   # handler chose to drop the row
+
+    eval {
+        $insert_sth->execute(@$values);
+        1;
+    } or do {
+        my $err = $@;
+        die sprintf "INSERT failed for %s row %d (id=%s): %s\nSQL: %s\nVALUES: %s\n",
+            $current_table, $row_count + 1,
+            ($row{id} // '?'), $err, $insert_sql_string,
+            join(' | ', map { defined $_ ? $_ : 'NULL' } @$values);
+    };
+
+    $row_count++;
+    if (++$batch_count >= $opt{batch}) {
+        $dbh->commit;
+        $dbh->begin_work;
+        $batch_count = 0;
+        if ($row_count % 50_000 == 0) {
+            say sprintf "  ... %d rows", $row_count;
+        }
+    }
+}
+
+if ($started_tx) {
+    $dbh->commit;
+    $started_tx = 0;
+}
+
+close $fh;
+
+# ---------------------------------------------------------------------------
+# Bump sqlite_sequence so AUTOINCREMENT continues past imported ids.
+# sqlite_sequence has no UNIQUE constraint on `name`, so we DELETE+INSERT
+# rather than UPSERT.
+# ---------------------------------------------------------------------------
+
+for my $tbl (qw(smoke_config report config result failure)) {
+    my ($maxid) = $dbh->selectrow_array("SELECT MAX(id) FROM $tbl");
+    next unless defined $maxid;
+    $dbh->do("DELETE FROM sqlite_sequence WHERE name = ?", undef, $tbl);
+    $dbh->do("INSERT INTO sqlite_sequence(name, seq) VALUES (?, ?)",
+        undef, $tbl, $maxid);
+}
+
+# ---------------------------------------------------------------------------
+# Restore production-friendly pragmas. journal_mode is database-wide and
+# persistent, but PRAGMA changes can be rejected while the connection has
+# any cached prepared statements. Drop the import handle and reconnect
+# fresh to make the WAL switch stick.
+# ---------------------------------------------------------------------------
+
+undef $insert_sth;
+undef $db;
+undef $sql;
+
+require DBI;
+my $reset_dbh = DBI->connect(
+    "dbi:SQLite:dbname=$opt{target}", undef, undef,
+    { RaiseError => 1, AutoCommit => 1 },
+);
+$reset_dbh->do("PRAGMA journal_mode = WAL");
+$reset_dbh->do("PRAGMA synchronous  = NORMAL");
+$reset_dbh->do("PRAGMA foreign_keys = ON");
+my $jm = $reset_dbh->selectrow_array("PRAGMA journal_mode");
+my $fk = $reset_dbh->selectrow_array("PRAGMA foreign_keys");
+$reset_dbh->disconnect;
+say "[pragma] journal_mode=$jm foreign_keys=$fk";
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+
+say "";
+say "=== import complete ===";
+for my $tbl (sort keys %totals) {
+    say sprintf "  %-30s %d rows", $tbl, $totals{$tbl};
+}
+say "";
+say "target: $opt{target}";
+
+exit 0;
+
+# ---------------------------------------------------------------------------
+# Per-table row handlers
+# Each takes a hashref of { col_name => decoded_value } from the dump
+# and returns an arrayref of bind values matching the target column order
+# (or undef to drop the row).
+# ---------------------------------------------------------------------------
+
+sub row_smoke_config ($row) {
+    return [ @{$row}{qw(id md5 config)} ];
+}
+
+sub row_report ($row) {
+    my $smoke_date = pg_ts_to_iso($row->{smoke_date})
+        // die "report id=$row->{id}: smoke_date is required\n";
+
+    my $plevel = CoreSmoke::Model::Plevel::from_git_describe($row->{git_describe});
+
+    my $report_hash = md5_hex(
+        join "\0",
+        map { defined $_ ? $_ : '' }
+            $row->{git_id},
+            $smoke_date,
+            $row->{duration},
+            $row->{hostname},
+            $row->{architecture},
+    );
+
+    my @vals = (
+        $row->{id},
+        $row->{sconfig_id},
+        $row->{duration},
+        $row->{config_count},
+        $row->{reporter},
+        $row->{reporter_version},
+        $row->{smoke_perl},
+        $row->{smoke_revision},
+        $row->{smoke_version},
+        $row->{smoker_version},
+        $smoke_date,
+        $row->{perl_id},
+        $row->{git_id},
+        $row->{git_describe},
+        $row->{applied_patches},
+        $row->{hostname},
+        $row->{architecture},
+        $row->{osname},
+        $row->{osversion},
+        $row->{cpu_count},
+        $row->{cpu_description},
+        $row->{username},
+        $row->{test_jobs},
+        $row->{lc_all},
+        $row->{lang},
+        $row->{user_note},
+        $row->{skipped_tests},
+        $row->{harness_only},
+        $row->{harness3opts},
+        $row->{summary},
+        $row->{smoke_branch} // 'blead',
+        $plevel,
+        $report_hash,
+    );
+    return \@vals;
+}
+
+sub row_config ($row) {
+    return [
+        $row->{id},
+        $row->{report_id},
+        $row->{arguments},
+        $row->{debugging},
+        pg_ts_to_iso($row->{started}),
+        $row->{duration},
+        $row->{cc},
+        $row->{ccversion},
+    ];
+}
+
+sub row_result ($row) {
+    return [
+        $row->{id},
+        $row->{config_id},
+        $row->{io_env},
+        $row->{locale},
+        $row->{summary},
+        $row->{statistics},
+        $row->{stat_cpu_time},
+        $row->{stat_tests},
+    ];
+}
+
+sub row_failure ($row) {
+    return [
+        $row->{id},
+        $row->{test},
+        $row->{status},
+        $row->{extra},
+    ];
+}
+
+sub row_failures_for_env ($row) {
+    return [ @{$row}{qw(result_id failure_id)} ];
+}
+
+# ---------------------------------------------------------------------------
+# INSERT statement builder, keyed off table name
+# ---------------------------------------------------------------------------
+
+sub build_insert_sth ($dbh, $target) {
+    state %cache_cols = (
+        smoke_config     => [qw(id md5 config)],
+        report           => \@REPORT_TARGET_COLS,
+        config           => [qw(id report_id arguments debugging started duration cc ccversion)],
+        result           => [qw(id config_id io_env locale summary statistics stat_cpu_time stat_tests)],
+        failure          => [qw(id test status extra)],
+        failures_for_env => [qw(result_id failure_id)],
+    );
+    my $cols = $cache_cols{$target}
+        // die "no column list defined for target table $target";
+    my $placeholders = join ', ', ('?') x scalar @$cols;
+    my $colnames     = join ', ', @$cols;
+    my $sql = "INSERT INTO $target ($colnames) VALUES ($placeholders)";
+    return ($dbh->prepare($sql), $sql);
+}
+
+# ---------------------------------------------------------------------------
+# pg_dump COPY field decoding
+# Backslash escapes per Postgres COPY text format:
+#   \N -> NULL (only when the entire field is "\N")
+#   \\ -> \
+#   \t -> tab
+#   \n -> newline
+#   \r -> CR
+#   \b -> backspace
+#   \f -> form feed
+#   \v -> vertical tab
+# Hex/octal byte escapes (\xNN, \NNN) are unlikely in this dump and not used here.
+# ---------------------------------------------------------------------------
+
+sub decode_copy_field ($f) {
+    return undef if $f eq '\\N';
+    return $f unless index($f, '\\') >= 0;
+    $f =~ s{\\(.)}{
+          $1 eq 'n' ? "\n"
+        : $1 eq 't' ? "\t"
+        : $1 eq 'r' ? "\r"
+        : $1 eq 'b' ? "\b"
+        : $1 eq 'f' ? "\f"
+        : $1 eq 'v' ? "\013"
+        : $1 eq '\\' ? "\\"
+        : $1
+    }ge;
+    return $f;
+}
+
+# ---------------------------------------------------------------------------
+# Postgres timestamp -> ISO 8601 UTC (e.g. "2024-05-08T10:23:11Z")
+# Input shape in this dump: "YYYY-MM-DD HH:MM:SS+OFFSET" where OFFSET is one
+# or two digits, optionally followed by ":MM". The dump only contains +01/+02.
+# ---------------------------------------------------------------------------
+
+sub pg_ts_to_iso ($ts) {
+    return undef unless defined $ts && length $ts;
+
+    if ($ts =~ /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)([+-])(\d{1,2})(?::?(\d{2}))?$/) {
+        my ($date, $time, $sign, $h, $m) = ($1, $2, $3, $4, $5 // 0);
+        $time =~ s/\.\d+$//;   # drop fractional seconds
+        my $offset_secs = ($h * 3600 + $m * 60) * ($sign eq '+' ? 1 : -1);
+        my $tp = Time::Piece->strptime("$date $time", '%Y-%m-%d %H:%M:%S');
+        $tp -= $offset_secs;   # convert to UTC
+        return $tp->strftime('%Y-%m-%dT%H:%M:%SZ');
+    }
+
+    # Already-ISO-ish timestamp: leave it alone.
+    if ($ts =~ /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/) {
+        return $ts;
+    }
+
+    warn "[ts] unrecognised timestamp format: '$ts' (passing through)\n";
+    return $ts;
+}
+
+sub _usage () {
+    print <<~"USAGE";
+        Usage: $0 --source <pg_dump.sql> --target <smoke.db> [options]
+
+        Convert a plain-text pg_dump of the legacy CoreSmokeDB Postgres
+        database into a 2.0-schema SQLite database.
+
+        Options:
+          --source PATH    pg_dump plain-text file to read (required)
+          --target PATH    SQLite database to write (required)
+          --batch  N       rows per transaction during import (default: 1000)
+          --fresh          delete --target (and -wal/-shm) before importing
+          --help           show this help
+        USAGE
+}

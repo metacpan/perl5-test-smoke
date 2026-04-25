@@ -4,6 +4,9 @@
 /.cpanm/
 /cover_db/
 *.swp
+*.psql
+*.txz
+data/*.db
 /t/test.db
 /t/test.db-wal
 /t/test.db-shm
