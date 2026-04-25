@@ -5,6 +5,7 @@
 % if (!@$perl_versions) {
 <p>No reports yet.</p>
 % } else {
+<div class="table-wrap">
 <table class="matrix">
   <thead>
     <tr>
@@ -34,4 +35,5 @@
 % }
   </tbody>
 </table>
+</div>
 % }

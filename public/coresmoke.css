@@ -130,3 +130,26 @@ form label {
   padding: 0.4em 0.6em;
   border-radius: 4px;
 }
+
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+  main, footer { padding: 0.5rem; }
+  h1 { font-size: 1.3rem; }
+
+  nav { padding: 0.4rem 0.6rem; display: flex; flex-wrap: wrap; gap: 0.2rem 0; }
+  nav a { margin-right: 0.6rem; font-size: 0.95em; }
+
+  form fieldset { padding: 0.4em 0.6em; }
+  form label { display: block; margin: 0.3em 0; }
+  form label select { width: 100%; }
+
+  dl { grid-template-columns: 1fr; gap: 0.2em; }
+  dt { margin-top: 0.4em; }
+
+  th, td { padding: 0.3em 0.4em; font-size: 0.85em; white-space: nowrap; }
+  .matrix td.test { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+
+  footer small { font-size: 0.8em; }
+  footer .credits-courtesy { font-size: 0.75em; }
+}
