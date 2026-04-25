@@ -10,76 +10,44 @@ permissions:
   packages: write
   pull-requests: write
 
-env:
-  PERL_VERSION: "5.42"
-
 jobs:
-  build:
-    name: build prod image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-
-      # Build the prod image once for the local arch and load it so the test
-      # job below can run a container from it. The runtime image is what we
-      # ship; tests run inside it.
-      - name: build prod image (load for local use)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
-          push: false
-          load: true
-          tags: coresmoke:ci
-          cache-from: type=gha
-          cache-to:   type=gha,mode=max
-
-      # Save the loaded image so the test/push jobs can reuse it without
-      # rebuilding.
-      - name: export image to artifact
-        run: |
-          docker save coresmoke:ci | gzip > /tmp/coresmoke-ci.tar.gz
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coresmoke-ci-image
-          path: /tmp/coresmoke-ci.tar.gz
-          retention-days: 1
-
   test:
-    name: prove + perlcritic (inside prod image)
+    name: prove + perlcritic
     runs-on: ubuntu-latest
-    needs: build
+    container: perl:5.42-slim
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: coresmoke-ci-image
-          path: /tmp
-
-      - name: load image
-        run: gunzip -c /tmp/coresmoke-ci.tar.gz | docker load
-
-      # Run the prod image as root, install the missing build deps + develop
-      # CPAN modules into /app/local, then run prove + perlcritic. The
-      # container is ephemeral; nothing is saved back into the prod image.
-      - name: install test-only deps and run prove + perlcritic
+      - name: install build deps for XS modules
         run: |
-          docker run --rm --user 0:0 coresmoke:ci bash -c '
-            set -euo pipefail
-            apt-get update -qq
-            apt-get install -y --no-install-recommends \
-              build-essential libsqlite3-dev liblzma-dev libssl-dev zlib1g-dev curl > /dev/null
-            cpan -T App::cpm > /dev/null
-            cpm install -L /app/local --with-develop --no-test \
-              --resolver=snapshot --resolver=metadb
-            cd /app
-            PERL5LIB=/app/local/lib/perl5:/app/lib prove -lr t/
-            PERL5LIB=/app/local/lib/perl5:/app/lib /app/local/bin/perlcritic --severity 5 lib/
-          '
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+              build-essential libsqlite3-dev liblzma-dev libssl-dev zlib1g-dev \
+              ca-certificates curl
+
+      - uses: actions/checkout@v4
+
+      - name: install CPAN deps from cpanfile (+ develop)
+        uses: perl-actions/install-with-cpm@v2
+        with:
+          cpanfile: cpanfile
+          install-app-cpm: true
+          args: "--with-develop --no-test --resolver=snapshot --resolver=metadb"
+          path: local
+          sudo: false
+
+      - name: prove
+        env:
+          PERL5LIB: local/lib/perl5:lib
+        run: prove -lr t/
+
+      - name: perlcritic (severity 5, fail on violation)
+        env:
+          PERL5LIB: local/lib/perl5:lib
+        run: local/bin/perlcritic --severity 5 lib/
 
   docker:
-    name: build + scan + push (multi-arch runtime)
+    name: build + scan + push prod image
     runs-on: ubuntu-latest
     needs: test
     steps:
