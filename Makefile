@@ -23,6 +23,7 @@ BREW_PKGS   := xz
 
 APP         := script/smoke
 DB_PATH     ?= data/smoke.db
+DEV_DB_PATH ?= data/development.db
 REPORTS_DIR ?= data/reports
 SRC         ?=
 
@@ -37,7 +38,7 @@ export MOJO_MODE := development
 .PHONY: help build deps brew-deps cpan-deps \
         test critic cover \
         dev start stop reload \
-        import import-fresh \
+        import import-fresh dev-db dev-db-fresh \
         clean clean-cover distclean check-src
 
 # ---------------------------------------------------------------------------
@@ -61,8 +62,12 @@ help:
 	@echo "  critic        Run perlcritic at severity 5 over lib/ and script/"
 	@echo "  cover         Run tests under Devel::Cover and emit a report"
 	@echo ""
-	@echo "  import        Import a legacy pg_dump:  make import SRC=csdb.psql"
+	@echo "  import        Import a legacy pg_dump into the prod DB"
+	@echo "                  (data/smoke.db):  make import SRC=csdb.psql"
 	@echo "  import-fresh  Same as import but wipes data/smoke.db first"
+	@echo "  dev-db        Import a legacy pg_dump into the development DB"
+	@echo "                  (data/development.db):  make dev-db SRC=csdb.psql"
+	@echo "  dev-db-fresh  Same as dev-db but wipes data/development.db first"
 	@echo ""
 	@echo "  clean         Remove cover_db and other build artifacts"
 	@echo "  distclean     clean + remove data/ (DESTROYS the local DB)"
@@ -143,6 +148,16 @@ import: check-src
 
 import-fresh: check-src
 	./script/import-from-pgdump --source "$(SRC)" --target "$(DB_PATH)" --fresh
+
+# Same as `import`/`import-fresh` but writes to the development DB
+# (data/development.db) -- the one `make start` and `make dev` open
+# while running in development mode. Use these on a fresh checkout
+# to seed your dev environment from a legacy pg_dump.
+dev-db: check-src
+	./script/import-from-pgdump --source "$(SRC)" --target "$(DEV_DB_PATH)"
+
+dev-db-fresh: check-src
+	./script/import-from-pgdump --source "$(SRC)" --target "$(DEV_DB_PATH)" --fresh
 
 # ---------------------------------------------------------------------------
 # Cleanup
