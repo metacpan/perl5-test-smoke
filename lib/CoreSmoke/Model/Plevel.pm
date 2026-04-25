@@ -45,8 +45,8 @@ sub from_git_describe ($describe, $perl_id = undef) {
 
 # 5.41.9 -> 5.041009zzz000. Returns undef if perl_id is malformed.
 sub _from_perl_id ($perl_id) {
-    return undef unless defined $perl_id;
-    return undef unless $perl_id =~ /^(\d+)\.(\d+)(?:\.(\d+))?$/;
+    return unless defined $perl_id;
+    return unless $perl_id =~ /^(\d+)\.(\d+)(?:\.(\d+))?$/;
     return sprintf '%d.%03d%03dzzz000', $1, $2, $3 // 0;
 }
 
