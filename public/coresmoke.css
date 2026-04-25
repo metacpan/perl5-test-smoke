@@ -942,9 +942,18 @@ p { margin: 0 0 var(--space-4); }
   width: 100%;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  overflow: auto;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--bg-surface);
+}
+
+/* /matrix is the one place we WANT an internal scroll container --
+   its thead and first-column tbody cells use position:sticky and need
+   a scroll viewport to stick to. Everywhere else (e.g. /latest, /search)
+   the page itself must scroll so HTMX's `hx-trigger="revealed"` on the
+   load-more <tr> fires as the user scrolls toward the bottom. */
+.table-wrap:has(.matrix-table) {
+  overflow: auto;
   max-height: calc(100vh - 220px);
 }
 .data-table {
