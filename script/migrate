@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../local/lib/perl5";
+
+use Mojo::Home;
+use File::Spec;
+
+use CoreSmoke::Model::DB;
+
+# Resolve the DB path the same way CoreSmoke::App does:
+#   1. $ENV{SMOKE_DB_PATH} wins if set (e.g. for the prod container)
+#   2. otherwise default to data/development.db (matches the dev config)
+#   3. relative paths resolve under MOJO_HOME (the repo root)
+my $home = Mojo::Home->new->detect('CoreSmoke::App');
+my $path = $ENV{SMOKE_DB_PATH} // 'data/development.db';
+$path = $home->child($path)->to_string
+    unless File::Spec->file_name_is_absolute($path);
+
+my $db = CoreSmoke::Model::DB->new(
+    path           => $path,
+    migrations_sql => $home->child('lib/CoreSmoke/Schema/migrations.sql')->to_string,
+);
+$db->migrate;
+say "[migrate] $path is at the latest schema";

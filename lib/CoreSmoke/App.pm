@@ -26,7 +26,21 @@ sub startup ($self) {
         path           => $db_path,
         migrations_sql => $home->child('lib/CoreSmoke/Schema/migrations.sql'),
     );
-    $sqlite->migrate;
+
+    # `auto_migrate` defaults to 1 so the production container
+    # (which mounts an empty /data on first boot) and the test suite
+    # (which deletes t/test.db between runs) keep working without
+    # change. Development mode sets `auto_migrate => 0` so a normal
+    # `make start` refuses to silently fabricate an empty DB --
+    # operators have to consciously run `make migrate` or one of the
+    # `make dev-db` targets.
+    if ($cfg->{auto_migrate} // 1) {
+        $sqlite->migrate;
+    }
+    elsif (!-e $db_path) {
+        die "DB does not exist at $db_path.\n"
+          . "Run `make migrate` to create an empty schema, or `make dev-db SRC=<dump>` to populate from a pg_dump.\n";
+    }
 
     my $report_files = CoreSmoke::Model::ReportFiles->new(
         root   => $reports_dir,

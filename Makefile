@@ -38,6 +38,7 @@ export MOJO_MODE := development
 .PHONY: help build deps brew-deps cpan-deps \
         test critic cover \
         dev start stop reload \
+        migrate \
         import import-fresh dev-db dev-db-fresh \
         clean clean-cover distclean check-src
 
@@ -57,6 +58,7 @@ help:
 	@echo "  start         Start hypnotoad (production-like, port 3000)"
 	@echo "  stop          Stop hypnotoad"
 	@echo "  reload        Hot-reload hypnotoad (re-exec workers)"
+	@echo "  migrate       Create / upgrade data/development.db schema"
 	@echo ""
 	@echo "  test          Run the full test suite (prove -lr t/)"
 	@echo "  critic        Run perlcritic at severity 5 over lib/ and script/"
@@ -115,6 +117,12 @@ stop:
 
 reload:
 	$(HYPNOTOAD) $(APP)
+
+# Create / upgrade the development DB schema in place. Honors
+# $SMOKE_DB_PATH if set; otherwise defaults to data/development.db.
+# Idempotent: running it on an already-current DB is a no-op.
+migrate:
+	./script/migrate
 
 # ---------------------------------------------------------------------------
 # Test, lint, coverage
