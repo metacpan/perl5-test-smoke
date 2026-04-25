@@ -18,7 +18,11 @@
 %       $url .= "&" . url_escape($k) . "=" . url_escape($f->{$k});
 %     }
 %   }
-<tr hx-get="<%= $url %>" hx-trigger="revealed" hx-swap="afterend" hx-target="this">
+<tr class="hx-load-more"
+    hx-get="<%= $url %>"
+    hx-trigger="revealed"
+    hx-swap="outerHTML"
+    hx-target="this">
   <td colspan="6"><em>Loading more...</em></td>
 </tr>
 % }
