@@ -16,6 +16,7 @@ use experimental qw(signatures);
 #   selected_cver / andnotsel_cver       -> c.ccversion   (joins config)
 #   selected_perl                        -> "all" | "latest" | "<perl_id>"
 #   selected_branch                      -> r.smoke_branch
+#   selected_smkv                        -> r.smoke_version
 #   selected_summary                     -> r.summary     ("PASS" | "FAIL(F)" | ...)
 #   page                                 -> 1-based, default 1
 #   reports_per_page                     -> default 25
@@ -31,6 +32,7 @@ my %REPORT_FIELD = (
     osvs   => 'r.osversion',
     host   => 'r.hostname',
     branch => 'r.smoke_branch',
+    smkv   => 'r.smoke_version',
     # `summary` is intentionally NOT in this map -- it's matched via
     # GLOB patterns ("PASS*" or "FAIL(*X*)") rather than equality, so
     # it gets its own branch in compile() below.
@@ -52,7 +54,7 @@ sub compile ($self, $params) {
         push @bind, $v;
     };
 
-    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch);
+    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch smkv);
 
     # Summary: bucketed match.
     #   selected_summary = "PASS"     -> r.summary GLOB 'PASS*'
