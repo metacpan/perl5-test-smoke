@@ -20,14 +20,15 @@ sub latest ($c) {
     # Cheap aggregate stats for the hero block (full-page renders only).
     my %stats;
     if (!$is_htmx) {
-        my $db = $c->app->sqlite->db;
-        $stats{total_reports} = $db->query('SELECT COUNT(*) AS n FROM report')->hash->{n} // 0;
-        $stats{fails_24h} = $db->query(
-            q{SELECT COUNT(*) AS n FROM report WHERE smoke_date >= datetime('now','-1 day') AND summary GLOB 'FAIL*'}
-        )->hash->{n} // 0;
-        $stats{pass_24h} = $db->query(
-            q{SELECT COUNT(*) AS n FROM report WHERE smoke_date >= datetime('now','-1 day') AND summary = 'PASS'}
-        )->hash->{n} // 0;
+        my $row = $c->app->sqlite->db->query(q{
+            SELECT COUNT(*) AS total_reports,
+                   SUM(CASE WHEN smoke_date >= datetime('now','-1 day')
+                                 AND summary GLOB 'FAIL*' THEN 1 ELSE 0 END) AS fails_24h,
+                   SUM(CASE WHEN smoke_date >= datetime('now','-1 day')
+                                 AND summary = 'PASS'     THEN 1 ELSE 0 END) AS pass_24h
+            FROM report
+        })->hash;
+        %stats = map { $_ => ($row->{$_} // 0) } qw(total_reports fails_24h pass_24h);
     }
 
     my $tmpl    = $is_htmx ? 'web/_reports_rows' : 'web/latest';
