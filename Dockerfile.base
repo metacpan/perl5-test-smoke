@@ -29,16 +29,29 @@ RUN apt-get update \
 WORKDIR /build
 
 # Snapshot-pinned install for reproducibility (decision #20).
-# Strip cpm's build cache + work dirs, the trimmed-out manpages, and
-# .packlist files (only ExtUtils::Installed reads them; nothing in this
-# app does). The builder stage itself is never shipped, but the cleaner
-# this layer is, the smaller the GHA buildx cache.
+#
+# cpm uses Menlo internally and Menlo streams the underlying make install
+# output line-by-line per worker (Installing /usr/local/lib/perl5/...),
+# which in --workers=4 mode is hundreds of interleaved lines per build
+# and drowns out the actual progress. Capture the whole thing to a log,
+# print the per-distribution DONE/FAIL summary only on success, and
+# dump the full log only on failure.
+#
+# Then strip cpm's build cache + work dirs, the trimmed-out manpages,
+# and .packlist / .pod files. The builder stage itself is never shipped,
+# but a slim layer means a slim GHA buildx cache.
 COPY cpanfile cpanfile.snapshot ./
-RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --show-build-log-on-failure \
- && rm -rf /root/.perl-cpm /root/.cpan /root/.cpanm /tmp/cpm-* /tmp/cpanm-* \
- && rm -rf /build/local/man /build/local/lib/perl5/man \
- && find /build/local -name '.packlist' -delete \
- && find /build/local -name '*.pod'      -delete
+RUN set -e; \
+    cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb \
+        > /tmp/cpm.log 2>&1 \
+        || { echo '=== cpm install failed; full log: ==='; cat /tmp/cpm.log; exit 1; }; \
+    grep -E '^(DONE|FAIL) (install|configure)' /tmp/cpm.log || true; \
+    n=$(grep -c '^DONE install' /tmp/cpm.log || true); \
+    echo "cpm: $n distributions installed"; \
+    rm -rf /root/.perl-cpm /root/.cpan /root/.cpanm /tmp/cpm-* /tmp/cpanm-* /tmp/cpm.log; \
+    rm -rf /build/local/man /build/local/lib/perl5/man; \
+    find /build/local -name '.packlist' -delete; \
+    find /build/local -name '*.pod'      -delete
 
 # Vendor htmx -- decision #17. Pinned to a stable major release.
 RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
