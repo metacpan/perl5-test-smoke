@@ -68,6 +68,11 @@ sub startup ($self) {
     $self->helper(reports      => sub ($c) { $reports });
     $self->helper(ingest       => sub ($c) { $ingest });
 
+    # Mojolicious doesn't expose Mojo::Util::url_escape as a default
+    # helper, but our templates use it for query-string assembly.
+    require Mojo::Util;
+    $self->helper(url_escape => sub ($c, $s) { Mojo::Util::url_escape($s // '') });
+
     $self->hook(before_dispatch => sub ($c) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';
