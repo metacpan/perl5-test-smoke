@@ -114,14 +114,34 @@ sub search ($c) {
 }
 
 sub matrix ($c) {
-    my $data = $c->app->reports->matrix;
-    my $hot = 0;
-    for my $row (@{ $data->{rows} // [] }) {
-        for my $v (@{ $data->{perl_versions} // [] }) {
-            $hot += $row->{$v}{cnt} // 0;
-        }
+    my $page = int($c->param('page') || 1);
+    $page = 1 if $page < 1;
+    my $rpp  = int($c->param('rows_per_page') || 50);
+    $rpp = 500 if $rpp > 500;
+
+    my $data = $c->app->reports->matrix({
+        page => $page, rows_per_page => $rpp,
+    });
+
+    my $is_htmx = _is_htmx($c);
+
+    if ($is_htmx) {
+        return $c->render(template => 'web/_matrix_rows',
+            rows          => $data->{rows},
+            perl_versions => $data->{perl_versions},
+            test_count    => $data->{test_count}    // 0,
+            hot_failures  => $data->{hot_failures}  // 0,
+            page          => $page,
+            rows_per_page => $rpp,
+            oob_summary   => 1,
+        );
     }
-    return $c->render(template => 'web/matrix', %$data, hot_failures => $hot);
+
+    return $c->render(template => 'web/matrix',
+        %$data,
+        page          => $page,
+        rows_per_page => $rpp,
+    );
 }
 
 sub submatrix ($c) {

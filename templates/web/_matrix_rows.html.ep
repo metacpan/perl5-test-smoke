@@ -1,0 +1,39 @@
+% # Renders <tr>s for the failure matrix plus a load-more skeleton row
+% # when more pages exist. Follows the same infinite-scroll pattern as
+% # _reports_rows.html.ep.
+% for my $row (@$rows) {
+    <tr>
+      <td class="matrix-test">
+        <a href="/submatrix?test=<%= url_escape $row->{test} %>"><%= $row->{test} %></a>
+      </td>
+% for my $v (@$perl_versions) {
+%   my $cell = $row->{$v};
+%   if ($cell) {
+%     my $cnt = $cell->{cnt} // 0;
+%     my $ratio = heatmap_ratio($cnt);
+%     my $intense = $ratio >= 55 ? ' intense' : '';
+      <td class="heatmap-cell heatmap-fail<%= $intense %>" style="--ratio: <%= $ratio %>%" title="<%= $cnt %> failure(s)">
+        <a href="/submatrix?test=<%= url_escape $row->{test} %>&amp;pversion=<%= $v %>"><%= commify($cnt) %></a>
+      </td>
+%   } else {
+      <td class="heatmap-cell heatmap-zero">0</td>
+%   }
+% }
+    </tr>
+% }
+% if ($test_count > $page * $rows_per_page) {
+%   my $next = $page + 1;
+%   my $url  = "/matrix?page=$next&rows_per_page=$rows_per_page";
+<tr class="skeleton-row hx-load-more"
+    hx-get="<%= $url %>"
+    hx-trigger="revealed"
+    hx-swap="outerHTML"
+    hx-target="this">
+  <td colspan="<%= 1 + scalar @$perl_versions %>"><span class="skeleton"></span></td>
+</tr>
+% }
+% if (stash('oob_summary')) {
+%   my $shown = $page * $rows_per_page;
+%   $shown = $test_count if $shown > $test_count;
+%= include 'components/pagination_summary', shown => $shown, total => $test_count, noun => 'tests', id => 'matrix-summary', oob => 1
+% }

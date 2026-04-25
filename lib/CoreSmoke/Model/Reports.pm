@@ -441,8 +441,8 @@ sub _sort_perl_ids_desc ($list) {
     ];
 }
 
-sub matrix ($self) {
-    return $self->_matrix->matrix;
+sub matrix ($self, $params = {}) {
+    return $self->_matrix->matrix(%$params);
 }
 
 sub submatrix ($self, $test, $pversion = undef) {

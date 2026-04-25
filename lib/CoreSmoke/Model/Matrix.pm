@@ -11,7 +11,7 @@ sub new ($class, %args) {
 # Cross-tab: rows = test name, columns = last 5 perl_ids by plevel desc.
 # Each cell = { cnt => N, alt => "linux-6.5;darwin-23.0" } where alt is a
 # semicolon-joined distinct list of "<osname>-<osversion>" pairs.
-sub matrix ($self) {
+sub matrix ($self, %opts) {
     my $db = $self->{sqlite}->db;
 
     my $perl_versions = [
@@ -22,9 +22,19 @@ sub matrix ($self) {
             SQL
     ];
 
-    return { perl_versions => [], rows => [] } unless @$perl_versions;
+    my $empty = { perl_versions => [], rows => [],
+                  test_count => 0, hot_failures => 0 };
+    return $empty unless @$perl_versions;
 
     my $marks = join ',', ('?') x scalar @$perl_versions;
+
+    my $rpp = int($opts{rows_per_page} || 0);
+    $rpp = 500 if $rpp > 500;
+
+    if ($rpp) {
+        return $self->_paginated_matrix($db, $perl_versions, $marks, $rpp, %opts);
+    }
+
     my $sql = <<~"SQL";
         SELECT f.test,
                r.perl_id,
@@ -42,8 +52,84 @@ sub matrix ($self) {
 
     my $rows = $db->query($sql, @$perl_versions)->hashes->to_array;
 
-    my %by_test;
+    my (%by_test, $hot);
+    $hot = 0;
     for my $row (@$rows) {
+        $by_test{ $row->{test} } //= { test => $row->{test} };
+        $by_test{ $row->{test} }{ $row->{perl_id} } = {
+            cnt => $row->{cnt} + 0,
+            alt => $row->{alt} // '',
+        };
+        $hot += $row->{cnt};
+    }
+
+    my @ordered = sort {
+        ( _row_total($b) <=> _row_total($a) ) || ( $a->{test} cmp $b->{test} )
+    } values %by_test;
+
+    return {
+        perl_versions => $perl_versions,
+        rows          => \@ordered,
+        test_count    => scalar @ordered,
+        hot_failures  => $hot,
+    };
+}
+
+sub _paginated_matrix ($self, $db, $perl_versions, $marks, $rpp, %opts) {
+    my $page = int($opts{page} || 1);
+    $page = 1 if $page < 1;
+    my $offset = ($page - 1) * $rpp;
+
+    my $totals = $db->query(<<~"SQL", @$perl_versions)->hash;
+        SELECT COUNT(DISTINCT f.test) AS test_count,
+               COUNT(*)              AS hot_failures
+          FROM failure          f
+          JOIN failures_for_env ffe ON ffe.failure_id = f.id
+          JOIN result           rs  ON rs.id          = ffe.result_id
+          JOIN config           c   ON c.id           = rs.config_id
+          JOIN report           r   ON r.id           = c.report_id
+         WHERE r.perl_id IN ($marks)
+        SQL
+
+    my $page_tests = [
+        map { $_->{test} }
+        @{ $db->query(<<~"SQL", @$perl_versions, $rpp, $offset)->hashes->to_array }
+            SELECT f.test
+              FROM failure          f
+              JOIN failures_for_env ffe ON ffe.failure_id = f.id
+              JOIN result           rs  ON rs.id          = ffe.result_id
+              JOIN config           c   ON c.id           = rs.config_id
+              JOIN report           r   ON r.id           = c.report_id
+             WHERE r.perl_id IN ($marks)
+             GROUP BY f.test
+             ORDER BY COUNT(*) DESC, f.test
+             LIMIT ? OFFSET ?
+            SQL
+    ];
+
+    my $empty = { perl_versions => $perl_versions, rows => [],
+                  test_count => $totals->{test_count} // 0,
+                  hot_failures => $totals->{hot_failures} // 0 };
+    return $empty unless @$page_tests;
+
+    my $test_marks = join ',', ('?') x scalar @$page_tests;
+    my $detail = $db->query(<<~"SQL", @$perl_versions, @$page_tests)->hashes->to_array;
+        SELECT f.test,
+               r.perl_id,
+               COUNT(*)                                                AS cnt,
+               GROUP_CONCAT(DISTINCT r.osname || '-' || r.osversion)   AS alt
+          FROM failure          f
+          JOIN failures_for_env ffe ON ffe.failure_id = f.id
+          JOIN result           rs  ON rs.id          = ffe.result_id
+          JOIN config           c   ON c.id           = rs.config_id
+          JOIN report           r   ON r.id           = c.report_id
+         WHERE r.perl_id IN ($marks)
+           AND f.test IN ($test_marks)
+         GROUP BY f.test, r.perl_id
+        SQL
+
+    my %by_test;
+    for my $row (@$detail) {
         $by_test{ $row->{test} } //= { test => $row->{test} };
         $by_test{ $row->{test} }{ $row->{perl_id} } = {
             cnt => $row->{cnt} + 0,
@@ -55,7 +141,12 @@ sub matrix ($self) {
         ( _row_total($b) <=> _row_total($a) ) || ( $a->{test} cmp $b->{test} )
     } values %by_test;
 
-    return { perl_versions => $perl_versions, rows => \@ordered };
+    return {
+        perl_versions => $perl_versions,
+        rows          => \@ordered,
+        test_count    => $totals->{test_count} // 0,
+        hot_failures  => $totals->{hot_failures} // 0,
+    };
 }
 
 sub _row_total ($row) {

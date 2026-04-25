@@ -2,7 +2,7 @@
 % title 'Failure matrix';
 % my $hot = stash('hot_failures') // 0;
 % my @hero_stats = (
-%   { label => 'Tests tracked', value => commify(scalar @$rows) },
+%   { label => 'Tests tracked', value => commify($test_count) },
 %   { label => 'Perl versions', value => commify(scalar @$perl_versions) },
 %   { label => 'Total failures', value => commify($hot), variant => $hot ? 'danger' : 'success' },
 % );
@@ -11,28 +11,12 @@
 % if (!@$perl_versions) {
   %= include 'components/empty_state', title => 'No reports yet', desc => 'Once smoke results are ingested, the failure matrix will appear here.', icon => '&hellip;'
 % } else {
+
+%= include 'components/pagination_summary', shown => scalar @$rows, total => $test_count, noun => 'tests', id => 'matrix-summary'
+
 %   my @headers = ('Test');
 %   push @headers, qq(<code class="code-inline">$_</code>) for @$perl_versions;
-  %= include 'components/data_table', extra_class => 'matrix-table', headers => \@headers, body => begin
-% for my $row (@$rows) {
-    <tr>
-      <td class="matrix-test">
-        <a href="/submatrix?test=<%= url_escape $row->{test} %>"><%= $row->{test} %></a>
-      </td>
-% for my $v (@$perl_versions) {
-%   my $cell = $row->{$v};
-%   if ($cell) {
-%     my $cnt = $cell->{cnt} // 0;
-%     my $ratio = heatmap_ratio($cnt);
-%     my $intense = $ratio >= 55 ? ' intense' : '';
-      <td class="heatmap-cell heatmap-fail<%= $intense %>" style="--ratio: <%= $ratio %>%" title="<%= $cnt %> failure(s)">
-        <a href="/submatrix?test=<%= url_escape $row->{test} %>&amp;pversion=<%= $v %>"><%= commify($cnt) %></a>
-      </td>
-%   } else {
-      <td class="heatmap-cell heatmap-zero">0</td>
-%   }
-% }
-    </tr>
-% }
+  %= include 'components/data_table', extra_class => 'matrix-table', headers => \@headers, tbody_id => 'matrix-rows', body => begin
+%= include 'web/_matrix_rows', rows => $rows, perl_versions => $perl_versions, test_count => $test_count, page => $page, rows_per_page => $rows_per_page
   % end
 % }
