@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MetaCPAN — Design System v1.0</title>
+<link rel="icon" type="image/png" href="logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -268,21 +269,13 @@ button { font-family: inherit; }
 }
 .sidebar-logo {
   width: 36px; height: 36px;
-  background: var(--ink-900);
-  border-radius: var(--radius-md);
-  display: grid;
-  place-items: center;
-  position: relative;
-}
-.sidebar-logo::before, .sidebar-logo::after {
-  content: '';
-  width: 5px; height: 5px;
   border-radius: var(--radius-full);
-  background: var(--cpan-red-500);
-  position: absolute;
+  background-image: url('logo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
 }
-.sidebar-logo::before { top: 13px; left: 13px; box-shadow: 8px 0 var(--cpan-red-500); }
-.sidebar-logo::after  { top: 21px; left: 13px; box-shadow: 8px 0 var(--cpan-red-500); }
 .sidebar-title { display: flex; flex-direction: column; }
 .sidebar-title-name {
   font-family: var(--font-display);
