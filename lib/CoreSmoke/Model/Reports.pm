@@ -189,6 +189,47 @@ sub searchresults ($self, $params) {
     return $self->_search->run($params);
 }
 
+# For the /search UI: given the user's current $filter, return the
+# distinct values still possible for each dropdown dimension when all
+# OTHER filters are applied. Picking selected_arch=aarch64 narrows the
+# perl_version and branch dropdowns to only what exists in aarch64
+# rows; the architecture dropdown still shows every architecture so
+# the user can change their mind.
+#
+# Returns:
+#   { architectures => [...], perl_versions => [...], branches => [...] }
+sub available_filter_values ($self, $filter) {
+    my $search = $self->_search;
+    my $db     = $self->{sqlite}->db;
+
+    my %dims = (
+        architectures => { exclude => [qw(selected_arch   andnotsel_arch)],
+                           field   => 'r.architecture',
+                           order   => 'r.architecture' },
+        perl_versions => { exclude => [qw(selected_perl)],
+                           field   => 'r.perl_id',
+                           order   => 'r.plevel DESC' },
+        branches      => { exclude => [qw(selected_branch andnotsel_branch)],
+                           field   => 'r.smoke_branch',
+                           order   => 'r.smoke_branch' },
+    );
+
+    my %out;
+    for my $dim (keys %dims) {
+        my %f = %$filter;
+        delete @f{ @{ $dims{$dim}{exclude} } };
+        my ($from, $where, $bind) = $search->compile(\%f);
+        my $sql = "SELECT DISTINCT $dims{$dim}{field} AS v $from $where ORDER BY $dims{$dim}{order}";
+        $out{$dim} = [
+            grep { defined && length }
+            map  { $_->{v} }
+            @{ $db->query($sql, @$bind)->hashes->to_array }
+        ];
+    }
+
+    return \%out;
+}
+
 sub matrix ($self) {
     return $self->_matrix->matrix;
 }

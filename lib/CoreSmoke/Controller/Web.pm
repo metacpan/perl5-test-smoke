@@ -38,8 +38,8 @@ sub search ($c) {
     }
     my $page    = int($filter{page}             || 1);
     my $rpp     = int($filter{reports_per_page} || 25);
-    my $params  = $c->app->reports->searchparameters;
-    my $results = $c->app->reports->searchresults({ %filter, page => $page, reports_per_page => $rpp });
+    my $available = $c->app->reports->available_filter_values(\%filter);
+    my $results   = $c->app->reports->searchresults({ %filter, page => $page, reports_per_page => $rpp });
 
     if (_is_htmx($c)) {
         return $c->render(template => 'web/_reports_rows',
@@ -53,10 +53,10 @@ sub search ($c) {
     }
 
     return $c->render(template => 'web/search',
-        params  => $params,
-        filter  => \%filter,
-        results => $results,
-        page    => $page,
+        available => $available,
+        filter    => \%filter,
+        results   => $results,
+        page      => $page,
         reports_per_page => $rpp,
     );
 }
