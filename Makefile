@@ -25,6 +25,7 @@ APP         := script/smoke
 DB_PATH     ?= data/smoke.db
 DEV_DB_PATH ?= data/development.db
 REPORTS_DIR ?= data/reports
+PID_FILE    ?= data/hypnotoad.pid
 SRC         ?=
 
 # Every target in this Makefile is for local-dev use (developer machine,
@@ -37,7 +38,7 @@ export MOJO_MODE := development
 
 .PHONY: help build deps brew-deps cpan-deps \
         test critic cover \
-        dev start stop reload \
+        dev start stop restart reload \
         migrate \
         import import-fresh dev-db dev-db-fresh \
         clean clean-cover distclean check-src
@@ -57,6 +58,7 @@ help:
 	@echo "  dev           Run the app under morbo (auto-reload, dev mode)"
 	@echo "  start         Start hypnotoad (production-like, port 3000)"
 	@echo "  stop          Stop hypnotoad"
+	@echo "  restart       Stop then start hypnotoad"
 	@echo "  reload        Hot-reload hypnotoad (re-exec workers)"
 	@echo "  migrate       Create / upgrade data/development.db schema"
 	@echo ""
@@ -114,6 +116,21 @@ start:
 
 stop:
 	$(HYPNOTOAD) -s $(APP)
+
+# `hypnotoad -s` returns immediately after sending SIGQUIT, but the
+# master can take up to graceful_timeout (30s in prod) to actually exit
+# and free port 3000. Wait for the pid file to disappear before
+# starting again, or the new daemon will fail to bind.
+restart:
+	$(HYPNOTOAD) -s $(APP)
+	@n=0; while [ -e $(PID_FILE) ] && [ $$n -lt 35 ]; do \
+	    [ $$n -eq 0 ] && echo "[restart] waiting for $(PID_FILE) to be removed..."; \
+	    sleep 1; n=$$((n+1)); \
+	done; \
+	if [ -e $(PID_FILE) ]; then \
+	    echo "[restart] timeout: $(PID_FILE) still present after 35s"; exit 1; \
+	fi
+	$(HYPNOTOAD) $(APP)
 
 reload:
 	$(HYPNOTOAD) $(APP)
