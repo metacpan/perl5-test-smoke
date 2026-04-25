@@ -37,4 +37,56 @@ $t->post_ok('/api/report' =>
     "not actually gzipped"
 )->status_is(400);
 
+# --- Streaming decompression (no default size limit) ---
+
+# Default (no max_decompressed_size set) should handle large payloads
+# without 413.  The body is still invalid JSON / not a real report,
+# so the controller rejects it -- but the hook must let it through.
+my $big_body = 'x' x 200_000;
+my $gz_big;
+gzip(\$big_body => \$gz_big)
+    or die "gzip big failed: $GzipError";
+
+$t->post_ok('/api/report' =>
+    {
+        'Content-Type'     => 'application/json',
+        'Content-Encoding' => 'gzip',
+    } =>
+    $gz_big
+)->status_isnt(413);
+
+# --- Optional decompressed-size limit (opt-in bomb protection) ---
+
+$h->app->config->{max_decompressed_size} = 1024;
+
+my $bomb_body = 'x' x 2048;
+my $gz_bomb;
+gzip(\$bomb_body => \$gz_bomb)
+    or die "gzip bomb failed: $GzipError";
+
+$t->post_ok('/api/report' =>
+    {
+        'Content-Type'     => 'application/json',
+        'Content-Encoding' => 'gzip',
+    } =>
+    $gz_bomb
+)->status_is(413)->json_is('/error' => 'Decompressed body too large');
+
+# A payload under the limit should still decompress fine
+my $small_body = '{"not":"valid report but small"}';
+my $gz_small;
+gzip(\$small_body => \$gz_small)
+    or die "gzip small failed: $GzipError";
+
+$t->post_ok('/api/report' =>
+    {
+        'Content-Type'     => 'application/json',
+        'Content-Encoding' => 'gzip',
+    } =>
+    $gz_small
+)->status_isnt(413);
+
+# Restore default so subsequent tests are not affected
+delete $h->app->config->{max_decompressed_size};
+
 done_testing;

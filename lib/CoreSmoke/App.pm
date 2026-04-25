@@ -82,12 +82,31 @@ sub startup ($self) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';
         require IO::Uncompress::Gunzip;
-        my $body = $c->req->body;
-        my $out;
-        unless (IO::Uncompress::Gunzip::gunzip(\$body => \$out)) {
-            return $c->render(status => 400, json => { error => 'Bad gzip body' });
+        require Mojo::Asset::File;
+        my $body  = $c->req->body;
+        my $limit = $c->app->config->{max_decompressed_size} // 0;
+        my $z = IO::Uncompress::Gunzip->new(\$body)
+            or return $c->render(status => 400, json => { error => 'Bad gzip body' });
+        my $asset = Mojo::Asset::File->new;
+        my $total = 0;
+        my $buf;
+        while (1) {
+            my $n = $z->read($buf, 65536);
+            last if !$n;
+            if ($n < 0) {
+                $z->close;
+                return $c->render(status => 400, json => { error => 'Bad gzip body' });
+            }
+            $total += $n;
+            if ($limit && $total > $limit) {
+                $z->close;
+                return $c->render(status => 413,
+                    json => { error => 'Decompressed body too large' });
+            }
+            $asset->add_chunk($buf);
         }
-        $c->req->body($out);
+        $z->close;
+        $c->req->content->asset($asset);
         $c->req->headers->remove('Content-Encoding');
     });
 
