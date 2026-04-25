@@ -383,7 +383,13 @@ sub build_insert_sth ($dbh, $target) {
 # ---------------------------------------------------------------------------
 
 sub decode_copy_field ($f) {
-    return if $f eq '\\N';
+    # NOTE: must be `return undef`, not bare `return`. This sub is called
+    # in list context inside `map { decode_copy_field($_) } @raw`, and
+    # bare `return` returns an empty list there -- which silently shrinks
+    # the result list and shifts the subsequent hash-slice assignment.
+    ## no critic (Subroutines::ProhibitExplicitReturnUndef)
+    return undef if $f eq '\\N';
+    ## use critic
     return $f unless index($f, '\\') >= 0;
     $f =~ s{\\(.)}{
           $1 eq 'n' ? "\n"
