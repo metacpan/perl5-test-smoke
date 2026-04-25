@@ -1,0 +1,9 @@
+[submodule "/Users/toddr/projects/smoke/perl5-smoke/legacy/sql"]
+	path = /Users/toddr/projects/smoke/perl5-smoke/legacy/sql
+	url = git@github.com:metacpan/Perl5-CoreSmokeDB.git
+[submodule "/Users/toddr/projects/smoke/perl5-smoke/legacy/api"]
+	path = /Users/toddr/projects/smoke/perl5-smoke/legacy/api
+	url = git@github.com:metacpan/Perl5-CoreSmokeDB-API.git
+[submodule "/Users/toddr/projects/smoke/perl5-smoke/legacy/web"]
+	path = /Users/toddr/projects/smoke/perl5-smoke/legacy/web
+	url = git@github.com:metacpan/Perl5-CoreSmokeDB-Web.git
