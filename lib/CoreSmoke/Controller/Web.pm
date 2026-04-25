@@ -10,7 +10,9 @@ sub _is_htmx ($c) {
 
 sub latest ($c) {
     my $page = int($c->param('page') || 1);
+    $page = 1 if $page < 1;
     my $rpp  = int($c->param('reports_per_page') || 25);
+    $rpp = 500 if $rpp > 500;
     my $data = $c->app->reports->latest({ page => $page, reports_per_page => $rpp });
 
     my $is_htmx = _is_htmx($c);
@@ -43,7 +45,9 @@ sub search ($c) {
         $filter{$key} = $v if defined $v;
     }
     my $page    = int($filter{page}             || 1);
+    $page = 1 if $page < 1;
     my $rpp     = int($filter{reports_per_page} || 25);
+    $rpp = 500 if $rpp > 500;
 
     # Resolve `selected_perl=latest` once for the whole request via the
     # RPM-style version sort, then feed the same concrete perl_id into

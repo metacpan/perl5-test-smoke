@@ -42,7 +42,9 @@ sub version ($self) {
 # /api/latest -- latest report per hostname, ordered by plevel desc.
 sub latest ($self, $params = {}) {
     my $rpp  = int($params->{reports_per_page} || 25);
+    $rpp = 500 if $rpp > 500;
     my $page = int($params->{page} || 1);
+    $page = 1 if $page < 1;
     my $offset = ($page - 1) * $rpp;
 
     my $db = $self->{sqlite}->db;
@@ -445,6 +447,8 @@ sub submatrix ($self, $test, $pversion = undef) {
 
 sub reports_from_id ($self, $rid, $limit = 100) {
     $limit = int($limit || 100);
+    $limit = 1   if $limit < 1;
+    $limit = 500 if $limit > 500;
     return [
         map { $_->{id} }
         @{ $self->{sqlite}->db->query(
