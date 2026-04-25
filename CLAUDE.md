@@ -23,8 +23,62 @@ script/{smoke,migrate,fix-plevels,import-from-pgdump}
 etc/{coresmoke,*.conf,openapi.yaml}
 data/                  — gitignored: SQLite + reports/ tree
 t/                     — sequential prove (single shared t/test.db)
+docs/                  — knowledge base (see "Docs" section below)
+  README.md            — index
+  architecture/        — request flow, DB, ingest, JSONRPC dispatch
+  features/            — one .md per user-facing feature
+  conventions/         — coding/test/deploy patterns
+  operations/          — runbooks, troubleshooting
 plans/00..10/          — the planning docs
 ```
+
+## Docs — knowledge base
+
+`docs/` is the **current-state** reference for this project. It answers
+"how does feature X work today?" and "what convention applies here?".
+
+Roles, kept distinct on purpose:
+
+| Where         | What goes there                                            |
+|---------------|------------------------------------------------------------|
+| `plans/`      | Forward-looking design (what we intend to build).          |
+| `docs/`       | How things actually work right now.                        |
+| `CLAUDE.md`   | Terse rules + gotchas that bite repeatedly. Entry point.   |
+
+### Layout
+
+- `docs/README.md`     — index, points at the rest.
+- `docs/architecture/` — request flow, schema, ingest pipeline, JSONRPC
+                         dispatch, htmx integration, etc.
+- `docs/features/`     — one `.md` per user-facing feature
+                         (search, matrix, ingest endpoints, web pages).
+- `docs/conventions/`  — coding/test/deploy patterns that need more than
+                         a CLAUDE.md gotcha line.
+- `docs/operations/`   — runbooks, troubleshooting, on-call notes.
+
+### When to read
+
+**Before making non-trivial code changes**, scan `docs/` for context on
+the area you're touching. Start at `docs/README.md`, then drill into the
+relevant subdir. If a doc contradicts the code, trust the code and flag
+the drift to the user.
+
+### When to write / update
+
+Update or create a `docs/` file when the change is one of:
+
+- **New user-facing feature** — endpoint, page, CLI command, or
+  significant UI change. Add/update `docs/features/<feature>.md`.
+- **Architectural change** — data flow, module boundaries, schema,
+  ingest pipeline, deployment shape. Update `docs/architecture/`.
+- **New convention or gotcha** worth more than a one-liner. Put deep
+  reference in `docs/conventions/`; keep the terse rule in `CLAUDE.md`.
+
+Skip doc updates for pure refactors, cosmetic changes, or one-off bug
+fixes whose root cause already lives in the commit message.
+
+If the right doc doesn't exist yet, create it — don't skip the update.
+Ask the user when scope is unclear.
 
 ## DB / file locations by mode
 
@@ -190,6 +244,8 @@ patterns like `FAIL(*M*)`.
 
 ## Conventions
 
+- **Docs follow code**: features and architectural changes update
+  `docs/` in the same PR (see "Docs — knowledge base" section above).
 - **Tests are sequential**: single shared `t/test.db` reset between
   tests. `prove -lr t/`, no `-j`.
 - **perlcritic severity 5**, fail on violation. Run via `make critic`.
