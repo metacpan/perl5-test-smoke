@@ -48,6 +48,9 @@ jobs:
           # straight into /usr/local/lib/perl5/... and /usr/local/bin/...
           # which are already on @INC and PATH. No `path: local` and no
           # PERL5LIB juggling needed.
+          # We're already root inside the container; perl:5.42-slim has no
+          # sudo binary, so disable the action's sudo wrapper.
+          sudo: false
 
       - name: prove
         env:
