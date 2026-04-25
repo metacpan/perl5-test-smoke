@@ -3,8 +3,10 @@
   <td><%= $r->{hostname} %></td>
   <td><%= $r->{architecture} %></td>
   <td><%= $r->{osname} %> <%= $r->{osversion} %></td>
-  <td><a href="/report/<%= $r->{id} %>"><%= $r->{perl_id} %></a></td>
-  <td class="summary-<%= lc($r->{summary} // '') %>"><%= $r->{summary} %></td>
+  <td><%= $r->{perl_id} %></td>
+  <td class="summary-<%= lc($r->{summary} // '') %>">
+    <a href="/report/<%= $r->{id} %>"><%= $r->{summary} %></a>
+  </td>
   <td><%= $r->{smoke_date} %></td>
 </tr>
 % }
