@@ -84,6 +84,24 @@ $t->get_ok('/search?selected_smkv=1.77')->status_is(200)
 $t->get_ok('/search?selected_smkv=99.99')->status_is(200)
   ->content_unlike(qr/idefix/);
 
+# Date range filter: date_from/date_to on /search
+# Fixture has smoke_date 2022-07-31T01:05:08Z (UTC)
+$t->get_ok('/search?date_from=2022-07-31&date_to=2022-07-31')->status_is(200)
+  ->content_like(qr/idefix/, 'date range includes matching report');
+$t->get_ok('/search?date_from=2022-07-31')->status_is(200)
+  ->content_like(qr/idefix/, 'date_from alone includes report');
+$t->get_ok('/search?date_to=2023-01-01')->status_is(200)
+  ->content_like(qr/idefix/, 'date_to alone includes report');
+$t->get_ok('/search?date_from=2023-01-01')->status_is(200)
+  ->content_unlike(qr/idefix/, 'date_from after report excludes it');
+$t->get_ok('/search?date_to=2022-07-30')->status_is(200)
+  ->content_unlike(qr/idefix/, 'date_to before report excludes it');
+
+# Date inputs render in the search form
+$t->get_ok('/search')->status_is(200)
+  ->element_exists('input[name=date_from][type=date]', 'date_from input exists')
+  ->element_exists('input[name=date_to][type=date]',   'date_to input exists');
+
 # About page shows Perl + Mojo + DB versions
 $t->get_ok('/about')->status_is(200)
   ->content_like(qr/Mojolicious/)
