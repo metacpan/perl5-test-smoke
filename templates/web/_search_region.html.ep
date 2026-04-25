@@ -1,12 +1,20 @@
 <div id="search-region">
 % # `available` is computed against the OTHER active filters, so
 % # picking arch=aarch64 narrows perl_version and branch to only what
-% # exists in aarch64 reports. If a dimension reduces to a single
-% # value the dropdown collapses to just "all" -- nothing to filter
-% # between -- per the user's rule.
+% # exists in aarch64 reports. We always render the available values
+% # as options, and if the user's current selection isn't in the
+% # available list (e.g. the combination matches zero rows) we pin it
+% # as an extra <option> so the active filter stays visible and can
+% # be cleared.
 % my $arch_opts   = $available->{architectures} // [];
 % my $perl_opts   = $available->{perl_versions} // [];
 % my $branch_opts = $available->{branches}      // [];
+% my $sel_arch    = $filter->{selected_arch}    // '';
+% my $sel_perl    = $filter->{selected_perl}    // '';
+% my $sel_branch  = $filter->{selected_branch}  // '';
+% my %arch_have   = map { $_ => 1 } @$arch_opts;
+% my %perl_have   = map { $_ => 1 } @$perl_opts;
+% my %branch_have = map { $_ => 1 } @$branch_opts;
 
   <form id="search-form"
         hx-get="/search"
@@ -19,34 +27,37 @@
 
       <label>Architecture
         <select name="selected_arch">
-          <option value="all" <%= selected_if(($filter->{selected_arch} // '') eq '' || ($filter->{selected_arch} // '') eq 'all') %>>all</option>
-% if (@$arch_opts > 1) {
-%   for my $v (@$arch_opts) {
-          <option value="<%= $v %>" <%= selected_if(($filter->{selected_arch} // '') eq $v) %>><%= $v %></option>
-%   }
+          <option value="all" <%= selected_if($sel_arch eq '' || $sel_arch eq 'all') %>>all</option>
+% for my $v (@$arch_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_arch eq $v) %>><%= $v %></option>
+% }
+% if ($sel_arch ne '' && $sel_arch ne 'all' && !$arch_have{$sel_arch}) {
+          <option value="<%= $sel_arch %>" selected><%= $sel_arch %></option>
 % }
         </select>
       </label>
 
       <label>Perl version
         <select name="selected_perl">
-          <option value="all" <%= selected_if(($filter->{selected_perl} // '') eq '' || ($filter->{selected_perl} // '') eq 'all') %>>all</option>
-% if (@$perl_opts > 1) {
-          <option value="latest" <%= selected_if(($filter->{selected_perl} // '') eq 'latest') %>>latest</option>
-%   for my $v (@$perl_opts) {
-          <option value="<%= $v %>" <%= selected_if(($filter->{selected_perl} // '') eq $v) %>><%= $v %></option>
-%   }
+          <option value="all" <%= selected_if($sel_perl eq '' || $sel_perl eq 'all') %>>all</option>
+          <option value="latest" <%= selected_if($sel_perl eq 'latest') %>>latest</option>
+% for my $v (@$perl_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_perl eq $v) %>><%= $v %></option>
+% }
+% if ($sel_perl ne '' && $sel_perl ne 'all' && $sel_perl ne 'latest' && !$perl_have{$sel_perl}) {
+          <option value="<%= $sel_perl %>" selected><%= $sel_perl %></option>
 % }
         </select>
       </label>
 
       <label>Branch
         <select name="selected_branch">
-          <option value="all" <%= selected_if(($filter->{selected_branch} // '') eq '' || ($filter->{selected_branch} // '') eq 'all') %>>all</option>
-% if (@$branch_opts > 1) {
-%   for my $v (@$branch_opts) {
-          <option value="<%= $v %>" <%= selected_if(($filter->{selected_branch} // '') eq $v) %>><%= $v %></option>
-%   }
+          <option value="all" <%= selected_if($sel_branch eq '' || $sel_branch eq 'all') %>>all</option>
+% for my $v (@$branch_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_branch eq $v) %>><%= $v %></option>
+% }
+% if ($sel_branch ne '' && $sel_branch ne 'all' && !$branch_have{$sel_branch}) {
+          <option value="<%= $sel_branch %>" selected><%= $sel_branch %></option>
 % }
         </select>
       </label>
