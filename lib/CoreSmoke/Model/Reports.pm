@@ -215,9 +215,9 @@ sub full_report_data ($self, $rid) {
     # of kB of log output.
     my $rf = $self->{report_files};
     my $on_disk = sub ($field) {
-        return undef unless $rf;
+        return unless $rf;
         my $b = $rf->read($rid, $field);
-        return defined $b && length $b ? $b : undef;
+        return defined $b && length $b ? $b : ();
     };
 
     $report->{c_compilers}     = \@compilers;
