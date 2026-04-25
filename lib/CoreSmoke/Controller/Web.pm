@@ -54,7 +54,6 @@ sub search ($c) {
     if (($effective{selected_perl} // '') eq 'latest') {
         $effective{selected_perl} = $c->app->reports->latest_perl_id // 'all';
     }
-    my $available = $c->app->reports->available_filter_values(\%effective);
     my $results   = $c->app->reports->searchresults({ %effective, page => $page, reports_per_page => $rpp });
 
     # Form changes (HTMX) re-render the whole search region: the form
@@ -83,6 +82,7 @@ sub search ($c) {
         );
     }
 
+    my $available = $c->app->reports->available_filter_values(\%effective);
     my $template = _is_htmx($c) ? 'web/_search_region' : 'web/search';
     return $c->render(template => $template,
         available => $available,
