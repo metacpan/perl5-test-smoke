@@ -137,28 +137,113 @@ sub report_data ($self, $rid) {
 sub full_report_data ($self, $rid) {
     my $report = $self->report_data($rid) // return;
 
-    # Aggregate views the legacy UI uses.
-    my %compilers;
-    my %test_failures;
-    my $total_duration = 0;
-
+    # ---- Compilers (deduped {cc, ccversion} pairs) -----------------------
+    my %seen_compiler;
+    my @compilers;
     for my $cfg (@{ $report->{configs} // [] }) {
-        $total_duration += $cfg->{duration} // 0;
-        my $cv = join(' ', grep { defined && length } $cfg->{cc}, $cfg->{ccversion});
-        $compilers{$cv}++ if length $cv;
+        my $key = ($cfg->{cc} // '') . "\0" . ($cfg->{ccversion} // '');
+        next if $seen_compiler{$key}++;
+        push @compilers, { cc => $cfg->{cc}, ccversion => $cfg->{ccversion} };
+    }
 
+    # ---- Per-config matrix row -------------------------------------------
+    # Each config contributes one row: { args, debugging, results [ {io_env,
+    # locale, summary} ... ] } where the summary char is what the legacy
+    # smoke report prints (O / F / X / ...).  We also collect the union of
+    # io_env labels seen across configs so the template can render a stable
+    # column header.
+    my %io_seen;
+    my @matrix_rows;
+    for my $cfg (@{ $report->{configs} // [] }) {
+        my @results;
+        for my $res (@{ $cfg->{results} // [] }) {
+            my $label = $res->{io_env};
+            $label .= '-' . $res->{locale}
+                if defined $res->{locale} && length $res->{locale};
+            $io_seen{$label}++;
+            push @results, {
+                io_env  => $res->{io_env},
+                locale  => $res->{locale},
+                label   => $label,
+                summary => $res->{summary},
+            };
+        }
+        push @matrix_rows, {
+            arguments => $cfg->{arguments} // '',
+            debugging => $cfg->{debugging},
+            cc        => $cfg->{cc},
+            ccversion => $cfg->{ccversion},
+            duration  => $cfg->{duration},
+            results   => \@results,
+        };
+    }
+    my @io_labels = sort keys %io_seen;
+
+    # ---- Test failures grouped by test ------------------------------------
+    # legacy renders each failing test once with the list of configurations
+    # that hit it -- not once per (config, io_env). We mirror that.
+    my %fail_seen;
+    my @test_failures;
+    for my $cfg (@{ $report->{configs} // [] }) {
         for my $res (@{ $cfg->{results} // [] }) {
             for my $f (@{ $res->{failures} // [] }) {
-                $test_failures{ $f->{test} }++;
+                my $key = join "\0", $f->{test} // '', $f->{status} // '';
+                my $entry = $fail_seen{$key} //= do {
+                    push @test_failures, {
+                        test    => $f->{test},
+                        status  => $f->{status},
+                        extra   => $f->{extra},
+                        configs => [],
+                    };
+                    $test_failures[-1];
+                };
+                push @{ $entry->{configs} }, {
+                    arguments => $cfg->{arguments} // '',
+                    debugging => $cfg->{debugging},
+                    io_env    => $res->{io_env},
+                    locale    => $res->{locale},
+                };
             }
         }
     }
 
-    $report->{c_compilers}  = [ sort keys %compilers ];
-    $report->{test_failures} = [ sort keys %test_failures ];
-    $report->{durations}     = $total_duration;
+    # ---- Decoded on-disk extras -------------------------------------------
+    # The matrix UI inlines compiler_msgs and manifest_msgs when present;
+    # log_file is shown via a separate link because it's typically tens
+    # of kB of log output.
+    my $rf = $self->{report_files};
+    my $on_disk = sub ($field) {
+        return undef unless $rf;
+        my $b = $rf->read($rid, $field);
+        return defined $b && length $b ? $b : undef;
+    };
+
+    $report->{c_compilers}     = \@compilers;
+    $report->{io_labels}       = \@io_labels;
+    $report->{matrix_rows}     = \@matrix_rows;
+    $report->{test_failures}   = \@test_failures;
+    $report->{compiler_msgs_text} = $on_disk->('compiler_msgs');
+    $report->{manifest_msgs_text} = $on_disk->('manifest_msgs');
+    $report->{nonfatal_msgs_text} = $on_disk->('nonfatal_msgs');
+    $report->{has_log_file}    = defined $on_disk->('log_file') ? 1 : 0;
+    $report->{has_out_file}    = defined $on_disk->('out_file') ? 1 : 0;
+
+    # ---- Formatted durations ----------------------------------------------
+    my $total = 0;
+    $total += ($_->{duration} // 0) for @{ $report->{configs} // [] };
+    my $configs_n = scalar @{ $report->{configs} // [] };
+    $report->{durations}        = $total;
+    $report->{duration_in_hhmm} = _hhmm($total);
+    $report->{average_in_hhmm}  = _hhmm($configs_n ? int($total / $configs_n) : 0);
 
     return $report;
+}
+
+sub _hhmm ($seconds) {
+    return '0:00' unless $seconds && $seconds > 0;
+    my $h = int($seconds / 3600);
+    my $m = int(($seconds % 3600) / 60);
+    return sprintf '%d:%02d', $h, $m;
 }
 
 sub logfile ($self, $rid) {

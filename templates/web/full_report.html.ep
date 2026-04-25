@@ -4,49 +4,141 @@
 <h1>Smoke report #<%= $report->{id} %></h1>
 
 <dl class="report-meta">
-  <dt>Host</dt>      <dd><%= $report->{hostname} %></dd>
-  <dt>Architecture</dt><dd><%= $report->{architecture} %></dd>
-  <dt>OS</dt>        <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
-  <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
   <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
+  <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
+  <dt>Patch</dt>     <dd><code><%= $report->{git_id} %></code></dd>
+  <dt>Host</dt>      <dd><%= $report->{hostname} %>: <%= $report->{cpu_description} %> (<%= $report->{architecture} %>/<%= $report->{cpu_count} %> cpus)</dd>
+  <dt>OS</dt>        <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
+% if (@{ $report->{c_compilers} // [] }) {
+  <dt>Compilers</dt> <dd>
+% for my $cc (@{ $report->{c_compilers} }) {
+    <%= $cc->{cc} %> <%= $cc->{ccversion} %><br>
+% }
+  </dd>
+% }
+  <dt>Smoke time</dt><dd><%= $report->{duration_in_hhmm} %> (avg <%= $report->{average_in_hhmm} %> per config)</dd>
   <dt>Smoke date</dt><dd><time datetime="<%= $report->{smoke_date} %>" class="utc-date"><%= $report->{smoke_date} %></time></dd>
-  <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><%= $report->{summary} %></dd>
-  <dt>Duration</dt>  <dd><%= duration_hms($report->{durations}) %></dd>
+  <dt>Tester</dt>    <dd><%= $report->{username} // '(unknown)' %></dd>
+  <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><strong><%= $report->{summary} %></strong></dd>
 % if ($report->{user_note}) {
   <dt>Note</dt>      <dd class="user-note"><%= $report->{user_note} %></dd>
 % }
 </dl>
 
-<h2>Configurations</h2>
+<p class="report-actions">
+% if ($report->{has_log_file}) {
+  <a href="/file/log_file/<%= $report->{id} %>">View log_file</a>
+% }
+% if ($report->{has_out_file}) {
+  <a href="/file/out_file/<%= $report->{id} %>">View out_file</a>
+% }
+  <a href="/api/full_report_data/<%= $report->{id} %>">JSON</a>
+</p>
+
+<h2>Configurations &amp; results</h2>
 <div class="table-wrap">
-<table class="configs">
+<table class="configs matrix">
   <thead>
-    <tr><th>cc</th><th>Compiler version</th><th>Arguments</th><th>Duration</th></tr>
+    <tr>
+      <th>Build args</th>
+      <th>Debug</th>
+% for my $label (@{ $report->{io_labels} // [] }) {
+      <th><%= $label %></th>
+% }
+      <th>Duration</th>
+    </tr>
   </thead>
   <tbody>
-% for my $cfg (@{ $report->{configs} // [] }) {
+% for my $row (@{ $report->{matrix_rows} // [] }) {
+%   my %by_label = map { $_->{label} => $_ } @{ $row->{results} };
     <tr>
-      <td><%= $cfg->{cc} %></td>
-      <td><%= $cfg->{ccversion} %></td>
-      <td><code><%= $cfg->{arguments} %></code></td>
-      <td><%= duration_hms($cfg->{duration}) %></td>
+      <td class="cfg-args"><code><%= length $row->{arguments} ? $row->{arguments} : '(default)' %></code></td>
+      <td><%= $row->{debugging} // '' %></td>
+%   for my $label (@{ $report->{io_labels} // [] }) {
+%     my $r = $by_label{$label};
+%     my $sum = $r ? ($r->{summary} // '') : '';
+%     my $cls = !$r           ? ''
+%             : $sum eq 'O'   ? 'pass'
+%             : $sum eq 'F'   ? 'fail'
+%             : $sum eq 'X'   ? 'fail'
+%             :                 '';
+      <td class="<%= $cls %>" title="<%= $label %><%= $sum ? ' = '.$sum : '' %>"><%= $sum %></td>
+%   }
+      <td><%= duration_hms($row->{duration}) %></td>
     </tr>
 % }
   </tbody>
 </table>
 </div>
+<p><small>O = OK, F = harness failure, X = TEST failure (not under harness),
+  c/m/M/t = configure / make / make-after-miniperl / test-prep failure,
+  blank = N/A</small></p>
 
 % if (@{ $report->{test_failures} // [] }) {
-<h2>Failing tests</h2>
-<ul>
-% for my $t (@{ $report->{test_failures} }) {
-  <li><a href="/submatrix?test=<%= url_escape $t %>"><%= $t %></a></li>
+<h2>Test failures</h2>
+<dl class="test-failures">
+% for my $f (@{ $report->{test_failures} }) {
+  <dt>
+    <a href="/submatrix?test=<%= url_escape $f->{test} %>"><code><%= $f->{test} %></code></a>
+    <span class="status">(<%= $f->{status} %>)</span>
+  </dt>
+  <dd>
+%   if (defined $f->{extra} && length $f->{extra}) {
+    <pre class="failure-extra"><%= $f->{extra} %></pre>
+%   }
+%   if (@{ $f->{configs} // [] }) {
+    <small>Configurations:</small>
+    <ul class="failure-configs">
+%     for my $c (@{ $f->{configs} }) {
+      <li>
+        [<%= $c->{io_env} %><%= length($c->{locale} // '') ? '/'.$c->{locale} : '' %>]
+        <code><%= length($c->{arguments}) ? $c->{arguments} : '(default)' %></code>
+      </li>
+%     }
+    </ul>
+%   }
+  </dd>
 % }
-</ul>
+</dl>
 % }
 
-<p>
-  <a href="/file/log_file/<%= $report->{id} %>">log_file</a> |
-  <a href="/file/out_file/<%= $report->{id} %>">out_file</a> |
-  <a href="/api/full_report_data/<%= $report->{id} %>">JSON</a>
-</p>
+% if (defined $report->{compiler_msgs_text} && length $report->{compiler_msgs_text}) {
+<h2>Compiler messages</h2>
+<pre class="report-section"><%= $report->{compiler_msgs_text} %></pre>
+% }
+
+% if (defined $report->{manifest_msgs_text} && length $report->{manifest_msgs_text}) {
+<h2>Manifest messages</h2>
+<pre class="report-section"><%= $report->{manifest_msgs_text} %></pre>
+% }
+
+% if (defined $report->{nonfatal_msgs_text} && length $report->{nonfatal_msgs_text}) {
+<h2>Non-fatal messages</h2>
+<pre class="report-section"><%= $report->{nonfatal_msgs_text} %></pre>
+% }
+
+% if ($report->{applied_patches}) {
+<h2>Applied patches</h2>
+<pre class="report-section"><%= $report->{applied_patches} %></pre>
+% }
+
+% if ($report->{skipped_tests}) {
+<h2>Skipped tests</h2>
+<pre class="report-section"><%= $report->{skipped_tests} %></pre>
+% }
+
+<h2>About this smoke</h2>
+<dl class="report-about">
+  <dt>smoking-perl</dt>   <dd><%= $report->{smoke_perl} // '' %></dd>
+  <dt>smoker-version</dt> <dd><%= $report->{smoke_version} // '' %>/<%= $report->{smoker_version} // '' %></dd>
+  <dt>reporter</dt>       <dd><%= $report->{reporter} // '' %> <%= $report->{reporter_version} // '' %></dd>
+  <dt>test_jobs</dt>      <dd><%= $report->{test_jobs} // '' %></dd>
+  <dt>LANG</dt>           <dd><%= $report->{lang} // '' %></dd>
+  <dt>LC_ALL</dt>         <dd><%= $report->{lc_all} // '' %></dd>
+% if ($report->{harness_only}) {
+  <dt>harness only</dt>   <dd>1 (testsuite was run only with 'harness')</dd>
+% }
+% if ($report->{harness3opts}) {
+  <dt>HARNESS3OPTS</dt>   <dd><code><%= $report->{harness3opts} %></code></dd>
+% }
+</dl>
