@@ -78,6 +78,16 @@ sub startup ($self) {
     # to the template output, so use `<%= selected_if(...) %>` instead.
     $self->helper(selected_if => sub ($c, $cond) { $cond ? 'selected' : '' });
 
+    $self->helper(duration_hms => sub ($c, $seconds) {
+        return '0s' unless $seconds && $seconds > 0;
+        my $h = int($seconds / 3600);
+        my $m = int(($seconds % 3600) / 60);
+        my $s = $seconds % 60;
+        return "${h}h ${m}m ${s}s" if $h;
+        return "${m}m ${s}s"       if $m;
+        return "${s}s";
+    });
+
     $self->hook(before_dispatch => sub ($c) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';

@@ -11,7 +11,7 @@
   <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
   <dt>Smoke date</dt><dd><%= $report->{smoke_date} %></dd>
   <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><%= $report->{summary} %></dd>
-  <dt>Duration</dt>  <dd><%= $report->{durations} %> s</dd>
+  <dt>Duration</dt>  <dd><%= duration_hms($report->{durations}) %></dd>
 % if ($report->{user_note}) {
   <dt>Note</dt>      <dd class="user-note"><%= $report->{user_note} %></dd>
 % }
@@ -29,7 +29,7 @@
       <td><%= $cfg->{cc} %></td>
       <td><%= $cfg->{ccversion} %></td>
       <td><code><%= $cfg->{arguments} %></code></td>
-      <td><%= $cfg->{duration} %> s</td>
+      <td><%= duration_hms($cfg->{duration}) %></td>
     </tr>
 % }
   </tbody>
