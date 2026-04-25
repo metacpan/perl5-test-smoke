@@ -7,7 +7,7 @@
   <td class="summary-<%= (lc($r->{summary} // '') =~ s/\(.*//r) %>">
     <a href="/report/<%= $r->{id} %>"><%= $r->{summary} %></a>
   </td>
-  <td><%= $r->{smoke_date} %></td>
+  <td><time datetime="<%= $r->{smoke_date} %>" class="utc-date"><%= $r->{smoke_date} %></time></td>
 </tr>
 % }
 % if ($report_count > $page * $reports_per_page) {
