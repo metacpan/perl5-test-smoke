@@ -1,12 +1,25 @@
 % layout 'default';
 % title 'Failure matrix';
-% my $hot = stash('hot_failures') // 0;
+% my $hot           = stash('hot_failures') // 0;
+% my $exclude_stdio = stash('exclude_stdio') // 0;
 % my @hero_stats = (
 %   { label => 'Tests tracked', value => commify(scalar @$rows) },
 %   { label => 'Perl versions', value => commify(scalar @$perl_versions) },
 %   { label => 'Total failures', value => commify($hot), variant => $hot ? 'danger' : 'success' },
 % );
 %= include 'components/hero', eyebrow => 'Test failure matrix', title => 'Where Perl <em>breaks</em> across versions.', lede => 'Heatmap of failing tests by Perl version. Darker cells mean more failing reports. Click any cell for the matching reports.', stats => \@hero_stats
+
+<form class="matrix-filter" method="get" action="/matrix">
+  <label class="checkbox-field">
+    <input type="checkbox"
+           name="exclude_stdio"
+           value="1"
+           <%= $exclude_stdio ? 'checked' : '' %>
+           onchange="this.form.submit()">
+    Ignore stdio failures
+  </label>
+  <noscript><button class="btn btn-secondary btn-sm" type="submit">Apply</button></noscript>
+</form>
 
 % if (!@$perl_versions) {
   %= include 'components/empty_state', title => 'No reports yet', desc => 'Once smoke results are ingested, the failure matrix will appear here.', icon => '&hellip;'

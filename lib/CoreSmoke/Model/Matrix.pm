@@ -11,7 +11,15 @@ sub new ($class, %args) {
 # Cross-tab: rows = test name, columns = last 5 perl_ids by plevel desc.
 # Each cell = { cnt => N, alt => "linux-6.5;darwin-23.0" } where alt is a
 # semicolon-joined distinct list of "<osname>-<osversion>" pairs.
-sub matrix ($self) {
+#
+# Options:
+#   exclude_stdio  => truthy to drop result rows with io_env = 'stdio'
+#                     before counting. Per-letter FAIL semantics: the
+#                     stdio environment is the legacy non-PerlIO path
+#                     and is often noisy on platforms that have moved
+#                     on; hiding it lets users focus on PerlIO/locale
+#                     failures.
+sub matrix ($self, %opts) {
     my $db = $self->{sqlite}->db;
 
     my $perl_versions = [
@@ -24,7 +32,8 @@ sub matrix ($self) {
 
     return { perl_versions => [], rows => [] } unless @$perl_versions;
 
-    my $marks = join ',', ('?') x scalar @$perl_versions;
+    my $marks      = join ',', ('?') x scalar @$perl_versions;
+    my $stdio_pred = $opts{exclude_stdio} ? "AND rs.io_env <> 'stdio'" : '';
     my $sql = <<~"SQL";
         SELECT f.test,
                r.perl_id,
@@ -36,6 +45,7 @@ sub matrix ($self) {
           JOIN config           c   ON c.id           = rs.config_id
           JOIN report           r   ON r.id           = c.report_id
          WHERE r.perl_id IN ($marks)
+           $stdio_pred
          GROUP BY f.test, r.perl_id
          ORDER BY cnt DESC, f.test
         SQL

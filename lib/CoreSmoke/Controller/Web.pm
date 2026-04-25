@@ -139,14 +139,18 @@ sub search ($c) {
 }
 
 sub matrix ($c) {
-    my $data = $c->app->reports->matrix;
+    my $exclude_stdio = $c->param('exclude_stdio') ? 1 : 0;
+    my $data = $c->app->reports->matrix(exclude_stdio => $exclude_stdio);
     my $hot = 0;
     for my $row (@{ $data->{rows} // [] }) {
         for my $v (@{ $data->{perl_versions} // [] }) {
             $hot += $row->{$v}{cnt} // 0;
         }
     }
-    return $c->render(template => 'web/matrix', %$data, hot_failures => $hot);
+    return $c->render(template => 'web/matrix', %$data,
+        hot_failures  => $hot,
+        exclude_stdio => $exclude_stdio,
+    );
 }
 
 sub submatrix ($c) {

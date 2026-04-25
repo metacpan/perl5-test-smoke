@@ -773,6 +773,34 @@ p { margin: 0 0 var(--space-4); }
   gap: var(--space-4);
 }
 
+/* Single-control filter strip used on /matrix (stdio toggle).
+   Matches the search-form box styling but lays its label/control out
+   inline rather than in a multi-column grid. */
+.matrix-filter {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--fg-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-field input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 /* ============================================================
    COMPONENT — BADGES
    ============================================================ */
