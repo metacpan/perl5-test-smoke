@@ -1,0 +1,6 @@
+<nav>
+  <a href="/latest">Latest</a>
+  <a href="/search">Search</a>
+  <a href="/matrix">Matrix</a>
+  <a href="/about">About</a>
+</nav>

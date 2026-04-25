@@ -1,0 +1,5 @@
+% layout 'default';
+% title $title;
+
+<h1><%= $title %></h1>
+<pre class="plain-text"><%= $content %></pre>

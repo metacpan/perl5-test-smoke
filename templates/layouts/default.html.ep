@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title><%= title() || 'Perl 5 Core Smoke DB' %></title>
+<link rel="stylesheet" href="/coresmoke.css">
+<script src="/htmx.min.js"></script>
+</head>
+<body>
+%= include 'partials/menu'
+<main>
+<%= content %>
+</main>
+<footer>
+  <small><a href="/about"><%= config('app_name') // 'Perl 5 Core Smoke DB' %> v<%= config('app_version') // '2.0' %></a></small>
+</footer>
+</body>
+</html>

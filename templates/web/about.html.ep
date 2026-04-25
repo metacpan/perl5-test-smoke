@@ -1,0 +1,16 @@
+% layout 'default';
+% title 'About';
+
+<h1>About</h1>
+<dl>
+  <dt>App</dt>         <dd><%= $app_name %> v<%= $app_version %></dd>
+  <dt>Perl</dt>        <dd><%= $perl_version %></dd>
+  <dt>Mojolicious</dt> <dd><%= $mojo_version %></dd>
+  <dt>SQLite</dt>      <dd><%= $sqlite_version %></dd>
+  <dt>DB version</dt>  <dd><%= $db_version %></dd>
+</dl>
+
+<h2>API</h2>
+<p>Every page on this site is also reachable as JSON via the
+<a href="/api/openapi/web.yaml">OpenAPI</a>-documented REST routes.
+A JSONRPC 2.0 endpoint at <code>POST /api</code> exposes the same methods.</p>

@@ -1,0 +1,21 @@
+% layout 'default';
+% title 'Latest smoke results';
+
+<h1>Latest smoke results</h1>
+<p><small>Showing <%= scalar @$reports %> of <%= $report_count %> hosts. Latest plevel: <code><%= $latest_plevel %></code></small></p>
+
+<table class="reports">
+  <thead>
+    <tr>
+      <th>Host</th>
+      <th>Architecture</th>
+      <th>OS</th>
+      <th>Perl</th>
+      <th>Summary</th>
+      <th>Smoke date</th>
+    </tr>
+  </thead>
+  <tbody id="report-rows">
+%= include 'web/_reports_rows', path => $path, reports => $reports, report_count => $report_count, page => $page, reports_per_page => $reports_per_page
+  </tbody>
+</table>

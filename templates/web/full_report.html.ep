@@ -1,0 +1,50 @@
+% layout 'default';
+% title "Smoke report #$report->{id}";
+
+<h1>Smoke report #<%= $report->{id} %></h1>
+
+<dl class="report-meta">
+  <dt>Host</dt>      <dd><%= $report->{hostname} %></dd>
+  <dt>Architecture</dt><dd><%= $report->{architecture} %></dd>
+  <dt>OS</dt>        <dd><%= $report->{osname} %> <%= $report->{osversion} %></dd>
+  <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
+  <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
+  <dt>Smoke date</dt><dd><%= $report->{smoke_date} %></dd>
+  <dt>Summary</dt>   <dd class="summary-<%= lc($report->{summary} // '') %>"><%= $report->{summary} %></dd>
+  <dt>Duration</dt>  <dd><%= $report->{durations} %> s</dd>
+% if ($report->{user_note}) {
+  <dt>Note</dt>      <dd class="user-note"><%= $report->{user_note} %></dd>
+% }
+</dl>
+
+<h2>Configurations</h2>
+<table class="configs">
+  <thead>
+    <tr><th>cc</th><th>Compiler version</th><th>Arguments</th><th>Duration</th></tr>
+  </thead>
+  <tbody>
+% for my $cfg (@{ $report->{configs} // [] }) {
+    <tr>
+      <td><%= $cfg->{cc} %></td>
+      <td><%= $cfg->{ccversion} %></td>
+      <td><code><%= $cfg->{arguments} %></code></td>
+      <td><%= $cfg->{duration} %> s</td>
+    </tr>
+% }
+  </tbody>
+</table>
+
+% if (@{ $report->{test_failures} // [] }) {
+<h2>Failing tests</h2>
+<ul>
+% for my $t (@{ $report->{test_failures} }) {
+  <li><a href="/submatrix?test=<%= url_escape $t %>"><%= $t %></a></li>
+% }
+</ul>
+% }
+
+<p>
+  <a href="/file/log_file/<%= $report->{id} %>">log_file</a> |
+  <a href="/file/out_file/<%= $report->{id} %>">out_file</a> |
+  <a href="/api/full_report_data/<%= $report->{id} %>">JSON</a>
+</p>

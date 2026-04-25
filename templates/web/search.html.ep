@@ -1,0 +1,66 @@
+% layout 'default';
+% title 'Search smoke reports';
+
+<h1>Search smoke reports</h1>
+
+<form id="search-form"
+      hx-get="/search"
+      hx-trigger="change delay:200ms from:select, change delay:200ms from:input[type=checkbox]"
+      hx-target="#report-rows"
+      hx-include="closest form">
+  <fieldset>
+    <legend>Filters</legend>
+
+    <label>Architecture
+      <select name="selected_arch">
+        <option value="all">all</option>
+% for my $row (@{ $params->{sel_arch_os_ver} }) {
+        <option value="<%= $row->{architecture} %>"
+% if (($filter->{selected_arch} // '') eq $row->{architecture}) { print 'selected'; }
+        ><%= $row->{architecture} %></option>
+% }
+      </select>
+    </label>
+
+    <label>Perl version
+      <select name="selected_perl">
+        <option value="all">all</option>
+        <option value="latest"
+% if (($filter->{selected_perl} // '') eq 'latest') { print 'selected'; }
+        >latest</option>
+% for my $v (@{ $params->{perl_versions} }) {
+        <option value="<%= $v %>"
+% if (($filter->{selected_perl} // '') eq $v) { print 'selected'; }
+        ><%= $v %></option>
+% }
+      </select>
+    </label>
+
+    <label>Branch
+      <select name="selected_branch">
+        <option value="all">all</option>
+% for my $b (@{ $params->{branches} }) {
+        <option value="<%= $b %>"
+% if (($filter->{selected_branch} // '') eq $b) { print 'selected'; }
+        ><%= $b %></option>
+% }
+      </select>
+    </label>
+  </fieldset>
+</form>
+
+<table class="reports">
+  <thead>
+    <tr>
+      <th>Host</th>
+      <th>Architecture</th>
+      <th>OS</th>
+      <th>Perl</th>
+      <th>Summary</th>
+      <th>Smoke date</th>
+    </tr>
+  </thead>
+  <tbody id="report-rows">
+%= include 'web/_reports_rows', path => '/search', reports => $results->{reports}, report_count => $results->{report_count}, page => $page, reports_per_page => $reports_per_page, filter => $filter
+  </tbody>
+</table>

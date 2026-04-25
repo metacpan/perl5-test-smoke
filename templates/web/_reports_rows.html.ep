@@ -1,0 +1,24 @@
+% for my $r (@$reports) {
+<tr>
+  <td><%= $r->{hostname} %></td>
+  <td><%= $r->{architecture} %></td>
+  <td><%= $r->{osname} %> <%= $r->{osversion} %></td>
+  <td><a href="/report/<%= $r->{id} %>"><%= $r->{perl_id} %></a></td>
+  <td class="summary-<%= lc($r->{summary} // '') %>"><%= $r->{summary} %></td>
+  <td><%= $r->{smoke_date} %></td>
+</tr>
+% }
+% if ($report_count > $page * $reports_per_page) {
+%   my $next = $page + 1;
+%   my $url  = "$path?page=$next&reports_per_page=$reports_per_page";
+%   if (my $f = stash('filter')) {
+%     for my $k (sort keys %$f) {
+%       next if $k eq 'page' || $k eq 'reports_per_page';
+%       next unless defined $f->{$k} && length $f->{$k};
+%       $url .= "&" . url_escape($k) . "=" . url_escape($f->{$k});
+%     }
+%   }
+<tr hx-get="<%= $url %>" hx-trigger="revealed" hx-swap="afterend" hx-target="this">
+  <td colspan="6"><em>Loading more...</em></td>
+</tr>
+% }

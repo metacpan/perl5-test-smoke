@@ -1,0 +1,6 @@
+% layout 'default';
+% title 'Not Found';
+
+<h1>404 Not Found</h1>
+<p>That report or page does not exist (yet).</p>
+<p><a href="/latest">Go back to latest smoke results</a>.</p>
