@@ -1,5 +1,8 @@
 # Perl 5 Core Smoke DB (2.0)
 
+[![ci](https://github.com/toddr/perl5-smoke/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/toddr/perl5-smoke/actions/workflows/ci.yml)
+[![build base image](https://github.com/toddr/perl5-smoke/actions/workflows/base.yml/badge.svg?branch=main)](https://github.com/toddr/perl5-smoke/actions/workflows/base.yml)
+
 A modern Perl/Mojolicious rewrite of the legacy three-repo
 `Perl5-CoreSmokeDB{,-API,-Web}` stack, collapsed into a single app.
 
