@@ -45,7 +45,7 @@ export MOJO_MODE := development
 .PHONY: help build deps brew-deps cpan-deps vendor \
         test critic cover \
         dev start stop restart reload \
-        migrate \
+        migrate fix-plevels \
         import import-fresh dev-db dev-db-fresh \
         clean clean-cover distclean check-src
 
@@ -68,6 +68,7 @@ help:
 	@echo "  restart       Stop then start hypnotoad"
 	@echo "  reload        Hot-reload hypnotoad (re-exec workers)"
 	@echo "  migrate       Create / upgrade data/development.db schema"
+	@echo "  fix-plevels   Recompute report.plevel for every row"
 	@echo ""
 	@echo "  test          Run the full test suite (prove -lr t/)"
 	@echo "  critic        Run perlcritic at severity 5 over lib/ and script/"
@@ -166,6 +167,13 @@ reload:
 # Idempotent: running it on an already-current DB is a no-op.
 migrate:
 	./script/migrate
+
+# Recompute report.plevel for every row using the current
+# Plevel.pm logic. Idempotent and cheap (one UPDATE per row that
+# differs). Useful after pulling a Plevel.pm change or noticing weird
+# /latest sort order on imported data.
+fix-plevels:
+	./script/fix-plevels
 
 # ---------------------------------------------------------------------------
 # Test, lint, coverage

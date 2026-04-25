@@ -4,13 +4,28 @@ use warnings;
 use experimental qw(signatures);
 
 # Faithful port of public.git_describe_as_plevel() from the legacy Postgres
-# schema. Output must be byte-identical to the PG function so plevel-keyed
-# URLs and existing client expectations keep working after migration.
+# schema. Output must be byte-identical to the PG function for valid
+# git_describe inputs (see t/data/plevel-corpus.tsv).
+#
+# Real-world dumps occasionally contain rows whose `git_describe` column is
+# a bare commit SHA (no v5.X.Y prefix). Those produce nonsense plevels that
+# sort above every well-formed value (since their first character is a hex
+# digit, not '5'), pinning malformed rows to the top of /latest. When that
+# happens AND a `perl_id` is supplied, fall back to deriving the plevel
+# from `perl_id` (e.g. 5.41.9 -> 5.041009zzz000). Without a perl_id, return
+# a sentinel that sorts LOW so the malformed row drops to the bottom.
 
-sub from_git_describe ($describe) {
+sub from_git_describe ($describe, $perl_id = undef) {
     my $clean = $describe // '';
     $clean =~ s/^v//;
     $clean =~ s/-g.+$//;
+
+    # Reject obviously bogus input (bare SHA, empty, malformed) and fall
+    # back to a perl_id-derived plevel if we have one.
+    unless ($clean =~ /^\d+\.\d/) {
+        return _from_perl_id($perl_id) // '0.000000zzz000';
+    }
+
     my @parts = split /[.\-]/, $clean;
     push @parts, '0' if @parts == 3;
 
@@ -28,8 +43,15 @@ sub from_git_describe ($describe) {
     return $plevel;
 }
 
-# PG lpad(str, len, fill): pads from the left, truncates from the right
-# if the string is already longer than `len`.
+# 5.41.9 -> 5.041009zzz000. Returns undef if perl_id is malformed.
+sub _from_perl_id ($perl_id) {
+    return undef unless defined $perl_id;
+    return undef unless $perl_id =~ /^(\d+)\.(\d+)(?:\.(\d+))?$/;
+    return sprintf '%d.%03d%03dzzz000', $1, $2, $3 // 0;
+}
+
+# PG lpad(str, len, fill): left-pad with `fill` if shorter than `len`,
+# truncate from the right if longer.
 sub _lpad ($str, $len, $fill) {
     return substr($str, 0, $len) if length($str) > $len;
     return $fill x ($len - length($str)) . $str;

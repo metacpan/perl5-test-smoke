@@ -40,7 +40,10 @@ sub post_report ($self, $raw) {
     my ($data, $files) = $self->_normalize($raw);
 
     # Compute plevel + report_hash.
-    $data->{plevel}      = CoreSmoke::Model::Plevel::from_git_describe($data->{git_describe} // '');
+    $data->{plevel}      = CoreSmoke::Model::Plevel::from_git_describe(
+        $data->{git_describe} // '',
+        $data->{perl_id},
+    );
     $data->{report_hash} = $self->{sqlite}->report_hash($data);
 
     # Write on-disk content first (decision #33: best-effort, files first).

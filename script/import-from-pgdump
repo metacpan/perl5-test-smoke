@@ -258,7 +258,9 @@ sub row_report ($row) {
     my $smoke_date = pg_ts_to_iso($row->{smoke_date})
         // die "report id=$row->{id}: smoke_date is required\n";
 
-    my $plevel = CoreSmoke::Model::Plevel::from_git_describe($row->{git_describe});
+    my $plevel = CoreSmoke::Model::Plevel::from_git_describe(
+        $row->{git_describe}, $row->{perl_id},
+    );
 
     my $report_hash = md5_hex(
         join "\0",

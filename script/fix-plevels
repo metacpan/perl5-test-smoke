@@ -1,0 +1,57 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../local/lib/perl5";
+
+use Mojo::Home;
+use File::Spec;
+use Mojo::SQLite;
+
+use CoreSmoke::Model::Plevel;
+
+# Recompute report.plevel for every row using the current
+# from_git_describe(git_describe, perl_id) logic. Idempotent: rows that
+# already have the correct plevel are left alone.
+#
+# Run after pulling a Plevel.pm change, or after spotting weird sort
+# order on /latest. Honors $SMOKE_DB_PATH; otherwise uses the dev DB
+# (data/development.db) -- same default as `make migrate`.
+
+my $home = Mojo::Home->new->detect('CoreSmoke::App');
+my $path = $ENV{SMOKE_DB_PATH} // 'data/development.db';
+$path = $home->child($path)->to_string
+    unless File::Spec->file_name_is_absolute($path);
+
+my $sql = Mojo::SQLite->new("sqlite:$path");
+$sql->on(connection => sub ($sqlite, $dbh) { $dbh->do('PRAGMA foreign_keys = ON') });
+my $db = $sql->db;
+
+my $rows = $db->query(
+    "SELECT id, git_describe, perl_id, plevel FROM report"
+)->hashes->to_array;
+
+my ($checked, $changed) = (0, 0);
+my $tx = $db->begin;
+
+for my $r (@$rows) {
+    $checked++;
+    my $new = CoreSmoke::Model::Plevel::from_git_describe(
+        $r->{git_describe}, $r->{perl_id},
+    );
+    next if defined $r->{plevel} && defined $new && $r->{plevel} eq $new;
+    $db->query(
+        "UPDATE report SET plevel = ? WHERE id = ?",
+        $new, $r->{id},
+    );
+    $changed++;
+    say "  [$r->{id}] $r->{plevel} -> $new (git_describe=$r->{git_describe}, perl_id=$r->{perl_id})"
+        if $ENV{VERBOSE};
+}
+
+$tx->commit;
+
+say "[fix-plevels] checked $checked rows, updated $changed";
