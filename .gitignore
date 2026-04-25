@@ -16,3 +16,4 @@ data/*.pid
 # Vendored at build time -- real htmx is fetched by `make` (or by the
 # Dockerfile.base builder stage). Don't commit a stale copy.
 /public/htmx.min.js
+.DS_Store
