@@ -8,7 +8,9 @@ use lib "$FindBin::Bin/../../lib";
 use lib "$FindBin::Bin/../../local/lib/perl5";
 
 use Test::Mojo;
-use File::Path qw(remove_tree);
+use Mojo::JSON  qw(decode_json);
+use Mojo::File  qw();
+use File::Path  qw(remove_tree);
 
 my $T         = $FindBin::Bin;
 my $TEST_DB   = "$T/test.db";
@@ -32,5 +34,18 @@ sub reset_db {
 
 sub t   ($self) { $self->{t} }
 sub app ($self) { $self->{t}->app }
+
+sub fixture ($self, $name) {
+    my $path = "$T/data/$name";
+    return decode_json(Mojo::File->new($path)->slurp);
+}
+
+sub ingest_fixture ($self, $name) {
+    my $body = $self->fixture($name);
+    return $self->{t}
+        ->post_ok('/api/report', json => { report_data => $body })
+        ->status_is(200)
+        ->tx->res->json;
+}
 
 1;
