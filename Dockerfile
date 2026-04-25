@@ -1,46 +1,26 @@
 #  =========================================================================
 #  coresmoke (prod image)
 #  -------------------------------------------------------------------------
-#  Per-commit build. The heavy CPAN + apt install lives in coresmoke-base
-#  (built by .github/workflows/base.yml from Dockerfile.base whenever
-#  cpanfile or cpanfile.snapshot change). This file just lays the source
-#  on top of that base, so a fresh build is essentially a `COPY .`.
+#  Per-commit build. All apt and CPAN deps live in coresmoke-base (built
+#  by .github/workflows/base.yml from Dockerfile.base whenever cpanfile or
+#  cpanfile.snapshot change). This file just lays the source on top of
+#  that base. A fresh build is essentially `COPY . /app` plus configuring
+#  the entrypoint -- typically a few seconds.
 #
-#  Override BASE_IMAGE to build against a local base for development:
+#  Override BASE_IMAGE for local development:
 #     docker build -f Dockerfile.base -t coresmoke-base:local .
 #     docker build --build-arg BASE_IMAGE=coresmoke-base:local -t coresmoke:dev .
 #  =========================================================================
-ARG PERL_VERSION=5.42
 ARG BASE_IMAGE=ghcr.io/metacpan/coresmoke-base:latest
 
-# Pull the prebuilt deps (perl + cpm + /build/local + /build/htmx.min.js).
-FROM ${BASE_IMAGE} AS deps
+FROM ${BASE_IMAGE}
 
-# ---------- runtime ----------------------------------------------------------
-FROM perl:${PERL_VERSION}-slim AS runtime
-
-# Runtime deps only (no headers / build tools).
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-        libsqlite3-0 \
-        liblzma5 \
-        libssl3 \
-        ca-certificates \
-        tini \
-        wget \
- && rm -rf /var/lib/apt/lists/* \
- && useradd --system --create-home --uid 1000 smoke
-
-# Copy installed CPAN deps and the vendored htmx from the base image.
-COPY --from=deps /build/local         /app/local
-COPY --from=deps /build/htmx.min.js   /app/public/htmx.min.js
-
-# Copy the application source.
+# Layer the application source on top of the prebuilt base. The base has
+# already created /app and /data, vendored htmx, installed CPAN deps into
+# /app/local, and chowned everything to smoke:smoke. .dockerignore keeps
+# public/htmx.min.js (the dev placeholder) out of the build context so
+# this COPY does not overwrite the real vendored htmx from the base.
 COPY --chown=smoke:smoke . /app
-
-# Make sure the data directory exists and is owned by `smoke`.
-RUN mkdir -p /data \
- && chown -R smoke:smoke /app /data
 
 WORKDIR /app
 USER smoke

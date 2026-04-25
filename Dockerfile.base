@@ -1,14 +1,17 @@
 #  =========================================================================
 #  coresmoke-base
 #  -------------------------------------------------------------------------
-#  Heavy CPAN + apt deps for the prod image. Rebuilt only when cpanfile,
-#  cpanfile.snapshot, or this file change (see .github/workflows/base.yml).
-#  The prod Dockerfile FROMs the resulting image and just adds the source,
-#  so per-commit builds finish in seconds instead of minutes.
+#  Everything the prod image needs except the source: apt runtime libs +
+#  build-time CPAN deps + vendored htmx + the unprivileged `smoke` user.
+#  Rebuilt only when cpanfile, cpanfile.snapshot, or this file change (see
+#  .github/workflows/base.yml). The prod Dockerfile FROMs this and just
+#  layers the application source on top, so per-commit builds reduce to
+#  a single COPY.
 #  =========================================================================
 ARG PERL_VERSION=5.42
 
-FROM perl:${PERL_VERSION}-slim
+# ---------- builder (build tools, NOT shipped) ------------------------------
+FROM perl:${PERL_VERSION}-slim AS builder
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -31,3 +34,26 @@ RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --sh
 # Vendor htmx -- decision #17. Pinned to a stable major release.
 RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
         -o /build/htmx.min.js
+
+
+# ---------- base (this is what we publish) ----------------------------------
+FROM perl:${PERL_VERSION}-slim
+
+# Runtime deps: SQLite, xz, OpenSSL libs; tini for PID-1; wget for HEALTHCHECK.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        libsqlite3-0 \
+        liblzma5 \
+        libssl3 \
+        ca-certificates \
+        tini \
+        wget \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --create-home --uid 1000 smoke
+
+# Bake the prebuilt CPAN tree and the vendored htmx into /app.
+COPY --from=builder /build/local       /app/local
+COPY --from=builder /build/htmx.min.js /app/public/htmx.min.js
+
+RUN mkdir -p /data \
+ && chown -R smoke:smoke /app /data

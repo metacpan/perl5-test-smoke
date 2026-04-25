@@ -18,3 +18,8 @@ t/test.db-shm
 t/test.db-wal
 t/data/reports-tmp/
 README.md.bak
+
+# Keep the dev placeholder out of the build context. The real htmx is
+# vendored into the base image; if we let the placeholder through here,
+# the source COPY in the prod Dockerfile would overwrite it.
+public/htmx.min.js
