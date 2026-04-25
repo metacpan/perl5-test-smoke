@@ -214,9 +214,10 @@ sub full_report_data ($self, $rid) {
     # log_file is shown via a separate link because it's typically tens
     # of kB of log output.
     my $rf = $self->{report_files};
+    my $hash = $report->{report_hash};
     my $on_disk = sub ($field) {
-        return unless $rf;
-        my $b = $rf->read($rid, $field);
+        return unless $rf && defined $hash;
+        my $b = $rf->read_by_hash($hash, $field);
         return defined $b && length $b ? $b : ();
     };
 

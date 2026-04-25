@@ -61,12 +61,16 @@ my $results = $h->app->sqlite->db->query(
 )->hashes->to_array;
 ok scalar(@$results) >= 1, 'results inserted';
 
-# /api/full_report_data shape
-$t->get_ok("/api/full_report_data/$rid")->status_is(200)
+# /api/full_report_data shape and on-disk fields
+my $full = $t->get_ok("/api/full_report_data/$rid")->status_is(200)
   ->json_has('/configs')
   ->json_has('/c_compilers')
   ->json_has('/test_failures')
-  ->json_has('/durations');
+  ->json_has('/durations')
+  ->tx->res->json;
+
+like $full->{manifest_msgs_text}, qr/MANIFEST did not declare/,
+     'full_report_data includes manifest_msgs_text from disk';
 
 # /api/logfile / /api/outfile -- the fixture has empty log/out, so 404
 $t->get_ok("/api/logfile/$rid")->status_is(404);
