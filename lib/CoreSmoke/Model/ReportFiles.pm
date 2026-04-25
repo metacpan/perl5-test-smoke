@@ -90,6 +90,11 @@ sub _hash_for_rid ($self, $rid) {
     return $row ? $row->{report_hash} : undef;
 }
 
+sub has_file ($self, $hash, $field) {
+    return unless $IS_FIELD{$field};
+    return -f ($self->path_for($hash) . "/$field.xz") ? 1 : 0;
+}
+
 sub fields { return @FIELDS }
 
 1;
