@@ -43,18 +43,21 @@ jobs:
           # network or disk.
           workers: 6
           args: "--with-develop"
-          path: local
-          sudo: false
+          # `global: true` is the action's default and what we want here:
+          # we're inside an ephemeral perl:5.42-slim container, so install
+          # straight into /usr/local/lib/perl5/... and /usr/local/bin/...
+          # which are already on @INC and PATH. No `path: local` and no
+          # PERL5LIB juggling needed.
 
       - name: prove
         env:
-          PERL5LIB: local/lib/perl5:lib
+          PERL5LIB: lib
         run: prove -lr t/
 
       - name: perlcritic (severity 5, fail on violation)
         env:
-          PERL5LIB: local/lib/perl5:lib
-        run: local/bin/perlcritic --severity 5 lib/
+          PERL5LIB: lib
+        run: perlcritic --severity 5 lib/
 
   docker:
     name: build + scan + push prod image
