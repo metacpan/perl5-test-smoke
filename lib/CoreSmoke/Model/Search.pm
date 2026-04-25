@@ -16,6 +16,7 @@ use experimental qw(signatures);
 #   selected_cver / andnotsel_cver       -> c.ccversion   (joins config)
 #   selected_perl                        -> "all" | "latest" | "<perl_id>"
 #   selected_branch                      -> r.smoke_branch
+#   selected_summary                     -> r.summary     ("PASS" | "FAIL(F)" | ...)
 #   page                                 -> 1-based, default 1
 #   reports_per_page                     -> default 25
 
@@ -25,11 +26,12 @@ sub new ($class, %args) {
 }
 
 my %REPORT_FIELD = (
-    arch   => 'r.architecture',
-    osnm   => 'r.osname',
-    osvs   => 'r.osversion',
-    host   => 'r.hostname',
-    branch => 'r.smoke_branch',
+    arch    => 'r.architecture',
+    osnm    => 'r.osname',
+    osvs    => 'r.osversion',
+    host    => 'r.hostname',
+    branch  => 'r.smoke_branch',
+    summary => 'r.summary',
 );
 my %CONFIG_FIELD = (
     comp => 'c.cc',
@@ -48,7 +50,7 @@ sub compile ($self, $params) {
         push @bind, $v;
     };
 
-    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch);
+    $emit->($REPORT_FIELD{$_}, $_) for qw(arch osnm osvs host branch summary);
 
     my $needs_config_join = 0;
     for my $key (qw(comp cver)) {

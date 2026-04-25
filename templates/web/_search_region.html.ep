@@ -6,15 +6,21 @@
 % # available list (e.g. the combination matches zero rows) we pin it
 % # as an extra <option> so the active filter stays visible and can
 % # be cleared.
-% my $arch_opts   = $available->{architectures} // [];
-% my $perl_opts   = $available->{perl_versions} // [];
-% my $branch_opts = $available->{branches}      // [];
-% my $sel_arch    = $filter->{selected_arch}    // '';
-% my $sel_perl    = $filter->{selected_perl}    // '';
-% my $sel_branch  = $filter->{selected_branch}  // '';
-% my %arch_have   = map { $_ => 1 } @$arch_opts;
-% my %perl_have   = map { $_ => 1 } @$perl_opts;
-% my %branch_have = map { $_ => 1 } @$branch_opts;
+% my $arch_opts    = $available->{architectures} // [];
+% my $perl_opts    = $available->{perl_versions} // [];
+% my $branch_opts  = $available->{branches}      // [];
+% my $host_opts    = $available->{hostnames}     // [];
+% my $summary_opts = $available->{summaries}     // [];
+% my $sel_arch     = $filter->{selected_arch}    // '';
+% my $sel_perl     = $filter->{selected_perl}    // '';
+% my $sel_branch   = $filter->{selected_branch}  // '';
+% my $sel_host     = $filter->{selected_host}    // '';
+% my $sel_summary  = $filter->{selected_summary} // '';
+% my %arch_have    = map { $_ => 1 } @$arch_opts;
+% my %perl_have    = map { $_ => 1 } @$perl_opts;
+% my %branch_have  = map { $_ => 1 } @$branch_opts;
+% my %host_have    = map { $_ => 1 } @$host_opts;
+% my %summary_have = map { $_ => 1 } @$summary_opts;
 
   <form id="search-form"
         hx-get="/search"
@@ -59,6 +65,30 @@
 % }
 % if ($sel_branch ne '' && $sel_branch ne 'all' && !$branch_have{$sel_branch}) {
           <option value="<%= $sel_branch %>" selected><%= $sel_branch %></option>
+% }
+        </select>
+      </label>
+
+      <label>Hostname
+        <select name="selected_host">
+          <option value="all" <%= selected_if($sel_host eq '' || $sel_host eq 'all') %>>all</option>
+% for my $v (@$host_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_host eq $v) %>><%= $v %></option>
+% }
+% if ($sel_host ne '' && $sel_host ne 'all' && !$host_have{$sel_host}) {
+          <option value="<%= $sel_host %>" selected><%= $sel_host %></option>
+% }
+        </select>
+      </label>
+
+      <label>Summary
+        <select name="selected_summary">
+          <option value="all" <%= selected_if($sel_summary eq '' || $sel_summary eq 'all') %>>all</option>
+% for my $v (@$summary_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_summary eq $v) %>><%= $v %></option>
+% }
+% if ($sel_summary ne '' && $sel_summary ne 'all' && !$summary_have{$sel_summary}) {
+          <option value="<%= $sel_summary %>" selected><%= $sel_summary %></option>
 % }
         </select>
       </label>

@@ -226,15 +226,21 @@ sub available_filter_values ($self, $filter) {
     }
 
     my %dims = (
-        architectures => { exclude => [qw(selected_arch   andnotsel_arch)],
+        architectures => { exclude => [qw(selected_arch    andnotsel_arch)],
                            field   => 'r.architecture',
                            order   => 'r.architecture' },
         perl_versions => { exclude => [qw(selected_perl)],
                            field   => 'r.perl_id',
                            order   => 'r.perl_id' },
-        branches      => { exclude => [qw(selected_branch andnotsel_branch)],
+        branches      => { exclude => [qw(selected_branch  andnotsel_branch)],
                            field   => 'r.smoke_branch',
                            order   => 'r.smoke_branch' },
+        hostnames     => { exclude => [qw(selected_host    andnotsel_host)],
+                           field   => 'r.hostname',
+                           order   => 'r.hostname COLLATE NOCASE' },
+        summaries     => { exclude => [qw(selected_summary andnotsel_summary)],
+                           field   => 'r.summary',
+                           order   => 'r.summary' },
     );
 
     my %out;

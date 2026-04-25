@@ -29,8 +29,9 @@ sub search ($c) {
     for my $key (qw(
         selected_arch selected_osnm selected_osvs selected_host
         selected_comp selected_cver selected_perl selected_branch
+        selected_summary
         andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
-        andnotsel_comp andnotsel_cver
+        andnotsel_comp andnotsel_cver andnotsel_summary
         page reports_per_page
     )) {
         my $v = $c->param($key);
