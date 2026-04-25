@@ -14,7 +14,14 @@
 <%= content %>
 </main>
 <footer>
-  <small><a href="/about"><%= config('app_name') // 'Perl 5 Core Smoke DB' %> v<%= config('app_version') // '2.0' %></a></small>
+  <small>
+    <a href="/about"><%= config('app_name') // 'Perl 5 Core Smoke DB' %> v<%= config('app_version') // '2.0' %></a>
+    (rewrite of CoreSmokeDB 1.04 / 0.0.5);
+    courtesy of Perl QA Hackathon: 2010 Vienna + 2011 Amsterdam +
+    2012 Paris + 2013 Lancaster + 2014 Lyon + 2015 Berlin + 2016 Rugby +
+    PTS 2017 Lyon + 2018 Oslo + Private 2022 abeltje +
+    PTS 2023 Lyon + 2024 Lisbon
+  </small>
 </footer>
 </body>
 </html>
