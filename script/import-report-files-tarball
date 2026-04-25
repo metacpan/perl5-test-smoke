@@ -1,0 +1,167 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+
+# Temporary helper: extract a `tsdbf-YYYYMM.txz` tarball of report
+# files, look up each report's report_hash in the SQLite DB, and write
+# the file under data/reports/<sharded-hash>/<field>.xz so that the
+# UI's /file/log_file/:rid etc. routes find them.
+#
+# The tarball layout (one entry per file):
+#
+#   YYYY/MM/DD/<rid>.log        -> log_file
+#   YYYY/MM/DD/<rid>-cm.txt     -> compiler_msgs
+#   YYYY/MM/DD/<rid>-mm.txt     -> manifest_msgs
+#
+# Files for report ids that don't exist in the local DB are silently
+# skipped (the count appears in the final summary).
+#
+# Usage:
+#   ./script/import-report-files-tarball [path/to/tsdbf-YYYYMM.txz]
+#
+# Default tarball: data/reports/tsdbf-202604.txz
+# Default DB:      $SMOKE_DB_PATH or data/development.db
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../local/lib/perl5";
+
+use Mojo::Home;
+use Mojo::SQLite;
+use File::Spec;
+use File::Path qw(make_path);
+use File::Find ();
+use File::Temp qw(tempdir);
+use IO::Compress::Xz qw(xz $XzError);
+
+my $home = Mojo::Home->new->detect('CoreSmoke::App');
+
+my $tarball = shift @ARGV // 'data/reports/tsdbf-202604.txz';
+$tarball = $home->child($tarball)->to_string
+    unless File::Spec->file_name_is_absolute($tarball);
+-r $tarball or die "cannot read tarball: $tarball\n";
+
+my $db_path = $ENV{SMOKE_DB_PATH} // 'data/development.db';
+$db_path = $home->child($db_path)->to_string
+    unless File::Spec->file_name_is_absolute($db_path);
+-e $db_path or die "DB does not exist at $db_path\n";
+
+my $reports_root = $ENV{SMOKE_REPORTS_DIR} // 'data/reports';
+$reports_root = $home->child($reports_root)->to_string
+    unless File::Spec->file_name_is_absolute($reports_root);
+
+# ----------------------------------------------------------------------
+# Prefetch every id->report_hash so we avoid one query per file.
+# ----------------------------------------------------------------------
+
+my $sql = Mojo::SQLite->new("sqlite:$db_path");
+my $db  = $sql->db;
+
+say "[index] loading id -> report_hash from $db_path";
+my %hash_for;
+my $rows = $db->query("SELECT id, report_hash FROM report")->hashes->to_array;
+$hash_for{ $_->{id} } = $_->{report_hash} for @$rows;
+say sprintf "[index] %d reports indexed", scalar keys %hash_for;
+
+# ----------------------------------------------------------------------
+# Extract the tarball into a temp dir.
+# ----------------------------------------------------------------------
+
+my $tmp = tempdir(CLEANUP => 1);
+say "[extract] $tarball -> $tmp";
+system('tar', '-xJf', $tarball, '-C', $tmp) == 0
+    or die "tar extract failed (status=$?)\n";
+
+# ----------------------------------------------------------------------
+# Walk and place.
+# ----------------------------------------------------------------------
+
+# Filename suffix -> on-disk field name. Order matters: longer suffixes
+# matched first so '-cm.txt' wins over '.txt' if any other extensions
+# show up later. Pattern is anchored to the basename.
+my @SUFFIX_RULES = (
+    [ qr/^(\d+)-cm\.txt$/  => 'compiler_msgs' ],
+    [ qr/^(\d+)-mm\.txt$/  => 'manifest_msgs' ],
+    [ qr/^(\d+)\.log$/     => 'log_file'      ],
+);
+
+sub _path_for ($root, $hash) {
+    my $shard = join('/',
+        substr($hash, 0, 2),
+        substr($hash, 2, 2),
+        substr($hash, 4, 2),
+        $hash,
+    );
+    return "$root/$shard";
+}
+
+my @files;
+File::Find::find(sub { push @files, $File::Find::name if -f $_ }, $tmp);
+say sprintf "[walk] %d files in tarball", scalar @files;
+
+my ($written, $skipped_no_match, $skipped_no_hash, $errors) = (0, 0, 0, 0);
+my $next_progress = 500;
+
+for my $file (@files) {
+    (my $base = $file) =~ s{.*/}{};
+
+    my ($rid, $field);
+    for my $rule (@SUFFIX_RULES) {
+        if ($base =~ $rule->[0]) {
+            ($rid, $field) = ($1, $rule->[1]);
+            last;
+        }
+    }
+    unless (defined $rid) {
+        $skipped_no_match++;
+        next;
+    }
+
+    my $hash = $hash_for{$rid};
+    unless (defined $hash) {
+        $skipped_no_hash++;
+        next;
+    }
+
+    my $dir = _path_for($reports_root, $hash);
+    make_path($dir) unless -d $dir;
+    my $dest = "$dir/$field.xz";
+
+    if (open my $in, '<:raw', $file) {
+        my $bytes = do { local $/; <$in> };
+        close $in;
+
+        my $gz;
+        unless (xz(\$bytes => \$gz, Preset => 6)) {
+            warn "xz $file: $XzError\n";
+            $errors++;
+            next;
+        }
+
+        if (open my $out, '>:raw', $dest) {
+            print {$out} $gz;
+            close $out;
+            $written++;
+        }
+        else {
+            warn "write $dest: $!\n";
+            $errors++;
+        }
+    }
+    else {
+        warn "open $file: $!\n";
+        $errors++;
+    }
+
+    if ($written + $skipped_no_match + $skipped_no_hash + $errors >= $next_progress) {
+        say sprintf "  ... %d processed (%d written, %d no-match, %d no-hash, %d errors)",
+            $next_progress, $written, $skipped_no_match, $skipped_no_hash, $errors;
+        $next_progress += 500;
+    }
+}
+
+say "";
+say sprintf "[done] wrote=%d  no-rid-pattern=%d  no-db-row=%d  errors=%d",
+    $written, $skipped_no_match, $skipped_no_hash, $errors;
+say "    target: $reports_root";
