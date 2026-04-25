@@ -100,14 +100,16 @@ Hand-curated corpus (no PG dump per decision #7). Each line of `t/data/plevel-co
 ```
 5.42.0                          5.042000zzz000
 v5.42.0                         5.042000zzz000
-v5.42.0-RC1                     5.042000RC1000
-v5.42.0-RC2                     5.042000RC2000
+v5.42.0-RC1                     5.042000RC1RC1
+v5.42.0-RC2                     5.042000RC2RC2
 v5.41.10                        5.041010zzz000
 v5.41.10-12-gabc1234            5.041010zzz012
 v5.40.2                         5.040002zzz000
 v5.40.0-RC3-5-gdef5678          5.040000RC3005
 ... (~30 total covering release / RC / tagged-with-ahead variants)
 ```
+
+Outputs are PG-byte-faithful (see `02-database.md` for the `lpad` semantics that produce `RC1RC1` for bare-RC tags).
 
 ```perl
 use v5.42;
