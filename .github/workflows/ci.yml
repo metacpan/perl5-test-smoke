@@ -68,6 +68,11 @@ jobs:
     name: build + scan + push prod image
     runs-on: ubuntu-latest
     needs: test
+    # Only run on pushes to main. Pull requests skip this job entirely
+    # -- the test job above already exercises the build deps and tests,
+    # and we don't want to burn CI minutes on a multi-arch buildx for a
+    # PR that may be revised many times before merge.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v6
 
@@ -79,19 +84,18 @@ jobs:
         run: echo "name=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: log in to ghcr
-        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: build multi-arch (and push on main)
+      - name: build multi-arch and push
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
           # Override the Dockerfile's default BASE_IMAGE (metacpan) so the
           # FROM resolves to the base image we actually publish from this
           # repo. base.yml builds and pushes coresmoke-base; ci.yml pulls
@@ -103,7 +107,6 @@ jobs:
           cache-to:   type=gha,mode=max
 
       - name: trivy scan (report-only)
-        if: github.ref == 'refs/heads/main'
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
