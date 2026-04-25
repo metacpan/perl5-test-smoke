@@ -57,6 +57,14 @@ my $s     = CoreSmoke::Model::Search->new(sqlite => $sqlite);
     is_deeply $bind, ['gcc'], 'bind value';
 }
 
+# Smoker version filter uses report table
+{
+    my ($from, $where, $bind) = $s->compile({ selected_smkv => '1.86' });
+    is $from, "FROM report r", 'smkv only: no config join';
+    like $where, qr/r\.smoke_version = \?/, 'smoke_version =';
+    is_deeply $bind, ['1.86'], 'bind value';
+}
+
 # `all` is treated as no filter
 {
     my (undef, $where, $bind) = $s->compile({

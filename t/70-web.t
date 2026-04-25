@@ -31,7 +31,8 @@ my $resp = $h->ingest_fixture('idefix-gff5bbe677.jsn');
 my $rid  = $resp->{id};
 
 $t->get_ok('/latest')->status_is(200)
-  ->content_like(qr/idefix/);                 # hostname appears in row
+  ->content_like(qr/idefix/)                  # hostname appears in row
+  ->content_like(qr/1\.77/);                  # smoke_version appears in row
 
 $t->get_ok("/report/$rid")->status_is(200)
   ->text_like('h1' => qr/Smoke report #\Q$rid\E/)
@@ -40,6 +41,17 @@ $t->get_ok("/report/$rid")->status_is(200)
 # manifest_msgs is on disk; the file route reads it back through xz
 # (we ingested an empty log_file so log_file path stays 404)
 $t->get_ok("/file/log_file/$rid")->status_is(404);
+
+# /search shows smoker version column and filter dropdown
+$t->get_ok('/search')->status_is(200)
+  ->element_exists('select[name=selected_smkv]', 'smoker filter exists')
+  ->content_like(qr/<th>Smoker<\/th>/);
+
+# Smoker filter narrows results
+$t->get_ok('/search?selected_smkv=1.77')->status_is(200)
+  ->content_like(qr/idefix/);
+$t->get_ok('/search?selected_smkv=99.99')->status_is(200)
+  ->content_unlike(qr/idefix/);
 
 # About page shows Perl + Mojo + DB versions
 $t->get_ok('/about')->status_is(200)

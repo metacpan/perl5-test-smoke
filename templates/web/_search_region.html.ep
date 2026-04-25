@@ -14,6 +14,7 @@
 % my $host_opts    = $available->{hostnames}         // [];
 % my $comp_opts    = $available->{compilers}         // [];
 % my $cver_opts    = $available->{compiler_versions} // [];
+% my $smkv_opts    = $available->{smoker_versions}    // [];
 % my $summary_opts = $available->{summaries}         // [];
 % my $sel_arch     = $filter->{selected_arch}    // '';
 % my $sel_osnm     = $filter->{selected_osnm}    // '';
@@ -23,6 +24,7 @@
 % my $sel_host     = $filter->{selected_host}    // '';
 % my $sel_comp     = $filter->{selected_comp}    // '';
 % my $sel_cver     = $filter->{selected_cver}    // '';
+% my $sel_smkv     = $filter->{selected_smkv}    // '';
 % my $sel_summary  = $filter->{selected_summary} // '';
 % my %arch_have    = map { $_ => 1 } @$arch_opts;
 % my %osnm_have    = map { $_ => 1 } @$osnm_opts;
@@ -32,6 +34,7 @@
 % my %host_have    = map { $_ => 1 } @$host_opts;
 % my %comp_have    = map { $_ => 1 } @$comp_opts;
 % my %cver_have    = map { $_ => 1 } @$cver_opts;
+% my %smkv_have    = map { $_ => 1 } @$smkv_opts;
 % my %summary_have = map { $_ => 1 } @$summary_opts;
 
   <form id="search-form"
@@ -147,6 +150,18 @@
         </select>
       </label>
 
+      <label>Smoker
+        <select name="selected_smkv">
+          <option value="all" <%= selected_if($sel_smkv eq '' || $sel_smkv eq 'all') %>>all</option>
+% for my $v (@$smkv_opts) {
+          <option value="<%= $v %>" <%= selected_if($sel_smkv eq $v) %>><%= $v %></option>
+% }
+% if ($sel_smkv ne '' && $sel_smkv ne 'all' && !$smkv_have{$sel_smkv}) {
+          <option value="<%= $sel_smkv %>" selected><%= $sel_smkv %></option>
+% }
+        </select>
+      </label>
+
       <label>Summary
         <select name="selected_summary">
           <option value="all" <%= selected_if($sel_summary eq '' || $sel_summary eq 'all') %>>all</option>
@@ -170,6 +185,7 @@
         <th>OS</th>
         <th>Perl</th>
         <th>Summary</th>
+        <th>Smoker</th>
         <th>Smoke date</th>
       </tr>
     </thead>
