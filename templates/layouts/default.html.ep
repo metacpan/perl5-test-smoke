@@ -53,7 +53,7 @@
       <a href="/about">About this site</a>
       <a href="/api/openapi/web">OpenAPI reference</a>
       <a href="/api/openapi/web.yaml">OpenAPI YAML</a>
-      <a href="https://github.com/Perl/Perl5-CoreSmokeDB" rel="noopener">GitHub source</a>
+      <a href="https://github.com/metacpan/perl5-test-smoke" rel="noopener">GitHub source</a>
     </div>
   </nav>
 
