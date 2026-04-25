@@ -4,3 +4,7 @@
 /.cpanm/
 /cover_db/
 *.swp
+/t/test.db
+/t/test.db-wal
+/t/test.db-shm
+/t/data/reports-tmp/

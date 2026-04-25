@@ -10,9 +10,9 @@ use lib "$FindBin::Bin/../../local/lib/perl5";
 use Test::Mojo;
 use File::Path qw(remove_tree);
 
-my $ROOT      = "$FindBin::Bin/..";
-my $TEST_DB   = "$ROOT/test.db";
-my $REPORTS   = "$ROOT/data/reports-tmp";
+my $T         = $FindBin::Bin;
+my $TEST_DB   = "$T/test.db";
+my $REPORTS   = "$T/data/reports-tmp";
 
 sub new ($class) {
     $ENV{MOJO_MODE}         = 'test';
