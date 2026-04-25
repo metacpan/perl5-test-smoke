@@ -73,6 +73,11 @@ sub startup ($self) {
     require Mojo::Util;
     $self->helper(url_escape => sub ($c, $s) { Mojo::Util::url_escape($s // '') });
 
+    # Tiny helper for option/checkbox state. `print 'selected'` inside
+    # an EP `% ... %` code block writes to the controller's stdout, not
+    # to the template output, so use `<%= selected_if(...) %>` instead.
+    $self->helper(selected_if => sub ($c, $cond) { $cond ? 'selected' : '' });
+
     $self->hook(before_dispatch => sub ($c) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';

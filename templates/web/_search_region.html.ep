@@ -19,12 +19,10 @@
 
       <label>Architecture
         <select name="selected_arch">
-          <option value="all">all</option>
+          <option value="all" <%= selected_if(($filter->{selected_arch} // '') eq '' || ($filter->{selected_arch} // '') eq 'all') %>>all</option>
 % if (@$arch_opts > 1) {
 %   for my $v (@$arch_opts) {
-          <option value="<%= $v %>"
-% if (($filter->{selected_arch} // '') eq $v) { print 'selected'; }
-          ><%= $v %></option>
+          <option value="<%= $v %>" <%= selected_if(($filter->{selected_arch} // '') eq $v) %>><%= $v %></option>
 %   }
 % }
         </select>
@@ -32,15 +30,11 @@
 
       <label>Perl version
         <select name="selected_perl">
-          <option value="all">all</option>
+          <option value="all" <%= selected_if(($filter->{selected_perl} // '') eq '' || ($filter->{selected_perl} // '') eq 'all') %>>all</option>
 % if (@$perl_opts > 1) {
-          <option value="latest"
-% if (($filter->{selected_perl} // '') eq 'latest') { print 'selected'; }
-          >latest</option>
+          <option value="latest" <%= selected_if(($filter->{selected_perl} // '') eq 'latest') %>>latest</option>
 %   for my $v (@$perl_opts) {
-          <option value="<%= $v %>"
-% if (($filter->{selected_perl} // '') eq $v) { print 'selected'; }
-          ><%= $v %></option>
+          <option value="<%= $v %>" <%= selected_if(($filter->{selected_perl} // '') eq $v) %>><%= $v %></option>
 %   }
 % }
         </select>
@@ -48,12 +42,10 @@
 
       <label>Branch
         <select name="selected_branch">
-          <option value="all">all</option>
+          <option value="all" <%= selected_if(($filter->{selected_branch} // '') eq '' || ($filter->{selected_branch} // '') eq 'all') %>>all</option>
 % if (@$branch_opts > 1) {
 %   for my $v (@$branch_opts) {
-          <option value="<%= $v %>"
-% if (($filter->{selected_branch} // '') eq $v) { print 'selected'; }
-          ><%= $v %></option>
+          <option value="<%= $v %>" <%= selected_if(($filter->{selected_branch} // '') eq $v) %>><%= $v %></option>
 %   }
 % }
         </select>
