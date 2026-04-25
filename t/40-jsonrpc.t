@@ -78,4 +78,25 @@ my $api_only = $t->post_ok('/api',
     ->tx->res->json->{result};
 ok !(grep { $_ eq 'ping' } @$api_only), 'api filter excludes ping';
 
+# Internal errors must NOT leak implementation details (CVE-worthy info disclosure)
+subtest 'internal error hides exception details' => sub {
+    # Temporarily register a method that dies with a recognizable internal message
+    no warnings 'once';
+    local $CoreSmoke::JsonRpc::Methods::METHODS{'_test_die'} = {
+        plugin => 'system',
+        call   => sub ($c, $p) { die "secret: DB path is /opt/smoke/data.db\n" },
+    };
+
+    my $res = $t->post_ok('/api',
+        json => { jsonrpc => '2.0', id => 99, method => '_test_die' })
+        ->status_is(200)
+        ->json_is('/error/code' => -32603)
+        ->tx->res->json;
+
+    my $msg = $res->{error}{message};
+    unlike $msg, qr/secret/,   'error message does not leak exception text';
+    unlike $msg, qr/DB path/,  'error message does not leak internal paths';
+    like   $msg, qr/Internal/, 'error message is generic';
+};
+
 done_testing;

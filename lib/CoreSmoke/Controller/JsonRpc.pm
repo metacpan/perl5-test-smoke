@@ -46,7 +46,7 @@ sub _single_payload ($c, $req) {
     my $result = eval { $entry->{call}->($c, $params) };
     if (my $e = $@) {
         $c->app->log->error("JSONRPC $method failed: $e");
-        return _err(-32603, "$e");
+        return _err(-32603, "Internal error");
     }
     return { result => $result };
 }
