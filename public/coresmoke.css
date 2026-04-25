@@ -93,8 +93,13 @@ table.reports tbody tr:hover { background: var(--hover); }
 table.reports tbody tr:hover td.summary-pass,
 table.reports tbody tr:hover td.summary-fail { filter: brightness(0.96); }
 
-td.summary-pass { background: var(--pass-bg); color: var(--pass-fg); }
-td.summary-fail { background: var(--fail-bg); color: var(--fail-fg); }
+td.summary-pass, dd.summary-pass { background: var(--pass-bg); color: var(--pass-fg); }
+td.summary-fail, dd.summary-fail { background: var(--fail-bg); color: var(--fail-fg); }
+
+dd.summary-pass, dd.summary-fail {
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+}
 
 .matrix td.pass { background: var(--pass-bg); color: var(--pass-fg); text-align: center; }
 .matrix td.fail { background: var(--fail-bg); color: var(--fail-fg); text-align: center; font-weight: 600; }

@@ -10,7 +10,7 @@
   <dt>Perl</dt>      <dd><%= $report->{perl_id} %> (<code><%= $report->{git_describe} %></code>)</dd>
   <dt>Branch</dt>    <dd><%= $report->{smoke_branch} %></dd>
   <dt>Smoke date</dt><dd><%= $report->{smoke_date} %></dd>
-  <dt>Summary</dt>   <dd class="summary-<%= lc($report->{summary} // '') %>"><%= $report->{summary} %></dd>
+  <dt>Summary</dt>   <dd class="summary-<%= (lc($report->{summary} // '') =~ s/\(.*//r) %>"><%= $report->{summary} %></dd>
   <dt>Duration</dt>  <dd><%= $report->{durations} %> s</dd>
 % if ($report->{user_note}) {
   <dt>Note</dt>      <dd class="user-note"><%= $report->{user_note} %></dd>
