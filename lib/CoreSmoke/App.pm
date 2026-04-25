@@ -88,6 +88,26 @@ sub startup ($self) {
         return "${s}s";
     });
 
+    # Translate a Test::Smoke matrix cell letter into a readable
+    # explanation. Used as the cell tooltip on /report/:rid so the
+    # legend paragraph isn't needed.
+    my %SUMMARY_DESC = (
+        'O' => 'OK',
+        'F' => 'harness failure',
+        'X' => 'TEST failure (not under harness)',
+        'c' => 'Configure failure',
+        'm' => 'make failure',
+        'M' => 'make failure after miniperl',
+        't' => 'test-prep failure',
+        '?' => 'still running or result not available',
+        '-' => 'unknown or N/A',
+    );
+    $self->helper(summary_desc => sub ($c, $letter) {
+        $letter //= '';
+        return 'N/A' unless length $letter;
+        return $SUMMARY_DESC{$letter} // $letter;
+    });
+
     $self->hook(before_dispatch => sub ($c) {
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';

@@ -62,7 +62,7 @@
 %             : $sum eq 'F'   ? 'fail'
 %             : $sum eq 'X'   ? 'fail'
 %             :                 '';
-      <td class="<%= $cls %>" title="<%= $label %><%= $sum ? ' = '.$sum : '' %>"><%= $sum %></td>
+      <td class="<%= $cls %>" title="<%= $label %>: <%= length $sum ? "$sum -- " . summary_desc($sum) : 'N/A' %>"><%= $sum %></td>
 %   }
       <td><%= duration_hms($row->{duration}) %></td>
     </tr>
@@ -70,9 +70,7 @@
   </tbody>
 </table>
 </div>
-<p><small>O = OK, F = harness failure, X = TEST failure (not under harness),
-  c/m/M/t = configure / make / make-after-miniperl / test-prep failure,
-  blank = N/A</small></p>
+<p><small>Hover any cell for the full status description.</small></p>
 
 % if (@{ $report->{test_failures} // [] }) {
 <h2>Test failures</h2>
