@@ -40,9 +40,26 @@ PERL5LIB=local/lib/perl5:lib prove -lr t/
 PERL5LIB=local/lib/perl5:lib local/bin/perlcritic --severity 5 lib/
 ```
 
-If `IO::Compress::Xz` fails to build, install xz dev headers
-(macOS Homebrew: `brew install xz`, then re-run `cpm` with
-`CPATH=/opt/homebrew/include LIBRARY_PATH=/opt/homebrew/lib`).
+### macOS install gotchas
+
+Two CPAN modules need C libraries that aren't on a fresh macOS by
+default. Install them with Homebrew first, otherwise `cpm install`
+will fail to build:
+
+```sh
+brew install sqlite3 xz
+```
+
+Then re-run `cpm` with the Homebrew include / lib paths exposed so
+the XS builds can find the headers and shared libs:
+
+```sh
+CPATH=/opt/homebrew/include LIBRARY_PATH=/opt/homebrew/lib \
+    cpm install -L local/
+```
+
+- `DBD::SQLite` needs `sqlite3` to link against the system SQLite.
+- `IO::Compress::Xz` needs `xz` for `liblzma`.
 
 ## Quick start (Docker)
 

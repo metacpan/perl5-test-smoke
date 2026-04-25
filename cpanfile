@@ -3,6 +3,7 @@ requires 'perl', '5.042000';
 # core framework
 requires 'Mojolicious',           '>= 9.34';
 requires 'Mojo::SQLite',          '>= 3.009';
+requires 'DBD::SQLite',           '>= 1.78';
 
 # config
 requires 'Mojolicious::Plugin::Config';
