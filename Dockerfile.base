@@ -13,6 +13,9 @@ ARG PERL_VERSION=5.42
 # ---------- builder (build tools, NOT shipped) ------------------------------
 FROM perl:${PERL_VERSION}-slim AS builder
 
+# Build-time only. ARG keeps DEBIAN_FRONTEND out of the final image's env.
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \
@@ -60,6 +63,9 @@ RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
 
 # ---------- base (this is what we publish) ----------------------------------
 FROM perl:${PERL_VERSION}-slim
+
+# Build-time only. ARG keeps DEBIAN_FRONTEND out of the final image's env.
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Runtime deps: SQLite, xz, OpenSSL libs; tini for PID-1; wget for HEALTHCHECK.
 # Strip apt caches, archives, logs, and any docs/man re-introduced by the

@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     container: perl:5.42-slim
     timeout-minutes: 15
+    env:
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
       - name: install build deps for XS modules
