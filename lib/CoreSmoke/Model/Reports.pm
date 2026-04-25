@@ -208,7 +208,7 @@ sub available_filter_values ($self, $filter) {
                            order   => 'r.architecture' },
         perl_versions => { exclude => [qw(selected_perl)],
                            field   => 'r.perl_id',
-                           order   => 'r.plevel DESC' },
+                           order   => 'r.perl_id' },
         branches      => { exclude => [qw(selected_branch andnotsel_branch)],
                            field   => 'r.smoke_branch',
                            order   => 'r.smoke_branch' },
@@ -227,7 +227,28 @@ sub available_filter_values ($self, $filter) {
         ];
     }
 
+    $out{perl_versions} = _sort_perl_ids_desc($out{perl_versions});
+
     return \%out;
+}
+
+# Sort "M.m.p" perl_id strings highest-to-lowest, RPM-style: split on
+# '.', compare each component numerically. SQL plevel ordering is
+# non-deterministic when DISTINCT collapses many plevels per perl_id.
+sub _sort_perl_ids_desc ($list) {
+    return [
+        sort {
+            my @a = split /\./, $a;
+            my @b = split /\./, $b;
+            my $n = $#a > $#b ? $#a : $#b;
+            my $cmp = 0;
+            for my $i (0 .. $n) {
+                $cmp = ($b[$i] // 0) <=> ($a[$i] // 0);
+                last if $cmp;
+            }
+            $cmp;
+        } @$list
+    ];
 }
 
 sub matrix ($self) {
