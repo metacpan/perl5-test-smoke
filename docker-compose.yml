@@ -1,0 +1,15 @@
+services:
+  smoke:
+    build: .
+    image: ghcr.io/${OWNER:-metacpan}/coresmoke:latest
+    container_name: coresmoke
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data         # smoke.db + smoke.db-wal + smoke.db-shm + reports/
+    environment:
+      MOJO_MODE: production
+      SMOKE_DB_PATH: /data/smoke.db
+      SMOKE_REPORTS_DIR: /data/reports
+      TZ: UTC
+    restart: unless-stopped
