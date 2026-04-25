@@ -28,7 +28,13 @@
         hx-target="#search-region"
         hx-swap="outerHTML"
         hx-include="closest form"
-        hx-push-url="true">
+        hx-push-url="true"
+        hx-on::config-request="
+          for (const k of Object.keys(event.detail.parameters)) {
+            const v = event.detail.parameters[k];
+            if (v === 'all' || v === '') delete event.detail.parameters[k];
+          }
+        ">
     <fieldset>
       <legend>Filters</legend>
 
