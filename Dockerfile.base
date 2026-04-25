@@ -28,8 +28,13 @@ RUN apt-get update \
 WORKDIR /build
 
 # Snapshot-pinned install for reproducibility (decision #20).
+# After install, drop cpm's build cache + work dirs and the trimmed-out
+# /build/local/man pages. The builder stage itself is never shipped, but
+# this also keeps the cached layer smaller in the GHA buildx cache.
 COPY cpanfile cpanfile.snapshot ./
-RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --show-build-log-on-failure
+RUN cpm install --workers=4 --no-test --resolver=snapshot --resolver=metadb --show-build-log-on-failure \
+ && rm -rf /root/.perl-cpm /root/.cpan /root/.cpanm /tmp/cpm-* \
+ && rm -rf /build/local/man /build/local/lib/perl5/man
 
 # Vendor htmx -- decision #17. Pinned to a stable major release.
 RUN curl -fsSL https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js \
