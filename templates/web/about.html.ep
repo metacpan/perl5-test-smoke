@@ -2,8 +2,14 @@
 % title 'About';
 
 <h1>About</h1>
+<p><%= $app_name %> (dev) v<%= $app_version %> is a re-write produced at
+the <strong>2026 Perl Toolchain Summit in Vienna, Austria</strong>. It
+replaces the legacy three-repo CoreSmokeDB 1.04 / 0.0.5 stack
+(Perl5-CoreSmokeDB, -API, -Web) with a single Mojolicious app backed by
+SQLite.</p>
+
 <dl>
-  <dt>App</dt>         <dd><%= $app_name %> v<%= $app_version %></dd>
+  <dt>App</dt>         <dd><%= $app_name %> (dev) v<%= $app_version %></dd>
   <dt>Perl</dt>        <dd><%= $perl_version %></dd>
   <dt>Mojolicious</dt> <dd><%= $mojo_version %></dd>
   <dt>SQLite</dt>      <dd><%= $sqlite_version %></dd>
@@ -14,3 +20,9 @@
 <p>Every page on this site is also reachable as JSON via the
 <a href="/api/openapi/web.yaml">OpenAPI</a>-documented REST routes.
 A JSONRPC 2.0 endpoint at <code>POST /api</code> exposes the same methods.</p>
+
+<h2>Credits</h2>
+<p>Courtesy of the Perl QA Hackathon / Perl Toolchain Summit:
+2010 Vienna, 2011 Amsterdam, 2012 Paris, 2013 Lancaster, 2014 Lyon,
+2015 Berlin, 2016 Rugby, PTS 2017 Lyon, 2018 Oslo, Private 2022 abeltje,
+PTS 2023 Lyon, 2024 Lisbon, and PTS 2026 Vienna (this rewrite).</p>
