@@ -376,6 +376,19 @@ patterns like `FAIL(*M*)`.
   rewrite is needed. `gzip` Content-Encoding accepted on every
   POST. The legacy `/api/outfle/:rid` typo is kept as an alias for
   `/api/outfile/:rid` -- existing clients in the wild still hit it.
+- **Supported Test::Smoke client versions**: `>= 1.70`. Anything
+  older is not supported and may be rejected without notice. The
+  oldest version observed reporting in the last 10 years (per
+  `data/development.db`) is `1.70_02`, so 1.70 is the practical
+  floor.
+- **Don't drop the form-decode path**: pre-1.81 clients (which
+  use `application/x-www-form-urlencoded` with `json=...`, escaped
+  via `CGI::Util::escape` before Oct 2022 and `URI::Escape`
+  after) still account for the majority of inbound traffic --
+  versions 1.71, 1.72, 1.78, 1.79, 1.80 all submitted reports
+  within the last few days. The form-encoded ingest path is
+  load-bearing and not "legacy compat for emergencies" -- treat
+  it as a first-class wire format.
 - **`legacy/` is reference only**: never modify. Submodules in
   `.gitmodules` use **relative paths and https://** URLs (the original
   `git submodule add` with absolute paths broke `git submodule status`).
