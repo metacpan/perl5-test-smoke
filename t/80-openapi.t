@@ -60,7 +60,7 @@ ok !@undocumented, 'all API routes documented in OpenAPI spec'
 sub _walk_route ($node, $prefix, $store) {
     my $pattern = $node->pattern->unparsed // '';
     my $here    = $prefix . $pattern;
-    $here = "/$here" if $here ne '' && $here !~ m{^/};
+    $here = "/$here" if $here !~ m{^/};
     $store->{$here} = 1 if $node->is_endpoint;
     _walk_route($_, $here, $store) for @{ $node->children };
 }
