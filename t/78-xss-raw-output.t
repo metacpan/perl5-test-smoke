@@ -21,10 +21,10 @@ my $XSS_ESC = '&lt;img src=x onerror=alert(1)&gt;';
 subtest 'reflected XSS in /submatrix title' => sub {
     $t->get_ok("/submatrix?test=$XSS")
         ->status_is(200)
-        ->content_unlike(qr/onerror=alert/,
-            'script payload must not appear unescaped in page body')
+        ->content_unlike(qr/<img src=x/,
+            'raw <img> tag must not appear unescaped in page body')
         ->content_like(qr/\Q$XSS_ESC\E/,
-            'test param appears as escaped entities');
+            'test param appears as escaped HTML entities');
 };
 
 # --- Stored XSS via perl_id in /matrix column headers ---
@@ -35,7 +35,6 @@ subtest 'stored XSS via perl_id in matrix headers' => sub {
     $fixture->{sysinfo}{perl_id} = $XSS;
     $fixture->{sysinfo}{git_id} = 'bb' . substr($fixture->{sysinfo}{git_id}, 2);
 
-    # Need at least one failure for the test to show in the matrix
     $fixture->{configs}[0]{results}[0]{summary} = 'F';
     $fixture->{configs}[0]{results}[0]{failures} = [
         { test => 'op/xss-test.t', status => 'FAILED', extra => '' },
@@ -47,10 +46,10 @@ subtest 'stored XSS via perl_id in matrix headers' => sub {
 
     $t->get_ok('/matrix')
         ->status_is(200)
-        ->content_unlike(qr/onerror=alert/,
-            'XSS perl_id must not appear raw in matrix column headers')
+        ->content_unlike(qr/<img src=x/,
+            'raw <img> tag must not appear in matrix column headers')
         ->content_like(qr/\Q$XSS_ESC\E/,
-            'perl_id appears as escaped entities in matrix headers');
+            'perl_id appears as escaped HTML entities in matrix headers');
 };
 
 # --- Stored XSS via io_env in /report/:id config table headers ---
@@ -60,7 +59,6 @@ subtest 'stored XSS via io_env in report config headers' => sub {
     my $fixture = $h->fixture('idefix-gff5bbe677.jsn');
     $fixture->{sysinfo}{git_id} = 'cc' . substr($fixture->{sysinfo}{git_id}, 2);
 
-    # Replace the io_env in one result with an XSS payload
     $fixture->{configs}[0]{results}[0]{io_env} = $XSS;
 
     my $resp = $t->post_ok('/api/report', json => { report_data => $fixture })
@@ -70,10 +68,10 @@ subtest 'stored XSS via io_env in report config headers' => sub {
 
     $t->get_ok("/report/$rid")
         ->status_is(200)
-        ->content_unlike(qr/onerror=alert/,
-            'XSS io_env must not appear raw in config table headers')
+        ->content_unlike(qr/<img src=x/,
+            'raw <img> tag must not appear in config table headers')
         ->content_like(qr/\Q$XSS_ESC\E/,
-            'io_env appears as escaped entities in config headers');
+            'io_env appears as escaped HTML entities in config headers');
 };
 
 done_testing;
