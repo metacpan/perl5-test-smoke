@@ -313,6 +313,25 @@ sub startup ($self) {
     $r->get('/file/log_file/:rid')   ->to('Web#log_file');
     $r->get('/file/out_file/:rid')   ->to('Web#out_file');
 
+    # Admin: public routes (login/logout)
+    $r->get('/admin/login') ->to('Admin#login_page');
+    $r->post('/admin/login')->to('Admin#login');
+    $r->post('/admin/logout')->to('Admin#logout');
+
+    # Admin: protected routes (session required)
+    my $admin = $r->under('/admin')->to('Admin#check_session');
+    $admin->get('/dashboard')           ->to('Admin#dashboard');
+    $admin->get('/tokens')              ->to('Admin#token_list');
+    $admin->get('/tokens/new')          ->to('Admin#token_new');
+    $admin->post('/tokens')             ->to('Admin#token_create');
+    $admin->get('/tokens/:id')          ->to('Admin#token_show');
+    $admin->post('/tokens/:id/cancel')  ->to('Admin#token_cancel');
+    $admin->get('/users')               ->to('Admin#user_list');
+    $admin->get('/users/new')           ->to('Admin#user_new');
+    $admin->post('/users')              ->to('Admin#user_create');
+    $admin->post('/users/:id/password') ->to('Admin#user_update_password');
+    $admin->post('/users/:id/delete')   ->to('Admin#user_delete');
+
     # 404 fallback
     $r->any('/*whatever' => { whatever => '' })->to('Web#not_found');
 }

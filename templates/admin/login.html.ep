@@ -1,0 +1,26 @@
+% layout 'default';
+% title 'Admin Login';
+
+<div class="card" style="max-width: 28rem; margin: 4rem auto;">
+  <h2>Admin Login</h2>
+
+% if (my $error = stash 'error') {
+  %= include 'components/alert', variant => 'danger', body => $error
+% }
+
+  <form method="POST" action="/admin/login" class="form-stack">
+    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+
+    <label class="form-field">
+      <span class="field-label">Username</span>
+      <input class="input" type="text" name="username" autocomplete="username" required>
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">Password</span>
+      <input class="input" type="password" name="password" autocomplete="current-password" required>
+    </label>
+
+    <button type="submit" class="btn btn-primary">Sign in</button>
+  </form>
+</div>
