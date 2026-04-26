@@ -50,9 +50,9 @@ sub _extract_report_data ($c) {
 }
 
 sub _extract_bearer_token ($c) {
-    my $auth = $c->req->headers->authorization // return undef;
+    my $auth = $c->req->headers->authorization // return;
     return $1 if $auth =~ /^Bearer\s+(\S+)$/i;
-    return undef; ## no critic (Subroutines::ProhibitExplicitReturnUndef)
+    return;
 }
 
 1;

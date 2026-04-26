@@ -7,7 +7,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 sub check_session ($c) {
     return 1 if $c->session('admin_user');
     $c->redirect_to('/admin/login');
-    return undef;
+    return;
 }
 
 sub login_page ($c) {
