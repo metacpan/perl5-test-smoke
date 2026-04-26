@@ -49,11 +49,20 @@ sub dashboard ($c) {
         FROM report
     })->hash;
 
+    my $top_tokens = $db->query(q{
+        SELECT id, note, email, use_count, last_used_at
+        FROM api_token
+        WHERE cancelled_at IS NULL AND use_count > 0
+        ORDER BY use_count DESC
+        LIMIT 5
+    })->hashes->to_array;
+
     $c->render(template => 'admin/dashboard',
         user_count    => $user_count,
         token_count   => $token_count,
         total_reports => $report_stats->{total} // 0,
         auth_reports  => $report_stats->{authenticated} // 0,
+        top_tokens    => $top_tokens,
     );
 }
 

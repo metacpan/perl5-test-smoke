@@ -24,3 +24,24 @@
     <p class="field-help"><%= $auth_reports %> authenticated, <%= $total_reports - $auth_reports %> unauthenticated</p>
   </div>
 </div>
+
+% if (@$top_tokens) {
+<div class="card">
+  <h3>Top tokens by usage</h3>
+  <table class="data-table">
+    <thead><tr>
+      <th>Note</th><th>Email</th><th>Uses</th><th>Last used</th>
+    </tr></thead>
+    <tbody>
+%   for my $tok (@$top_tokens) {
+      <tr>
+        <td><a href="/admin/tokens/<%= $tok->{id} %>"><%= $tok->{note} || '(no note)' %></a></td>
+        <td><%= $tok->{email} %></td>
+        <td><%= $tok->{use_count} %></td>
+        <td><%= $tok->{last_used_at} // 'never' %></td>
+      </tr>
+%   }
+    </tbody>
+  </table>
+</div>
+% }
