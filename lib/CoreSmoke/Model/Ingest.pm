@@ -18,7 +18,7 @@ my @REPORT_COLS = qw(
     perl_id git_id git_describe applied_patches hostname architecture
     osname osversion cpu_count cpu_description username test_jobs
     lc_all lang user_note skipped_tests harness_only harness3opts
-    summary smoke_branch plevel report_hash
+    summary smoke_branch plevel report_hash api_token_id
 );
 
 # Same as plan 05 / decision #30 -- written to disk, not the DB.
@@ -35,7 +35,7 @@ sub new ($class, %args) {
     return bless { sqlite => $sqlite, report_files => $report_files, auth => $auth }, $class;
 }
 
-sub post_report ($self, $raw) {
+sub post_report ($self, $raw, %opts) {
     return { error => 'Missing report_data.' } unless ref $raw eq 'HASH';
 
     my ($data, $files) = $self->_normalize($raw);
@@ -49,6 +49,16 @@ sub post_report ($self, $raw) {
 
     # Write on-disk content first (decision #33: best-effort, files first).
     $self->{report_files}->write($data->{report_hash}, $files) if %$files;
+
+    # Validate API token if provided.
+    my $api_token_string = $opts{api_token};
+    if (defined $api_token_string && $self->{auth}) {
+        my $token_row = $self->{auth}->validate_token($api_token_string);
+        if ($token_row) {
+            $data->{api_token_id} = $token_row->{id};
+            $self->{auth}->record_token_use($token_row->{id});
+        }
+    }
 
     # Smoke config dedup.
     my $sconfig_id = $self->_upsert_smoke_config($raw->{_config});
