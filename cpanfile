@@ -24,6 +24,9 @@ requires 'IO::Uncompress::UnXz';
 # YAML for OpenAPI spec
 requires 'YAML::PP';
 
+# CSP nonce generation
+requires 'Crypt::URandom';
+
 # Carton -- bring Carton::Snapshot along so the snapshot file can be
 # parsed at runtime if anything needs to (and cpm's snapshot resolver
 # inside the base image has a stable provider).
