@@ -7,3 +7,6 @@
 [submodule "legacy/web"]
 	path = legacy/web
 	url = https://github.com/metacpan/Perl5-CoreSmokeDB-Web.git
+[submodule "legacy/Test-Smoke"]
+	path = legacy/Test-Smoke
+	url = git@github.com:Perl-Toolchain-Gang/Test-Smoke.git
