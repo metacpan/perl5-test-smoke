@@ -14,8 +14,7 @@
     <input type="checkbox"
            name="include_stdio"
            value="1"
-           <%= $include_stdio ? 'checked' : '' %>
-           onchange="this.form.submit()">
+           <%= $include_stdio ? 'checked' : '' %>>
     Include stdio failures
   </label>
   <noscript><button class="btn btn-secondary btn-sm" type="submit">Apply</button></noscript>

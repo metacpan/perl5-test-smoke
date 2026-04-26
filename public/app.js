@@ -253,6 +253,24 @@
     });
   }
 
+  /* ---------- Matrix checkbox auto-submit ---------- */
+  document.addEventListener('change', function (e) {
+    if (e.target.matches('.matrix-filter input[type="checkbox"]')) {
+      e.target.form.submit();
+    }
+  });
+
+  /* ---------- Strip default-valued params from HTMX URLs ---------- */
+  document.addEventListener('htmx:configRequest', function (e) {
+    var elt = e.detail.elt;
+    if (!elt || !elt.closest('#search-form, #latest-form')) return;
+    var params = e.detail.parameters;
+    for (var k of Object.keys(params)) {
+      var v = params[k];
+      if (v === 'all' || v === '') delete params[k];
+    }
+  });
+
   /* ---------- HTMX hooks ---------- */
   function localiseDates(root) {
     if (!window.Intl) return;
