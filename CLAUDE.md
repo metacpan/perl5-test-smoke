@@ -362,6 +362,9 @@ patterns like `FAIL(*M*)`.
 - **Devel::Cover** report-only in CI, no threshold.
 - **Commits**: detailed body explaining the why; ends with
   `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
+  Both `make test` AND `make critic` must pass before committing --
+  perlcritic violations are fail-the-build, not warnings, so don't
+  commit code that hasn't cleared both gates.
 - **Ingest URLs**: `POST /api/report` (modern default since
   Test::Smoke 1.81_01), `POST /api/old_format_reports`, and
   `POST /report` (pre-1.81 default) all hit the same
