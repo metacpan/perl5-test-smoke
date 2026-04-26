@@ -108,6 +108,67 @@ my $s     = CoreSmoke::Model::Search->new(sqlite => $sqlite);
     is_deeply $bind, [], 'empty date params: no bind';
 }
 
+# summary GLOB: PASS bucket
+{
+    my ($from, $where, $bind) = $s->compile({ selected_summary => 'PASS' });
+    like $where, qr/r\.summary GLOB \?/, 'summary PASS -> GLOB';
+    is_deeply $bind, ['PASS*'], 'summary PASS bind';
+}
+
+# summary GLOB: FAIL(*) any-failure bucket
+{
+    my ($from, $where, $bind) = $s->compile({ selected_summary => 'FAIL(*)' });
+    like $where, qr/r\.summary GLOB \?/, 'summary FAIL(*) -> GLOB';
+    is_deeply $bind, ['FAIL(*'], 'summary FAIL(*) bind';
+}
+
+# summary GLOB: specific FAIL(F) bucket
+{
+    my ($from, $where, $bind) = $s->compile({ selected_summary => 'FAIL(F)' });
+    like $where, qr/r\.summary GLOB \?/, 'summary FAIL(F) -> GLOB';
+    is_deeply $bind, ['FAIL(*F*)'], 'summary FAIL(F) bind';
+}
+
+# andnotsel_summary negates PASS -> NOT GLOB
+{
+    my ($from, $where, $bind) = $s->compile({
+        selected_summary  => 'PASS',
+        andnotsel_summary => 1,
+    });
+    like $where, qr/r\.summary NOT GLOB \?/, 'andnotsel_summary PASS -> NOT GLOB';
+    is_deeply $bind, ['PASS*'], 'negated PASS bind unchanged';
+}
+
+# andnotsel_summary negates FAIL(*) -> NOT GLOB
+{
+    my ($from, $where, $bind) = $s->compile({
+        selected_summary  => 'FAIL(*)',
+        andnotsel_summary => 1,
+    });
+    like $where, qr/r\.summary NOT GLOB \?/, 'andnotsel_summary FAIL(*) -> NOT GLOB';
+    is_deeply $bind, ['FAIL(*'], 'negated FAIL(*) bind unchanged';
+}
+
+# andnotsel_summary negates specific FAIL(m) -> NOT GLOB
+{
+    my ($from, $where, $bind) = $s->compile({
+        selected_summary  => 'FAIL(m)',
+        andnotsel_summary => 1,
+    });
+    like $where, qr/r\.summary NOT GLOB \?/, 'andnotsel_summary FAIL(m) -> NOT GLOB';
+    is_deeply $bind, ['FAIL(*m*)'], 'negated FAIL(m) bind unchanged';
+}
+
+# andnotsel_summary negates unknown bucket -> <>
+{
+    my ($from, $where, $bind) = $s->compile({
+        selected_summary  => 'UNKNOWN',
+        andnotsel_summary => 1,
+    });
+    like $where, qr/r\.summary <> \?/, 'andnotsel_summary unknown -> <>';
+    is_deeply $bind, ['UNKNOWN'], 'negated unknown bind unchanged';
+}
+
 # run() against an empty DB returns the empty shape
 {
     my $out = $s->run({});

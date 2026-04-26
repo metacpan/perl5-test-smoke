@@ -94,22 +94,24 @@ sub compile ($self, $params) {
     # user spec'd.
     my $sum = $params->{selected_summary};
     if (defined $sum && length $sum && $sum ne 'all') {
+        my $neg = $params->{andnotsel_summary} ? 'NOT ' : '';
         if ($sum eq 'PASS') {
-            push @where, "r.summary GLOB ?";
+            push @where, "r.summary ${neg}GLOB ?";
             push @bind, 'PASS*';
         }
         elsif ($sum eq 'FAIL(*)') {
-            push @where, "r.summary GLOB ?";
+            push @where, "r.summary ${neg}GLOB ?";
             push @bind, 'FAIL(*';
         }
         elsif ($sum =~ /^FAIL\((.+)\)$/) {
-            push @where, "r.summary GLOB ?";
+            push @where, "r.summary ${neg}GLOB ?";
             push @bind, "FAIL(*$1*)";
         }
         else {
             # Unknown bucket: fall back to equality so a stale URL doesn't
             # silently match everything.
-            push @where, "r.summary = ?";
+            my $op = $params->{andnotsel_summary} ? '<>' : '=';
+            push @where, "r.summary $op ?";
             push @bind, $sum;
         }
     }
