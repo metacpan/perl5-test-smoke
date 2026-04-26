@@ -227,12 +227,10 @@ sub _insert_failures ($self, $result_id, $failures) {
 
         $extra //= '';
 
-        $db->query(
-            "INSERT OR IGNORE INTO failure (test, status, extra) VALUES (?, ?, ?)",
-            $f->{test}, $f->{status}, $extra,
-        );
         my $fid = $db->query(<<~'SQL', $f->{test}, $f->{status}, $extra)->hash->{id};
-            SELECT id FROM failure WHERE test = ? AND status = ? AND extra = ?
+            INSERT INTO failure (test, status, extra) VALUES (?, ?, ?)
+            ON CONFLICT(test, status, extra) DO UPDATE SET test = test
+            RETURNING id
             SQL
 
         $db->query(
