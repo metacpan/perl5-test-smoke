@@ -16,6 +16,8 @@ sub startup ($self) {
     my $cfg = $self->config;
     $self->log->level($cfg->{log_level} // 'info');
 
+    $self->secrets($cfg->{secrets}) if $cfg->{secrets};
+
     my $home = $self->home;
     my $db_path     = _resolve_path($home, $ENV{SMOKE_DB_PATH}     // $cfg->{db_path}     // 'data/smoke.db');
     my $reports_dir = _resolve_path($home, $ENV{SMOKE_REPORTS_DIR} // $cfg->{reports_dir} // 'data/reports');
