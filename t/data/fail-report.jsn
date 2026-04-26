@@ -1,0 +1,153 @@
+{
+   "skip_tests" : "",
+   "summary" : "FAIL(F)",
+   "un_position" : "bottom",
+   "log_file" : ["Build log line 1", "Build log line 2"],
+   "is56x" : 0,
+   "harness3opts" : "",
+   "harness_only" : 0,
+   "v" : 1,
+   "outfile" : "mktest.out",
+   "out_file" : ["Output line 1", "Output line 2"],
+   "un_file" : "/home/smoker/etc/blead.usernote",
+   "defaultenv" : 0,
+   "lfile" : "/home/smoker/etc/blead.log",
+   "jsnfile" : "mktest.jsn",
+   "skipped_tests" : [],
+   "compiler_msgs" : [
+      "op/magic.c: In function 'Perl_magic_get':",
+      "op/magic.c:123:5: warning: unused variable 'sv' [-Wunused-variable]"
+   ],
+   "configs" : [
+      {
+         "duration" : 3600,
+         "arguments" : "",
+         "ccversion" : "gcc (GCC) 12.3.0",
+         "cc" : "gcc",
+         "results" : [
+            {
+               "stat_cpu_time" : 812.45,
+               "failures" : [],
+               "summary" : "O",
+               "locale" : null,
+               "statistics" : "u=10.22  s=5.89  cu=700.11  cs=96.23  scripts=2488  tests=1175044",
+               "io_env" : "stdio",
+               "stat_tests" : "1175044"
+            },
+            {
+               "stat_cpu_time" : 750.30,
+               "failures" : [
+                  {
+                     "test" : "op/magic.t",
+                     "status" : "FAILED",
+                     "extra" : ["#   Failed test at op/magic.t line 42.", "#          got: 'undef'", "#     expected: '1'"]
+                  },
+                  {
+                     "test" : "op/taint.t",
+                     "status" : "FAILED",
+                     "extra" : "# Failed 2 tests out of 319"
+                  }
+               ],
+               "summary" : "F",
+               "locale" : null,
+               "statistics" : "u=8.15  s=6.20  cu=650.00  cs=85.95  scripts=2490  tests=1175032",
+               "io_env" : "perlio",
+               "stat_tests" : "1175032"
+            },
+            {
+               "stat_cpu_time" : 760.12,
+               "failures" : [
+                  {
+                     "test" : "op/magic.t",
+                     "status" : "FAILED",
+                     "extra" : ["#   Failed test at op/magic.t line 42.", "#          got: 'undef'", "#     expected: '1'"]
+                  }
+               ],
+               "summary" : "F",
+               "locale" : "en_US.UTF-8",
+               "statistics" : "u=8.30  s=6.40  cu=660.00  cs=85.42  scripts=2490  tests=1175116",
+               "io_env" : "locale",
+               "stat_tests" : "1175116"
+            }
+         ],
+         "started" : "2023-03-15 10:00:00 +0000",
+         "debugging" : "N"
+      },
+      {
+         "debugging" : "D",
+         "started" : "2023-03-15 11:00:00 +0000",
+         "results" : [
+            {
+               "failures" : [],
+               "stat_cpu_time" : 920.10,
+               "locale" : null,
+               "summary" : "O",
+               "statistics" : "u=12.80  s=6.50  cu=800.00  cs=100.80  scripts=2489  tests=1175062",
+               "io_env" : "stdio",
+               "stat_tests" : "1175062"
+            },
+            {
+               "statistics" : "u=9.00  s=6.80  cu=680.00  cs=84.00  scripts=2491  tests=1175236",
+               "io_env" : "perlio",
+               "stat_tests" : "1175236",
+               "stat_cpu_time" : 779.80,
+               "failures" : [],
+               "summary" : "O",
+               "locale" : null
+            },
+            {
+               "locale" : "en_US.UTF-8",
+               "summary" : "O",
+               "stat_cpu_time" : 785.00,
+               "failures" : [],
+               "stat_tests" : "1175055",
+               "io_env" : "locale",
+               "statistics" : "u=9.10  s=6.90  cu=690.00  cs=83.00  scripts=2491  tests=1175055"
+            }
+         ],
+         "cc" : "gcc",
+         "arguments" : "-DDEBUGGING",
+         "ccversion" : "gcc (GCC) 12.3.0",
+         "duration" : 4000
+      }
+   ],
+   "nonfatal_msgs" : [
+      "WARNING: Unexpected 'make test_prep' failure (non-fatal)"
+   ],
+   "hostname" : "smokebox",
+   "cfg" : "/home/smoker/etc/blead.buildcfg",
+   "ddir" : "/home/smoker/perl-current",
+   "locale" : "en_US.UTF-8",
+   "manifest_msgs" : [
+      "MANIFEST did not declare '.mailmap'"
+   ],
+   "showcfg" : 0,
+   "sysinfo" : {
+      "hostname" : "smokebox",
+      "smoke_version" : "1.81",
+      "git_id" : "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "cpu_description" : "Intel Xeon E5-2680 v4",
+      "lang" : null,
+      "duration" : 7600,
+      "smoker_version" : "0.050",
+      "smoke_branch" : "blead",
+      "architecture" : "x86_64",
+      "reporter" : "",
+      "username" : "smoker",
+      "osname" : "linux",
+      "smoke_revision" : "1.81",
+      "reporter_version" : "0.058",
+      "git_describe" : "v5.39.6-42-ga1b2c3d4e5",
+      "perl_id" : "5.39.7",
+      "test_jobs" : 4,
+      "cpu_count" : "8",
+      "user_note" : "",
+      "osversion" : "6.1.0-17-amd64",
+      "lc_all" : null,
+      "smoke_perl" : "5.36.0",
+      "config_count" : 2,
+      "smoke_date" : "2023-03-15 10:00:00 +0000"
+   },
+   "applied_patches" : [],
+   "rptfile" : "mktest.rpt"
+}
