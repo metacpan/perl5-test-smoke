@@ -105,4 +105,32 @@ is $page1->{report_count}, 3, 'total count unaffected by pagination';
 my $page2 = $h->app->reports->latest({ reports_per_page => 2, page => 2 });
 is scalar @{ $page2->{reports} }, 1, 'page 2 has remaining 1 report';
 
+# --- report_count == scalar @reports invariant (no pagination) --------
+# Add hosts with FAIL summaries so the filter paths are exercised.
+insert_report(
+    hostname    => 'delta',
+    plevel      => '5.041009zzz000',
+    smoke_date  => '2024-08-01T10:00:00Z',
+    report_hash => 'ddd111',
+    git_id      => 'ddd1',
+    summary     => 'FAIL(F)',
+);
+insert_report(
+    hostname    => 'echo',
+    plevel      => '5.041009zzz000',
+    smoke_date  => '2024-08-02T10:00:00Z',
+    report_hash => 'eee111',
+    git_id      => 'eee1',
+    summary     => 'FAIL(X)',
+);
+
+for my $filter (qw(all pass fail)) {
+    my $res = $h->app->reports->latest({
+        reports_per_page  => 500,
+        selected_summary  => $filter,
+    });
+    is $res->{report_count}, scalar @{ $res->{reports} },
+        "report_count matches rows returned (filter=$filter)";
+}
+
 done_testing;
