@@ -21,13 +21,7 @@
         hx-target="#latest-region"
         hx-swap="outerHTML"
         hx-include="closest form"
-        hx-push-url="true"
-        hx-on::config-request="
-          for (const k of Object.keys(event.detail.parameters)) {
-            const v = event.detail.parameters[k];
-            if (v === 'all' || v === '') delete event.detail.parameters[k];
-          }
-        ">
+        hx-push-url="true">
     <div class="filter-grid">
       %= include 'components/form_field', label => 'Summary', name => 'selected_summary', type => 'select', options => $summary_options
     </div>

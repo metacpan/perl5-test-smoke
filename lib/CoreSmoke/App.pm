@@ -189,7 +189,13 @@ sub startup ($self) {
         return $SUMMARY_DESC{$letter} // $letter;
     });
 
+    require Crypt::URandom;
+    require MIME::Base64;
+
     $self->hook(before_dispatch => sub ($c) {
+        my $nonce = MIME::Base64::encode_base64(Crypt::URandom::urandom(16), '');
+        $c->stash('csp_nonce' => $nonce);
+
         my $enc = $c->req->headers->header('Content-Encoding') // '';
         return unless $enc eq 'gzip';
         require IO::Uncompress::Gunzip;
@@ -222,6 +228,20 @@ sub startup ($self) {
     });
 
     $self->hook(after_dispatch => sub ($c) {
+        $c->res->headers->header('X-Content-Type-Options' => 'nosniff');
+        $c->res->headers->header('X-Frame-Options'        => 'DENY');
+
+        if (my $nonce = $c->stash('csp_nonce')) {
+            $c->res->headers->header('Content-Security-Policy' =>
+                "default-src 'self'; "
+              . "script-src 'self' 'nonce-$nonce'; "
+              . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+              . "font-src 'self' https://fonts.gstatic.com; "
+              . "img-src 'self' data:; "
+              . "connect-src 'self'; "
+              . "frame-ancestors 'none'");
+        }
+
         my $method = $c->req->method;
         return unless $method eq 'GET' || $method eq 'OPTIONS';
         my $origin = $c->app->config->{cors_allow_origin} // '*';
