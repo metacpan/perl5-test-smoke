@@ -34,10 +34,28 @@ for my $r (@{ $h->app->routes->children }) {
     _walk_route($r, '', \%routes);
 }
 
-for my $path (sort keys %{ $spec->{paths} }) {
+my %spec_paths = %{ $spec->{paths} };
+
+for my $path (sort keys %spec_paths) {
     my $route_pattern = $path =~ s/\{(\w+)\}/:$1/gr;   # OpenAPI {x} -> Mojo :x
     ok exists $routes{$route_pattern}, "spec path $path is registered (as $route_pattern)";
 }
+
+# Reverse: every API route has a corresponding OpenAPI spec entry.
+my @undocumented;
+for my $route (sort keys %routes) {
+    next if $route eq '/*whatever';
+    next if $route eq '/';
+    next if $route =~ m{^/(about|latest|search|matrix|submatrix|file|admin)\b};
+    next if $route eq '/report/:rid';
+    next if $route eq '/api/outfle/:rid'; # documented typo alias kept for legacy clients
+
+    my $spec_path = $route =~ s/:(\w+)/{$1}/gr;   # Mojo :x -> OpenAPI {x}
+    push @undocumented, $route unless exists $spec_paths{$spec_path};
+}
+
+ok !@undocumented, 'all API routes documented in OpenAPI spec'
+    or diag "Undocumented routes: " . join(', ', @undocumented);
 
 sub _walk_route ($node, $prefix, $store) {
     my $pattern = $node->pattern->unparsed // '';
