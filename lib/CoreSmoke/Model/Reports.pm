@@ -63,39 +63,18 @@ sub latest ($self, $params = {}) {
         push @extra_bind, 'FAIL*';
     }
 
+    my ($base_sql, $base_bind) = _latest_base_sql($extra_where, @extra_bind);
     my $db = $self->{sqlite}->db;
 
-    my $rows = $db->query(<<~"SQL", @extra_bind, $rpp, $offset)->hashes->to_array;
-        SELECT r.*
-          FROM report r
-         INNER JOIN (
-               SELECT hostname, MAX(plevel) AS plevel
-                 FROM report
-                GROUP BY hostname
-               ) g USING (hostname, plevel)
-         WHERE r.smoke_date = (
-               SELECT MAX(smoke_date) FROM report
-                WHERE hostname = r.hostname AND plevel = r.plevel
-               )$extra_where
-         ORDER BY r.plevel DESC, r.smoke_date DESC
-         LIMIT ? OFFSET ?
-        SQL
+    my $rows = $db->query(
+        "SELECT r.* $base_sql ORDER BY r.plevel DESC, r.smoke_date DESC LIMIT ? OFFSET ?",
+        @$base_bind, $rpp, $offset,
+    )->hashes->to_array;
 
-    my $count_row = $db->query(<<~"SQL", @extra_bind)->hash;
-        SELECT COUNT(*) AS n FROM (
-            SELECT r.id
-              FROM report r
-             INNER JOIN (
-                   SELECT hostname, MAX(plevel) AS plevel
-                     FROM report
-                    GROUP BY hostname
-                   ) g USING (hostname, plevel)
-             WHERE r.smoke_date = (
-                   SELECT MAX(smoke_date) FROM report
-                    WHERE hostname = r.hostname AND plevel = r.plevel
-                   )$extra_where
-        )
-        SQL
+    my $count_row = $db->query(
+        "SELECT COUNT(*) AS n FROM (SELECT r.id $base_sql)",
+        @$base_bind,
+    )->hash;
 
     my $latest_plevel = $db->query("SELECT MAX(plevel) AS p FROM report")->hash->{p};
 
@@ -106,6 +85,20 @@ sub latest ($self, $params = {}) {
         rpp              => $rpp,
         page             => $page,
     };
+}
+
+sub _latest_base_sql ($extra_where, @extra_bind) {
+    my $sql = "FROM report r"
+        . " INNER JOIN ("
+        .     " SELECT hostname, MAX(plevel) AS plevel"
+        .     " FROM report"
+        .     " GROUP BY hostname"
+        . " ) g USING (hostname, plevel)"
+        . " WHERE r.smoke_date = ("
+        .     " SELECT MAX(smoke_date) FROM report"
+        .     " WHERE hostname = r.hostname AND plevel = r.plevel"
+        . " )$extra_where";
+    return ($sql, \@extra_bind);
 }
 
 sub report_data ($self, $rid) {
