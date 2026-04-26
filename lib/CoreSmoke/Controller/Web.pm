@@ -3,6 +3,7 @@ use v5.42;
 use warnings;
 use experimental qw(signatures);
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use CoreSmoke::Model::Search qw(@SEARCH_PARAMS);
 
 sub _is_htmx ($c) {
     return ($c->req->headers->header('HX-Request') // '') eq 'true';
@@ -73,15 +74,7 @@ sub latest ($c) {
 
 sub search ($c) {
     my %filter;
-    for my $key (qw(
-        selected_arch selected_osnm selected_osvs selected_host
-        selected_comp selected_cver selected_perl selected_branch
-        selected_smkv selected_summary
-        date_from date_to
-        andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
-        andnotsel_comp andnotsel_cver andnotsel_smkv andnotsel_summary
-        page reports_per_page
-    )) {
+    for my $key (@SEARCH_PARAMS) {
         my $v = $c->param($key);
         $filter{$key} = $v if defined $v;
     }

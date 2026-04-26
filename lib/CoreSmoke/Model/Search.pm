@@ -3,6 +3,19 @@ use v5.42;
 use warnings;
 use experimental qw(signatures);
 
+use Exporter 'import';
+our @EXPORT_OK = qw(@SEARCH_PARAMS);
+
+our @SEARCH_PARAMS = qw(
+    selected_arch selected_osnm selected_osvs selected_host
+    selected_comp selected_cver selected_perl selected_branch
+    selected_smkv selected_summary
+    date_from date_to
+    andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
+    andnotsel_comp andnotsel_cver andnotsel_smkv andnotsel_summary
+    page reports_per_page
+);
+
 # Compile the legacy /api/searchresults filter parameters into a
 # parameterised SQL WHERE clause. Names are preserved verbatim so
 # existing clients keep working.
