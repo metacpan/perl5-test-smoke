@@ -8,6 +8,7 @@ use lib "$FindBin::Bin/../local/lib/perl5";
 use lib "$FindBin::Bin/lib";
 
 use TestApp;
+use Mojo::JSON ();
 
 my $h = TestApp->new;
 my $t = $h->t;
@@ -27,7 +28,7 @@ my $rid = $t->tx->res->json->{id};
 subtest 'full_report_data includes trust indicator' => sub {
     $t->get_ok("/api/full_report_data/$rid")
       ->status_is(200)
-      ->json_is('/authenticated' => \1)
+      ->json_is('/authenticated' => Mojo::JSON->true)
       ->json_is('/token_note' => 'visibility-test')
       ->json_is('/token_email' => 'viz@example.com');
 };
@@ -57,7 +58,7 @@ my $rid2 = $t->tx->res->json->{id};
 subtest 'unauthenticated report in API' => sub {
     $t->get_ok("/api/full_report_data/$rid2")
       ->status_is(200)
-      ->json_is('/authenticated' => \0);
+      ->json_is('/authenticated' => Mojo::JSON->false);
 };
 
 subtest 'report detail page shows Unauthenticated' => sub {
