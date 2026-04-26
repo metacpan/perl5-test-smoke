@@ -66,7 +66,7 @@ sub latest ($self, $params = {}) {
     my $db = $self->{sqlite}->db;
 
     my $rows = $db->query(<<~"SQL", @extra_bind, $rpp, $offset)->hashes->to_array;
-        SELECT r.*
+        SELECT r.*, COUNT(*) OVER() AS _total_count
           FROM report r
          INNER JOIN (
                SELECT hostname, MAX(plevel) AS plevel
@@ -81,27 +81,14 @@ sub latest ($self, $params = {}) {
          LIMIT ? OFFSET ?
         SQL
 
-    my $count_row = $db->query(<<~"SQL", @extra_bind)->hash;
-        SELECT COUNT(*) AS n FROM (
-            SELECT r.id
-              FROM report r
-             INNER JOIN (
-                   SELECT hostname, MAX(plevel) AS plevel
-                     FROM report
-                    GROUP BY hostname
-                   ) g USING (hostname, plevel)
-             WHERE r.smoke_date = (
-                   SELECT MAX(smoke_date) FROM report
-                    WHERE hostname = r.hostname AND plevel = r.plevel
-                   )$extra_where
-        )
-        SQL
+    my $total = @$rows ? delete $rows->[0]{_total_count} : 0;
+    delete $_->{_total_count} for @$rows;
 
     my $latest_plevel = $db->query("SELECT MAX(plevel) AS p FROM report")->hash->{p};
 
     return {
         reports          => $rows,
-        report_count     => $count_row->{n} // 0,
+        report_count     => $total,
         latest_plevel    => $latest_plevel  // '',
         rpp              => $rpp,
         page             => $page,
