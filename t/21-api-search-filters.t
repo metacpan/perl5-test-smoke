@@ -74,4 +74,15 @@ $t->get_ok('/api/searchresults?date_from=2022-07-01&selected_summary=FAIL(*)')
   ->status_is(200)
   ->json_is('/report_count' => 0, 'combined filters: summary mismatch');
 
+# --- andnotsel_branch filter (was missing from @SEARCH_PARAMS) ---
+# The fixture's smoke_branch defaults to 'blead' via Ingest.pm.
+
+$t->get_ok('/api/searchresults?selected_branch=blead&andnotsel_branch=1')
+  ->status_is(200)
+  ->json_is('/report_count' => 0, 'andnotsel_branch: negated match excludes report');
+
+$t->get_ok('/api/searchresults?selected_branch=maint&andnotsel_branch=1')
+  ->status_is(200)
+  ->json_is('/report_count' => 1, 'andnotsel_branch: negated non-match includes report');
+
 done_testing;
