@@ -115,16 +115,29 @@ runs).
 
 ### `return` vs `return undef`
 
-`map { decode_copy_field($_) } @raw` calls the sub in **list context**.
-Bare `return;` there yields the empty list `()`, NOT `(undef)`. A
-single bug like that ate every `\N` (NULL) field in the pg-dump
-importer and shifted every subsequent column in the row.
+**Default: always `return;` -- never `return undef;`.** perlcritic
+enforces this via `Subroutines::ProhibitExplicitReturnUndef` at
+severity 5, and `make critic` is a commit gate. A bare `return;`
+yields `undef` in scalar context and `()` (empty list) in list
+context, which is what callers almost always want.
 
-**Rule**: in any sub that may be called in list context and represents
-a "this slot is null but should still be counted" semantic, use
-`return undef;` with a `## no critic (Subroutines::ProhibitExplicitReturnUndef)`
-exemption + a one-line comment. Plain early returns elsewhere stay
-`return;`.
+The **only** time `return undef;` is justified: a sub that may be
+called in **list context** AND represents a "this slot is null but
+should still be counted" semantic -- e.g. column decoders fed into
+`map { decode_field($_) } @raw`, where bare `return;` would yield
+`()` instead of `(undef)` and silently shift every subsequent column
+in the row. (This exact bug ate every `\N` field in the pg-dump
+importer once -- don't let it happen again.)
+
+When you genuinely need it, the exemption is verbose on purpose:
+
+```perl
+return undef;  ## no critic (Subroutines::ProhibitExplicitReturnUndef)
+```
+
+plus a one-line comment explaining why list context matters here.
+If you can't write that comment honestly, you don't need
+`return undef;` -- just `return;`.
 
 ### `use v5.42` enables strict ASCII source encoding
 
@@ -359,6 +372,11 @@ patterns like `FAIL(*M*)`.
 - **Tests are sequential**: single shared `t/test.db` reset between
   tests. `prove -lr t/`, no `-j`.
 - **perlcritic severity 5**, fail on violation. Run via `make critic`.
+  Rules are enforced, not advisory. The one that bites most often is
+  `Subroutines::ProhibitExplicitReturnUndef` -- never write
+  `return undef;` without a documented reason (see "`return` vs
+  `return undef`" above). Default to plain `return;`; scalar context
+  gives you `undef` for free.
 - **Devel::Cover** report-only in CI, no threshold.
 - **Commits**: detailed body explaining the why; ends with
   `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
