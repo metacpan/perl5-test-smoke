@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json);
+use CoreSmoke::Model::Search qw(@SEARCH_PARAMS);
 
 sub version ($c) {
     return $c->render(json => $c->app->reports->version);
@@ -58,13 +59,7 @@ sub searchparameters ($c) {
 
 sub searchresults ($c) {
     my %params;
-    for my $key (qw(
-        selected_arch selected_osnm selected_osvs selected_host
-        selected_comp selected_cver selected_perl selected_branch
-        andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
-        andnotsel_comp andnotsel_cver
-        page reports_per_page
-    )) {
+    for my $key (@SEARCH_PARAMS) {
         my $v = $c->param($key);
         $params{$key} = $v if defined $v;
     }
