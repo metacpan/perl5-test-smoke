@@ -4,9 +4,9 @@ use warnings;
 use experimental qw(signatures);
 
 use Exporter 'import';
-our @EXPORT_OK = qw(@SEARCH_PARAMS);
+our @EXPORT_OK = qw(search_params);
 
-our @SEARCH_PARAMS = qw(
+my @SEARCH_PARAMS = qw(
     selected_arch selected_osnm selected_osvs selected_host
     selected_comp selected_cver selected_perl selected_branch
     selected_smkv selected_summary
@@ -16,6 +16,8 @@ our @SEARCH_PARAMS = qw(
     andnotsel_branch
     page reports_per_page
 );
+
+sub search_params { @SEARCH_PARAMS }
 
 # Compile the legacy /api/searchresults filter parameters into a
 # parameterised SQL WHERE clause. Names are preserved verbatim so

@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::File qw(path);
 use Mojo::JSON qw(encode_json);
-use CoreSmoke::Model::Search qw(@SEARCH_PARAMS);
+use CoreSmoke::Model::Search qw(search_params);
 
 sub version ($c) {
     return $c->render(json => $c->app->reports->version);
@@ -59,7 +59,7 @@ sub searchparameters ($c) {
 
 sub searchresults ($c) {
     my %params;
-    for my $key (@SEARCH_PARAMS) {
+    for my $key (search_params()) {
         my $v = $c->param($key);
         $params{$key} = $v if defined $v;
     }
