@@ -152,6 +152,20 @@ sub report_data ($self, $rid) {
 sub full_report_data ($self, $rid) {
     my $report = $self->report_data($rid) // return;
 
+    # Token provenance
+    if (defined $report->{api_token_id}) {
+        my $tok = $self->{sqlite}->db->query(
+            "SELECT note, email FROM api_token WHERE id = ?",
+            $report->{api_token_id},
+        )->hash;
+        $report->{authenticated} = \1;
+        $report->{token_note}    = $tok->{note}  // '';
+        $report->{token_email}   = $tok->{email} // '';
+    }
+    else {
+        $report->{authenticated} = \0;
+    }
+
     # ---- Compilers (deduped {cc, ccversion} pairs) -----------------------
     my %seen_compiler;
     my @compilers;

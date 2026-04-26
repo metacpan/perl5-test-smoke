@@ -1,0 +1,32 @@
+% layout 'default';
+% title 'Token Created';
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Tokens', href => '/admin/tokens' },
+%     { label => 'Created' },
+%   ],
+%   title => 'Token Created',
+% };
+
+%= include 'components/alert', variant => 'warning', title => 'Copy this token now', body => 'You will not be shown the full token value again.'
+
+<div class="card">
+  <dl class="dl-grid">
+    <dt>Token</dt>
+    <dd><code class="code-inline" id="token-value"><%= $token->{token} %></code></dd>
+    <dt>Note</dt>
+    <dd><%= $token->{note} || '(none)' %></dd>
+    <dt>Email</dt>
+    <dd><%= $token->{email} || '(none)' %></dd>
+  </dl>
+
+  <p class="field-help">
+    Use this token in the <code class="code-inline">Authorization</code> header when submitting reports:<br>
+    <code class="code-inline">Authorization: Bearer <%= $token->{token} %></code>
+  </p>
+</div>
+
+<p>
+  %= btn_link 'Back to tokens', '/admin/tokens', 'secondary'
+</p>

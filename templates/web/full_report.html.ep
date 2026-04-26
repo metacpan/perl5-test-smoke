@@ -45,6 +45,16 @@
   <dt>Smoke date</dt> <dd><time datetime="<%= $report->{smoke_date} %>" class="utc-date"><%= $report->{smoke_date} %></time></dd>
   <dt>Tester</dt>     <dd><%= $report->{username} // '(unknown)' %></dd>
   <dt>Summary</dt>    <dd><%= status_pill $report->{summary} %></dd>
+  <dt>Trust</dt>
+  <dd>
+%   if (defined $report->{api_token_id}) {
+    %= badge 'Authenticated', 'success'
+%     if (length($report->{token_note} // '')) {
+    <span class="field-help">(<%= $report->{token_note} %>)</span>
+%     }
+%   } else {
+    %= badge 'Unauthenticated', ''
+%   }
 %   if ($report->{user_note}) {
   <dt>Note</dt>       <dd>
     %= include 'components/alert', variant => 'warning', body => $report->{user_note}

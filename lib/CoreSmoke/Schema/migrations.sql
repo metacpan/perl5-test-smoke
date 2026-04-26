@@ -133,3 +133,36 @@ CREATE INDEX failures_for_env_failure_id_idx ON failures_for_env(failure_id);
 -- 4 down
 
 DROP INDEX failures_for_env_failure_id_idx;
+
+-- 5 up
+
+CREATE TABLE admin_user (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    NOT NULL UNIQUE,
+    password_hash TEXT    NOT NULL,
+    created_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    updated_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+
+CREATE TABLE api_token (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    token        TEXT    NOT NULL UNIQUE,
+    note         TEXT    NOT NULL DEFAULT '',
+    email        TEXT    NOT NULL DEFAULT '',
+    created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    cancelled_at TEXT,
+    last_used_at TEXT,
+    use_count    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX api_token_email_idx ON api_token(email);
+
+ALTER TABLE report ADD COLUMN api_token_id INTEGER REFERENCES api_token(id);
+CREATE INDEX report_api_token_id_idx ON report(api_token_id);
+
+-- 5 down
+
+DROP INDEX IF EXISTS report_api_token_id_idx;
+ALTER TABLE report DROP COLUMN api_token_id;
+DROP INDEX IF EXISTS api_token_email_idx;
+DROP TABLE IF EXISTS api_token;
+DROP TABLE IF EXISTS admin_user;

@@ -1,0 +1,47 @@
+% layout 'default';
+% title 'Admin Dashboard';
+% stash page_header => {
+%   crumbs => [{ label => 'Admin', href => '/admin/dashboard' }, { label => 'Dashboard' }],
+%   title  => 'Admin Dashboard',
+% };
+
+<div class="card-grid">
+  <div class="card">
+    <h3>Admin Users</h3>
+    <p class="stat-value"><%= $user_count %></p>
+    %= btn_link 'Manage users', '/admin/users', 'secondary', 'sm'
+  </div>
+
+  <div class="card">
+    <h3>Active API Tokens</h3>
+    <p class="stat-value"><%= $token_count %></p>
+    %= btn_link 'Manage tokens', '/admin/tokens', 'secondary', 'sm'
+  </div>
+
+  <div class="card">
+    <h3>Reports</h3>
+    <p class="stat-value"><%= commify($total_reports) %></p>
+    <p class="field-help"><%= $auth_reports %> authenticated, <%= $total_reports - $auth_reports %> unauthenticated</p>
+  </div>
+</div>
+
+% if (@$top_tokens) {
+<div class="card">
+  <h3>Top tokens by usage</h3>
+  <table class="data-table">
+    <thead><tr>
+      <th>Note</th><th>Email</th><th>Uses</th><th>Last used</th>
+    </tr></thead>
+    <tbody>
+%   for my $tok (@$top_tokens) {
+      <tr>
+        <td><a href="/admin/tokens/<%= $tok->{id} %>"><%= $tok->{note} || '(no note)' %></a></td>
+        <td><%= $tok->{email} %></td>
+        <td><%= $tok->{use_count} %></td>
+        <td><%= $tok->{last_used_at} // 'never' %></td>
+      </tr>
+%   }
+    </tbody>
+  </table>
+</div>
+% }

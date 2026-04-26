@@ -1,0 +1,57 @@
+#!/usr/bin/env perl
+use v5.42;
+use warnings;
+use experimental qw(signatures);
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../local/lib/perl5";
+
+use Getopt::Long;
+use Mojo::Home;
+use Mojo::File qw(path);
+use File::Spec;
+
+use CoreSmoke::Model::DB;
+use CoreSmoke::Model::Auth;
+
+my ($username, $password);
+GetOptions(
+    'username=s' => \$username,
+    'password=s' => \$password,
+) or die "Usage: $0 --username <user> --password <pass>\n";
+
+die "Usage: $0 --username <user> --password <pass>\n"
+    unless defined $username && length $username
+        && defined $password && length $password;
+
+my $home = Mojo::Home->new->detect('CoreSmoke::App');
+
+my $mode      = $ENV{MOJO_MODE} // 'development';
+my $mode_file = $home->child("etc/coresmoke.$mode.conf");
+my $conf_file = -e $mode_file ? "$mode_file" : $home->child('etc/coresmoke.conf')->to_string;
+$conf_file = $ENV{MOJO_CONFIG} if $ENV{MOJO_CONFIG};
+
+my $cfg = do $conf_file or die "Cannot load config $conf_file: " . ($@ || $!);
+
+my $db_path = $ENV{SMOKE_DB_PATH} // $cfg->{db_path} // 'data/development.db';
+$db_path = $home->child($db_path)->to_string
+    unless File::Spec->file_name_is_absolute($db_path);
+
+my $db = CoreSmoke::Model::DB->new(
+    path           => $db_path,
+    migrations_sql => $home->child('lib/CoreSmoke/Schema/migrations.sql')->to_string,
+);
+$db->migrate;
+
+my $auth = CoreSmoke::Model::Auth->new(
+    sqlite => $db,
+    pepper => $cfg->{admin_secret_salt} // '',
+);
+
+my $result = $auth->create_user($username, $password);
+if ($result->{error}) {
+    say STDERR "Error: $result->{error}";
+    exit 1;
+}
+say "Admin user '$username' created successfully.";

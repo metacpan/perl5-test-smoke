@@ -116,6 +116,7 @@
 %     { label => 'Status',       sort => 'status' },
 %     { label => 'Smoker',       sort => 'smoker' },
 %     { label => 'Smoke date',   sort => 'date' },
+%     { label => 'Trust',        sort => 'trust' },
 %   );
   %= include 'components/data_table', headers => \@headers, tbody_id => 'report-rows', body => begin
     %= include 'web/_reports_rows', path => '/search', reports => $results->{reports}, report_count => $results->{report_count}, page => $page, reports_per_page => $reports_per_page, filter => $filter

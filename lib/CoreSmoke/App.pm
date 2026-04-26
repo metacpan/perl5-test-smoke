@@ -4,6 +4,7 @@ use experimental qw(signatures);
 use Mojo::Base 'Mojolicious', -signatures;
 
 use CoreSmoke::Model::DB;
+use CoreSmoke::Model::Auth;
 use CoreSmoke::Model::Reports;
 use CoreSmoke::Model::Ingest;
 use CoreSmoke::Model::ReportFiles;
@@ -15,6 +16,8 @@ sub startup ($self) {
 
     my $cfg = $self->config;
     $self->log->level($cfg->{log_level} // 'info');
+
+    $self->secrets($cfg->{secrets}) if $cfg->{secrets};
 
     my $home = $self->home;
     my $db_path     = _resolve_path($home, $ENV{SMOKE_DB_PATH}     // $cfg->{db_path}     // 'data/smoke.db');
@@ -58,15 +61,21 @@ sub startup ($self) {
         sqlite       => $sqlite,
         report_files => $report_files,
     );
+    my $auth = CoreSmoke::Model::Auth->new(
+        sqlite => $sqlite,
+        pepper => $cfg->{admin_secret_salt} // '',
+    );
     my $ingest = CoreSmoke::Model::Ingest->new(
         sqlite       => $sqlite,
         report_files => $report_files,
+        auth         => $auth,
     );
 
     $self->helper(sqlite       => sub ($c) { $sqlite });
     $self->helper(report_files => sub ($c) { $report_files });
     $self->helper(reports      => sub ($c) { $reports });
     $self->helper(ingest       => sub ($c) { $ingest });
+    $self->helper(auth         => sub ($c) { $auth });
 
     # Mojolicious doesn't expose Mojo::Util::url_escape as a default
     # helper, but our templates use it for query-string assembly.
@@ -303,6 +312,25 @@ sub startup ($self) {
     $r->get('/report/:rid')          ->to('Web#full_report');
     $r->get('/file/log_file/:rid')   ->to('Web#log_file');
     $r->get('/file/out_file/:rid')   ->to('Web#out_file');
+
+    # Admin: public routes (login/logout)
+    $r->get('/admin/login') ->to('Admin#login_page');
+    $r->post('/admin/login')->to('Admin#login');
+    $r->post('/admin/logout')->to('Admin#logout');
+
+    # Admin: protected routes (session required)
+    my $admin = $r->under('/admin')->to('Admin#check_session');
+    $admin->get('/dashboard')           ->to('Admin#dashboard');
+    $admin->get('/tokens')              ->to('Admin#token_list');
+    $admin->get('/tokens/new')          ->to('Admin#token_new');
+    $admin->post('/tokens')             ->to('Admin#token_create');
+    $admin->get('/tokens/:id')          ->to('Admin#token_show');
+    $admin->post('/tokens/:id/cancel')  ->to('Admin#token_cancel');
+    $admin->get('/users')               ->to('Admin#user_list');
+    $admin->get('/users/new')           ->to('Admin#user_new');
+    $admin->post('/users')              ->to('Admin#user_create');
+    $admin->post('/users/:id/password') ->to('Admin#user_update_password');
+    $admin->post('/users/:id/delete')   ->to('Admin#user_delete');
 
     # 404 fallback
     $r->any('/*whatever' => { whatever => '' })->to('Web#not_found');

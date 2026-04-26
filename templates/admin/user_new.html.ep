@@ -1,0 +1,32 @@
+% layout 'default';
+% title 'New Admin User';
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Users', href => '/admin/users' },
+%     { label => 'New' },
+%   ],
+%   title => 'Create Admin User',
+% };
+
+% if (my $error = stash 'error') {
+  %= include 'components/alert', variant => 'danger', body => $error
+% }
+
+<div class="card">
+  <form method="POST" action="/admin/users" class="form-stack">
+    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+
+    <label class="form-field">
+      <span class="field-label">Username</span>
+      <input class="input" type="text" name="username" autocomplete="username" required>
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">Password</span>
+      <input class="input" type="password" name="password" autocomplete="new-password" required>
+    </label>
+
+    <button type="submit" class="btn btn-primary">Create user</button>
+  </form>
+</div>

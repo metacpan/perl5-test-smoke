@@ -1,0 +1,46 @@
+% layout 'default';
+% title "Token #$token->{id}";
+% my $cancelled = defined $token->{cancelled_at};
+% my $header_actions = begin
+%   if ($cancelled) {
+%=    badge 'Cancelled', 'danger'
+%   } else {
+%=    badge 'Active', 'success'
+%   }
+% end
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Tokens', href => '/admin/tokens' },
+%     { label => "#$token->{id}" },
+%   ],
+%   title   => "Token #$token->{id}",
+%   actions => $header_actions,
+% };
+
+<div class="card">
+  <dl class="dl-grid">
+    <dt>Token prefix</dt>
+    <dd><code class="code-inline"><%= substr($token->{token}, 0, 12) %>...</code></dd>
+    <dt>Note</dt>
+    <dd><%= $token->{note} || '(none)' %></dd>
+    <dt>Email</dt>
+    <dd><%= $token->{email} || '(none)' %></dd>
+    <dt>Created</dt>
+    <dd><%= $token->{created_at} %></dd>
+    <dt>Last used</dt>
+    <dd><%= $token->{last_used_at} // 'never' %></dd>
+    <dt>Total uses</dt>
+    <dd><%= $token->{use_count} %></dd>
+% if ($cancelled) {
+    <dt>Cancelled</dt>
+    <dd><%= $token->{cancelled_at} %></dd>
+% }
+  </dl>
+</div>
+
+% unless ($cancelled) {
+<form method="POST" action="/admin/tokens/<%= $token->{id} %>/cancel">
+  <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this token? Reports using it will land as unauthenticated.')">Cancel token</button>
+</form>
+% }

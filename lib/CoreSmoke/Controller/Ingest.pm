@@ -20,7 +20,9 @@ use Mojo::JSON qw(decode_json);
 sub post_report ($c) {
     my ($data, $err, $status) = _extract_report_data($c);
     return $c->render(status => $status, json => { error => $err }) if $err;
-    my $result = $c->app->ingest->post_report($data);
+
+    my $token_string = _extract_bearer_token($c);
+    my $result = $c->app->ingest->post_report($data, api_token => $token_string);
     return $c->render(status => 409, json => $result) if $result->{error};
     return $c->render(json => $result);
 }
@@ -45,6 +47,12 @@ sub _extract_report_data ($c) {
     my $data = $payload->{report_data}
         // return (undef, 'Missing report_data.', 422);
     return ($data, undef, undef);
+}
+
+sub _extract_bearer_token ($c) {
+    my $auth = $c->req->headers->authorization // return undef;
+    return $1 if $auth =~ /^Bearer\s+(\S+)$/i;
+    return undef; ## no critic (Subroutines::ProhibitExplicitReturnUndef)
 }
 
 1;

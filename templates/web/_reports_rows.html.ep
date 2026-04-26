@@ -32,6 +32,7 @@
   </td>
   <td data-sort-key="smoker"><code class="code-inline"><%= $smoker %></code></td>
   <td data-sort-key="date" data-sort-value="<%= $r->{smoke_date} %>"><time datetime="<%= $r->{smoke_date} %>" class="utc-date"><%= $r->{smoke_date} %></time></td>
+  <td data-sort-key="trust"><%= defined $r->{api_token_id} ? badge('Authed', 'success') : '' %></td>
 </tr>
 % }
 % if ($report_count > $page * $reports_per_page) {
@@ -49,7 +50,7 @@
     hx-trigger="revealed"
     hx-swap="outerHTML"
     hx-target="this">
-  <td colspan="7"><span class="skeleton"></span></td>
+  <td colspan="8"><span class="skeleton"></span></td>
 </tr>
 % }
 % if (stash('oob_summary')) {

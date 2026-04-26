@@ -45,7 +45,7 @@ export MOJO_MODE := development
 .PHONY: help build deps brew-deps cpan-deps vendor \
         test critic cover \
         dev start stop restart reload \
-        migrate fix-plevels \
+        migrate fix-plevels create-admin \
         import import-fresh dev-db dev-db-fresh \
         clean clean-cover distclean check-src
 
@@ -174,6 +174,14 @@ migrate:
 # /latest sort order on imported data.
 fix-plevels:
 	./script/fix-plevels
+
+# Create the first admin user for the web admin UI.
+# Usage: make create-admin USER=admin PASS=secret
+create-admin:
+	@if [ -z "$(USER)" ] || [ -z "$(PASS)" ]; then \
+	    echo "usage: make create-admin USER=<username> PASS=<password>"; exit 2; \
+	fi
+	./script/create-admin --username "$(USER)" --password "$(PASS)"
 
 # ---------------------------------------------------------------------------
 # Test, lint, coverage
