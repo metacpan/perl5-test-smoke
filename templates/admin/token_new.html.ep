@@ -1,0 +1,32 @@
+% layout 'default';
+% title 'New API Token';
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Tokens', href => '/admin/tokens' },
+%     { label => 'New' },
+%   ],
+%   title => 'Create API Token',
+% };
+
+% if (my $error = stash 'error') {
+  %= include 'components/alert', variant => 'danger', body => $error
+% }
+
+<div class="card">
+  <form method="POST" action="/admin/tokens" class="form-stack">
+    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+
+    <label class="form-field">
+      <span class="field-label">Note</span>
+      <input class="input" type="text" name="note" placeholder="e.g. CI bot, smoker host name">
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">Email</span>
+      <input class="input" type="email" name="email" placeholder="owner@example.com">
+    </label>
+
+    <button type="submit" class="btn btn-primary">Create token</button>
+  </form>
+</div>

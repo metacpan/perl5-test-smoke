@@ -1,0 +1,46 @@
+% layout 'default';
+% title 'API Tokens';
+% my $header_actions = begin
+  %= btn_link 'New token', '/admin/tokens/new', 'primary', 'sm'
+% end
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Tokens' },
+%   ],
+%   title   => 'API Tokens',
+%   actions => $header_actions,
+% };
+
+% if (!@$tokens) {
+  %= include 'components/empty_state', title => 'No tokens yet', desc => 'Create your first API token to authenticate smoke report submissions.'
+% } else {
+% my @headers = ({label => 'Note'}, {label => 'Email'}, {label => 'Uses'}, {label => 'Last used'}, {label => 'Created'}, {label => 'Status'}, {label => ''});
+% my $rows = begin
+%   for my $tok (@$tokens) {
+%     my $cancelled = defined $tok->{cancelled_at};
+  <tr>
+    <td><a href="/admin/tokens/<%= $tok->{id} %>"><%= length($tok->{note}) ? $tok->{note} : '(no note)' %></a></td>
+    <td><%= $tok->{email} %></td>
+    <td><%= $tok->{use_count} %></td>
+    <td><%= $tok->{last_used_at} // 'never' %></td>
+    <td><%= $tok->{created_at} %></td>
+    <td>
+%     if ($cancelled) {
+      %= badge 'Cancelled', 'danger'
+%     } else {
+      %= badge 'Active', 'success'
+%     }
+    </td>
+    <td>
+%     unless ($cancelled) {
+      <form method="POST" action="/admin/tokens/<%= $tok->{id} %>/cancel" style="display:inline">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this token?')">Cancel</button>
+      </form>
+%     }
+    </td>
+  </tr>
+%   }
+% end
+  %= include 'components/data_table', headers => \@headers, body => $rows
+% }

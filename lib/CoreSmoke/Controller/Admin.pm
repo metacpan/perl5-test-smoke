@@ -57,4 +57,107 @@ sub dashboard ($c) {
     );
 }
 
+# --- Token CRUD ---
+
+sub token_list ($c) {
+    my $tokens = $c->app->auth->list_tokens;
+    $c->render(template => 'admin/token_list', tokens => $tokens);
+}
+
+sub token_new ($c) {
+    $c->render(template => 'admin/token_new');
+}
+
+sub token_create ($c) {
+    my $csrf = $c->csrf_token;
+    unless (($c->param('csrf_token') // '') eq $csrf) {
+        return $c->render(template => 'admin/token_new', error => 'Invalid form submission.');
+    }
+
+    my $note  = $c->param('note')  // '';
+    my $email = $c->param('email') // '';
+    my $tok   = $c->app->auth->create_token(note => $note, email => $email);
+    $c->render(template => 'admin/token_created', token => $tok);
+}
+
+sub token_show ($c) {
+    my $id  = $c->stash('id');
+    my $tok = $c->app->auth->get_token($id)
+        // return $c->render(status => 404, template => 'web/404');
+    $c->render(template => 'admin/token_show', token => $tok);
+}
+
+sub token_cancel ($c) {
+    my $id = $c->stash('id');
+    $c->app->auth->cancel_token($id);
+    $c->redirect_to('/admin/tokens');
+}
+
+# --- User CRUD ---
+
+sub user_list ($c) {
+    my $users = $c->app->auth->list_users;
+    $c->render(template => 'admin/user_list', users => $users, current_user => $c->session('admin_user'));
+}
+
+sub user_new ($c) {
+    $c->render(template => 'admin/user_new');
+}
+
+sub user_create ($c) {
+    my $csrf = $c->csrf_token;
+    unless (($c->param('csrf_token') // '') eq $csrf) {
+        return $c->render(template => 'admin/user_new', error => 'Invalid form submission.');
+    }
+
+    my $username = $c->param('username') // '';
+    my $password = $c->param('password') // '';
+
+    unless (length $username && length $password) {
+        return $c->render(template => 'admin/user_new', error => 'Username and password are required.');
+    }
+
+    my $res = $c->app->auth->create_user($username, $password);
+    if ($res->{error}) {
+        return $c->render(template => 'admin/user_new', error => $res->{error});
+    }
+    $c->redirect_to('/admin/users');
+}
+
+sub user_update_password ($c) {
+    my $id       = $c->stash('id');
+    my $password = $c->param('password') // '';
+
+    unless (length $password) {
+        $c->flash(error => 'Password cannot be empty.');
+        return $c->redirect_to('/admin/users');
+    }
+
+    my $user = $c->app->sqlite->db->query(
+        "SELECT username FROM admin_user WHERE id = ?", $id,
+    )->hash;
+    if ($user) {
+        $c->app->auth->update_password($user->{username}, $password);
+    }
+    $c->redirect_to('/admin/users');
+}
+
+sub user_delete ($c) {
+    my $id = $c->stash('id');
+
+    my $user = $c->app->sqlite->db->query(
+        "SELECT username FROM admin_user WHERE id = ?", $id,
+    )->hash;
+
+    if ($user) {
+        if ($user->{username} eq $c->session('admin_user')) {
+            $c->flash(error => 'Cannot delete your own account.');
+            return $c->redirect_to('/admin/users');
+        }
+        my $res = $c->app->auth->delete_user($user->{username});
+        $c->flash(error => $res->{error}) if $res->{error};
+    }
+    $c->redirect_to('/admin/users');
+}
+
 1;
