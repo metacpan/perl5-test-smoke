@@ -6,31 +6,45 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::JSON qw(decode_json);
 
-# POST /api/report -- modern Test::Smoke clients (>= 1.81).
-# Body: { "report_data": { ... } }, optionally Content-Encoding: gzip
-# (decoded by App::startup before_dispatch hook).
+# Single ingest handler reachable from three routes:
+#   POST /api/report             (modern Test::Smoke >= 1.81_01 default URL)
+#   POST /api/old_format_reports (explicit legacy alias)
+#   POST /report                 (Fastly-redirect target / legacy default URL)
+#
+# Test::Smoke clients pick the wire format from the URL: a path containing
+# `/api/` posts `application/json` body `{"report_data": <report>}`, anything
+# else posts `application/x-www-form-urlencoded` with `json=<percent-encoded
+# JSON>`. A smoker with mismatched config (upgraded client + old URL, or
+# vice versa) ends up sending the "wrong" format to a path, so each route
+# accepts both and dispatches on the request's Content-Type.
 sub post_report ($c) {
-    my $payload = $c->req->json
-        // return $c->render(status => 400, json => { error => 'Invalid JSON.' });
-    my $data = $payload->{report_data}
-        // return $c->render(status => 422, json => { error => 'Missing report_data.' });
+    my ($data, $err, $status) = _extract_report_data($c);
+    return $c->render(status => $status, json => { error => $err }) if $err;
     my $result = $c->app->ingest->post_report($data);
     return $c->render(status => 409, json => $result) if $result->{error};
     return $c->render(json => $result);
 }
 
-# POST /api/old_format_reports and POST /report -- pre-1.81 Test::Smoke
-# clients send application/x-www-form-urlencoded with a single param `json`
-# whose value is the percent-encoded JSON report (NOT nested under
-# `report_data`).
-sub post_old_format_report ($c) {
-    my $raw = $c->req->param('json')
-        // return $c->render(status => 422, json => { error => 'Missing json param.' });
-    my $data = eval { decode_json($raw) };
-    return $c->render(status => 400, json => { error => "Bad JSON: $@" }) if $@;
-    my $result = $c->app->ingest->post_report($data);
-    return $c->render(status => 409, json => $result) if $result->{error};
-    return $c->render(json => $result);
+sub _extract_report_data ($c) {
+    my $ct = $c->req->headers->content_type // '';
+
+    if ($ct =~ m{^application/x-www-form-urlencoded}i) {
+        my $raw = $c->req->param('json')
+            // return (undef, 'Missing json param.', 422);
+        my $data = eval { decode_json($raw) };
+        return (undef, "Bad JSON in 'json' param: $@", 400) if $@;
+        return ($data, undef, undef);
+    }
+
+    my $body = $c->req->body;
+    return (undef, 'Missing report data (expected form `json=` or JSON `report_data`).', 422)
+        unless defined $body && length $body;
+
+    my $payload = eval { decode_json($body) };
+    return (undef, 'Invalid JSON.', 400) if $@;
+    my $data = $payload->{report_data}
+        // return (undef, 'Missing report_data.', 422);
+    return ($data, undef, undef);
 }
 
 1;

@@ -247,6 +247,7 @@ sub startup ($self) {
     $r->get('/api/report_data/:rid')       ->to('Api#report_data');
     $r->get('/api/logfile/:rid')           ->to('Api#logfile');
     $r->get('/api/outfile/:rid')           ->to('Api#outfile');
+    $r->get('/api/outfle/:rid')            ->to('Api#outfile'); # legacy typo alias
     $r->get('/api/matrix')                 ->to('Api#matrix');
     $r->get('/api/submatrix')              ->to('Api#submatrix');
     $r->get('/api/searchparameters')       ->to('Api#searchparameters');
@@ -259,10 +260,12 @@ sub startup ($self) {
     $r->get('/api/openapi/web.yaml')->to('Api#openapi_yaml');
     $r->get('/api/openapi/web')     ->to('Api#openapi_text');
 
-    # Ingest
+    # Ingest -- one handler, three URLs. Each accepts both wire formats
+    # (form-encoded `json=...` and JSON body `{report_data:...}`) so a
+    # client whose config URL doesn't match its wire format still works.
     $r->post('/api/report')             ->to('Ingest#post_report');
-    $r->post('/api/old_format_reports') ->to('Ingest#post_old_format_report');
-    $r->post('/report')                 ->to('Ingest#post_old_format_report');
+    $r->post('/api/old_format_reports') ->to('Ingest#post_report');
+    $r->post('/report')                 ->to('Ingest#post_report');
 
     # JSONRPC
     $r->post('/api')   ->to('JsonRpc#dispatch');

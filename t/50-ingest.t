@@ -75,5 +75,7 @@ like $full->{manifest_msgs_text}, qr/MANIFEST did not declare/,
 # /api/logfile / /api/outfile -- the fixture has empty log/out, so 404
 $t->get_ok("/api/logfile/$rid")->status_is(404);
 $t->get_ok("/api/outfile/$rid")->status_is(404);
+# Legacy /api/outfle typo alias -- must behave identically.
+$t->get_ok("/api/outfle/$rid")->status_is(404);
 
 done_testing;

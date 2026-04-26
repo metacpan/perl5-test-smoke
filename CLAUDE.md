@@ -362,11 +362,20 @@ patterns like `FAIL(*M*)`.
 - **Devel::Cover** report-only in CI, no threshold.
 - **Commits**: detailed body explaining the why; ends with
   `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
-- **Backwards-compat URLs**: `POST /report` (alias for
-  `old_format_reports`), `POST /api/old_format_reports`,
-  `gzip` Content-Encoding accepted on `POST /api/report`. Legacy
-  `/api/outfle` (typo) was deliberately dropped — only
-  `/api/outfile/:rid` is exposed.
+- **Ingest URLs**: `POST /api/report` (modern default since
+  Test::Smoke 1.81_01), `POST /api/old_format_reports`, and
+  `POST /report` (pre-1.81 default) all hit the same
+  `Ingest#post_report` handler, which dispatches on Content-Type
+  and accepts BOTH wire formats: legacy
+  `application/x-www-form-urlencoded` with `json=<urlencoded JSON>`
+  and modern `application/json` body `{"report_data": <JSON>}`.
+  This protects against smoker config drift (URL upgraded but
+  client wasn't, or vice versa). The Fastly silent redirect from
+  `/report` -> `/api/old_format_reports` is being retired -- the
+  Mojolicious router now handles both paths natively, so no edge
+  rewrite is needed. `gzip` Content-Encoding accepted on every
+  POST. The legacy `/api/outfle/:rid` typo is kept as an alias for
+  `/api/outfile/:rid` -- existing clients in the wild still hit it.
 - **`legacy/` is reference only**: never modify. Submodules in
   `.gitmodules` use **relative paths and https://** URLs (the original
   `git submodule add` with absolute paths broke `git submodule status`).

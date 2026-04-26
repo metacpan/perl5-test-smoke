@@ -9,8 +9,6 @@ use lib "$FindBin::Bin/lib";
 
 use TestApp;
 use Mojo::JSON qw(encode_json);
-use Mojo::URL  qw();
-use Mojo::Util qw(url_escape);
 
 my $h = TestApp->new;
 my $t = $h->t;
@@ -36,13 +34,43 @@ $t->post_ok('/report' =>
     form => { json => $body }
 )->status_is(200)->json_has('/id');
 
+# Cross-format: pre-1.81 client posting form-encoded to /api/report
+# (smoker upgraded the URL but not the client). Must still ingest.
+TestApp::reset_db();
+$h = TestApp->new;
+$t = $h->t;
+
+$t->post_ok('/api/report' =>
+    { 'Content-Type' => 'application/x-www-form-urlencoded' } =>
+    form => { json => $body }
+)->status_is(200)->json_has('/id');
+
+# Cross-format: 1.81+ client posting JSON {report_data:...} to legacy /report
+# (smoker upgraded the client but kept the old URL). Must still ingest.
+TestApp::reset_db();
+$h = TestApp->new;
+$t = $h->t;
+
+$t->post_ok('/report',
+    json => { report_data => $h->fixture('idefix-gff5bbe677.jsn') }
+)->status_is(200)->json_has('/id');
+
+# Same cross-format pairing against /api/old_format_reports for symmetry.
+TestApp::reset_db();
+$h = TestApp->new;
+$t = $h->t;
+
+$t->post_ok('/api/old_format_reports',
+    json => { report_data => $h->fixture('idefix-gff5bbe677.jsn') }
+)->status_is(200)->json_has('/id');
+
 # Missing json param
 $t->post_ok('/api/old_format_reports' =>
     { 'Content-Type' => 'application/x-www-form-urlencoded' } =>
     form => { }
 )->status_is(422);
 
-# Bad JSON
+# Bad JSON in form param
 $t->post_ok('/api/old_format_reports' =>
     { 'Content-Type' => 'application/x-www-form-urlencoded' } =>
     form => { json => 'not-json{' }
