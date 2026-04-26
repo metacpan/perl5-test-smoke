@@ -126,12 +126,12 @@ is $null_count, 1, 'undef extra: deduplicated across calls';
 
     my $query_count = 0;
     my $orig_query = $db->can('query');
-    no warnings 'redefine';
+    no warnings qw(redefine once);
     local *Mojo::SQLite::Database::query = sub {
         $query_count++;
         $orig_query->(@_);
     };
-    use warnings 'redefine';
+    use warnings qw(redefine once);
 
     $ingest->_insert_failures($result4->{id}, \@efficiency_failures);
     is $query_count, 6, '3 failures x 2 queries each = 6 total (no separate SELECT)';
