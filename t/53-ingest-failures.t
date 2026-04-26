@@ -109,4 +109,32 @@ my $null_count = $db->query(
 )->hash->{c};
 is $null_count, 1, 'undef extra: deduplicated across calls';
 
+# --- Test: query efficiency (INSERT RETURNING eliminates SELECT) ---
+# Each failure should require exactly 2 queries: one upsert+RETURNING for
+# the failure id, one INSERT OR IGNORE for failures_for_env.
+{
+    my $result4 = $db->query(
+        "INSERT INTO result (config_id, io_env, summary) VALUES (?, 'stdio', 'FAIL') RETURNING id",
+        $config->{id},
+    )->hash;
+
+    my @efficiency_failures = (
+        { test => 'op/eff1.t', status => 'FAILED', extra => '' },
+        { test => 'op/eff2.t', status => 'FAILED', extra => '' },
+        { test => 'op/eff3.t', status => 'FAILED', extra => '' },
+    );
+
+    my $query_count = 0;
+    my $orig_query = $db->can('query');
+    no warnings 'redefine';
+    local *Mojo::SQLite::Database::query = sub {
+        $query_count++;
+        $orig_query->(@_);
+    };
+    use warnings 'redefine';
+
+    $ingest->_insert_failures($result4->{id}, \@efficiency_failures);
+    is $query_count, 6, '3 failures x 2 queries each = 6 total (no separate SELECT)';
+}
+
 done_testing;
