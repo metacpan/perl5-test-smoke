@@ -345,53 +345,61 @@ sub available_filter_values ($self, $filter) {
 
     my %dims = (
         architectures     => { exclude => [qw(selected_arch    andnotsel_arch)],
-                               field   => 'r.architecture',
-                               order   => 'r.architecture' },
+                               field   => 'r.architecture' },
         osnames           => { exclude => [qw(selected_osnm    andnotsel_osnm)],
-                               field   => 'r.osname',
-                               order   => 'r.osname' },
+                               field   => 'r.osname' },
         osversions        => { exclude => [qw(selected_osvs    andnotsel_osvs)],
-                               field   => 'r.osversion',
-                               order   => 'r.osversion' },
+                               field   => 'r.osversion' },
         perl_versions     => { exclude => [qw(selected_perl)],
-                               field   => 'r.perl_id',
-                               order   => 'r.perl_id' },
+                               field   => 'r.perl_id' },
         branches          => { exclude => [qw(selected_branch  andnotsel_branch)],
-                               field   => 'r.smoke_branch',
-                               order   => 'r.smoke_branch' },
+                               field   => 'r.smoke_branch' },
         hostnames         => { exclude => [qw(selected_host    andnotsel_host)],
-                               field   => 'r.hostname',
-                               order   => 'r.hostname COLLATE NOCASE' },
+                               field   => 'r.hostname' },
         compilers         => { exclude => [qw(selected_comp    andnotsel_comp)],
                                field   => 'c.cc',
-                               order   => 'c.cc',
                                config_join => 1 },
         compiler_versions => { exclude => [qw(selected_cver    andnotsel_cver)],
                                field   => 'c.ccversion',
-                               order   => 'c.ccversion',
                                config_join => 1 },
         smoker_versions   => { exclude => [qw(selected_smkv    andnotsel_smkv)],
-                               field   => 'r.smoke_version',
-                               order   => 'r.smoke_version' },
+                               field   => 'r.smoke_version' },
         summaries         => { exclude => [qw(selected_summary andnotsel_summary)],
-                               field   => 'r.summary',
-                               order   => 'r.summary' },
+                               field   => 'r.summary' },
     );
 
-    my %out;
-    for my $dim (keys %dims) {
+    # Batch all 10 DISTINCT queries into a single UNION ALL statement,
+    # reducing 10 SQLite round-trips to 1.
+    my @parts;
+    my @all_bind;
+    for my $dim (sort keys %dims) {
         my %f = %$filter;
         delete @f{ @{ $dims{$dim}{exclude} } };
         my ($from, $where, $bind) = $search->compile(\%f);
         if ($dims{$dim}{config_join} && $from !~ /JOIN config/) {
             $from .= " JOIN config c ON c.report_id = r.id";
         }
-        my $sql = "SELECT DISTINCT $dims{$dim}{field} AS v $from $where ORDER BY $dims{$dim}{order}";
-        $out{$dim} = [
-            grep { defined && length }
-            map  { $_->{v} }
-            @{ $db->query($sql, @$bind)->hashes->to_array }
-        ];
+        push @parts, "SELECT DISTINCT '$dim' AS dim, $dims{$dim}{field} AS v $from $where";
+        push @all_bind, @$bind;
+    }
+
+    my $sql  = join(" UNION ALL ", @parts);
+    my $rows = $db->query($sql, @all_bind)->hashes->to_array;
+
+    my %out;
+    for my $row (@$rows) {
+        next unless defined $row->{v} && length $row->{v};
+        push @{ $out{$row->{dim}} }, $row->{v};
+    }
+
+    for my $dim (keys %dims) {
+        $out{$dim} //= [];
+        if ($dim eq 'hostnames') {
+            $out{$dim} = [ sort { lc($a) cmp lc($b) } @{ $out{$dim} } ];
+        }
+        else {
+            $out{$dim} = [ sort @{ $out{$dim} } ];
+        }
     }
 
     $out{perl_versions} = _sort_perl_ids_desc($out{perl_versions});
