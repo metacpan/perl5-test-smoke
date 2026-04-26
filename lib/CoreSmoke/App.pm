@@ -222,9 +222,11 @@ sub startup ($self) {
     });
 
     $self->hook(after_dispatch => sub ($c) {
+        my $method = $c->req->method;
+        return unless $method eq 'GET' || $method eq 'OPTIONS';
         my $origin = $c->app->config->{cors_allow_origin} // '*';
         $c->res->headers->access_control_allow_origin($origin);
-        $c->res->headers->header('Access-Control-Allow-Methods' => 'GET, POST, OPTIONS');
+        $c->res->headers->header('Access-Control-Allow-Methods' => 'GET, OPTIONS');
     });
 
     my $r = $self->routes;
