@@ -772,6 +772,17 @@ p { margin: 0 0 var(--space-4); }
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
 }
+.filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.filter-count {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
 
 /* Single-control filter strip used on /matrix (stdio toggle).
    Matches the search-form box styling but lays its label/control out

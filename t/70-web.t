@@ -102,6 +102,17 @@ $t->get_ok('/search')->status_is(200)
   ->element_exists('input[name=date_from][type=date]', 'date_from input exists')
   ->element_exists('input[name=date_to][type=date]',   'date_to input exists');
 
+# "Clear all" button appears only when filters are active
+$t->get_ok('/search')->status_is(200)
+  ->element_exists_not('button[hx-get="/search"]',
+                       'no clear button when no filters active');
+$t->get_ok('/search?selected_arch=x86_64')->status_is(200)
+  ->element_exists('button[hx-get="/search"]',
+                   'clear button appears with a filter active')
+  ->text_like('.filter-count' => qr/1 active filter/);
+$t->get_ok('/search?selected_arch=x86_64&selected_branch=blead')->status_is(200)
+  ->text_like('.filter-count' => qr/2 active filters/);
+
 # About page shows Perl + Mojo + DB versions
 $t->get_ok('/about')->status_is(200)
   ->content_like(qr/Mojolicious/)

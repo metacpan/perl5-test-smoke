@@ -94,6 +94,17 @@
       %= include 'components/form_field', label => 'From date',        name => 'date_from',        type => 'date',   value => $date_from
       %= include 'components/form_field', label => 'To date',          name => 'date_to',          type => 'date',   value => $date_to
     </div>
+% my $active_count = grep { $_ ne '' && $_ ne 'all' } $sel_arch, $sel_osnm, $sel_osvs, $sel_perl, $sel_branch, $sel_host, $sel_comp, $sel_cver, $sel_smkv, $sel_summary, $date_from, $date_to;
+% if ($active_count) {
+    <div class="filter-actions">
+      <span class="filter-count"><%= $active_count %> active <%= $active_count == 1 ? 'filter' : 'filters' %></span>
+      <button type="button" class="btn btn-ghost btn-sm"
+              hx-get="/search"
+              hx-target="#search-region"
+              hx-swap="outerHTML"
+              hx-push-url="/search">Clear all</button>
+    </div>
+% }
   </form>
 
   %= include 'components/pagination_summary', shown => scalar @{ $results->{reports} }, total => $results->{report_count}, noun => 'reports'
