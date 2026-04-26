@@ -169,6 +169,17 @@ my $s     = CoreSmoke::Model::Search->new(sqlite => $sqlite);
     is_deeply $bind, ['UNKNOWN'], 'negated unknown bind unchanged';
 }
 
+# AND/NOT inversion on branch flips to inequality
+{
+    my ($from, $where, $bind) = $s->compile({
+        selected_branch  => 'blead',
+        andnotsel_branch => 1,
+    });
+    like $where, qr/r\.smoke_branch <> \?/, 'andnotsel_branch flips to <>';
+    is_deeply $bind, ['blead'], 'bind value';
+}
+
+
 # run() against an empty DB returns the empty shape
 {
     my $out = $s->run({});

@@ -13,6 +13,7 @@ our @SEARCH_PARAMS = qw(
     date_from date_to
     andnotsel_arch andnotsel_osnm andnotsel_osvs andnotsel_host
     andnotsel_comp andnotsel_cver andnotsel_smkv andnotsel_summary
+    andnotsel_branch
     page reports_per_page
 );
 
