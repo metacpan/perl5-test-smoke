@@ -17,12 +17,6 @@
     <p class="stat-value"><%= $token_count %></p>
     %= btn_link 'Manage tokens', '/admin/tokens', 'secondary', 'sm'
   </div>
-
-  <div class="card">
-    <h3>Reports</h3>
-    <p class="stat-value"><%= commify($total_reports) %></p>
-    <p class="field-help"><%= $auth_reports %> authenticated, <%= $total_reports - $auth_reports %> unauthenticated</p>
-  </div>
 </div>
 
 % if (@$top_tokens) {

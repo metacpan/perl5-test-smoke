@@ -43,12 +43,6 @@ sub dashboard ($c) {
     my $user_count  = $db->query("SELECT COUNT(*) AS cnt FROM admin_user")->hash->{cnt};
     my $token_count = $db->query("SELECT COUNT(*) AS cnt FROM api_token WHERE cancelled_at IS NULL")->hash->{cnt};
 
-    my $report_stats = $db->query(q{
-        SELECT COUNT(*) AS total,
-               SUM(CASE WHEN api_token_id IS NOT NULL THEN 1 ELSE 0 END) AS authenticated
-        FROM report
-    })->hash;
-
     my $top_tokens = $db->query(q{
         SELECT id, note, email, use_count, last_used_at
         FROM api_token
@@ -58,11 +52,9 @@ sub dashboard ($c) {
     })->hashes->to_array;
 
     $c->render(template => 'admin/dashboard',
-        user_count    => $user_count,
-        token_count   => $token_count,
-        total_reports => $report_stats->{total} // 0,
-        auth_reports  => $report_stats->{authenticated} // 0,
-        top_tokens    => $top_tokens,
+        user_count  => $user_count,
+        token_count => $token_count,
+        top_tokens  => $top_tokens,
     );
 }
 
