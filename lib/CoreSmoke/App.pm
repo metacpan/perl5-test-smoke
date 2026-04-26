@@ -222,6 +222,9 @@ sub startup ($self) {
     });
 
     $self->hook(after_dispatch => sub ($c) {
+        $c->res->headers->header('X-Content-Type-Options' => 'nosniff');
+        $c->res->headers->header('X-Frame-Options'        => 'DENY');
+
         my $method = $c->req->method;
         return unless $method eq 'GET' || $method eq 'OPTIONS';
         my $origin = $c->app->config->{cors_allow_origin} // '*';
