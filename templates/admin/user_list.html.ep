@@ -1,0 +1,46 @@
+% layout 'default';
+% title 'Admin Users';
+% my $header_actions = begin
+  %= btn_link 'New user', '/admin/users/new', 'primary', 'sm'
+% end
+% stash page_header => {
+%   crumbs => [
+%     { label => 'Admin', href => '/admin/dashboard' },
+%     { label => 'Users' },
+%   ],
+%   title   => 'Admin Users',
+%   actions => $header_actions,
+% };
+
+% if (my $error = flash 'error') {
+  %= include 'components/alert', variant => 'danger', body => $error
+% }
+
+% if (!@$users) {
+  %= include 'components/empty_state', title => 'No admin users', desc => 'Run script/create-admin to bootstrap the first account.'
+% } else {
+% my @headers = ({label => 'Username'}, {label => 'Created'}, {label => 'Updated'}, {label => 'Change password'}, {label => ''});
+% my $rows = begin
+%   for my $u (@$users) {
+  <tr>
+    <td><%= $u->{username} %></td>
+    <td><%= $u->{created_at} %></td>
+    <td><%= $u->{updated_at} %></td>
+    <td>
+      <form method="POST" action="/admin/users/<%= $u->{id} %>/password" class="inline-form">
+        <input class="input input-sm" type="password" name="password" placeholder="new password" autocomplete="new-password" required>
+        <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+      </form>
+    </td>
+    <td>
+%     if ($u->{username} ne $current_user) {
+      <form method="POST" action="/admin/users/<%= $u->{id} %>/delete" style="display:inline">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete user <%= $u->{username} %>?')">Delete</button>
+      </form>
+%     }
+    </td>
+  </tr>
+%   }
+% end
+  %= include 'components/data_table', headers => \@headers, body => $rows
+% }
