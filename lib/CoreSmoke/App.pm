@@ -4,6 +4,7 @@ use experimental qw(signatures);
 use Mojo::Base 'Mojolicious', -signatures;
 
 use CoreSmoke::Model::DB;
+use CoreSmoke::Model::Auth;
 use CoreSmoke::Model::Reports;
 use CoreSmoke::Model::Ingest;
 use CoreSmoke::Model::ReportFiles;
@@ -60,15 +61,21 @@ sub startup ($self) {
         sqlite       => $sqlite,
         report_files => $report_files,
     );
+    my $auth = CoreSmoke::Model::Auth->new(
+        sqlite => $sqlite,
+        pepper => $cfg->{admin_secret_salt} // '',
+    );
     my $ingest = CoreSmoke::Model::Ingest->new(
         sqlite       => $sqlite,
         report_files => $report_files,
+        auth         => $auth,
     );
 
     $self->helper(sqlite       => sub ($c) { $sqlite });
     $self->helper(report_files => sub ($c) { $report_files });
     $self->helper(reports      => sub ($c) { $reports });
     $self->helper(ingest       => sub ($c) { $ingest });
+    $self->helper(auth         => sub ($c) { $auth });
 
     # Mojolicious doesn't expose Mojo::Util::url_escape as a default
     # helper, but our templates use it for query-string assembly.

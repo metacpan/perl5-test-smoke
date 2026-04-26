@@ -31,7 +31,8 @@ my @ARRAY_TO_TEXT = qw(skipped_tests applied_patches);
 sub new ($class, %args) {
     my $sqlite       = $args{sqlite}       // die "sqlite required";
     my $report_files = $args{report_files} // die "report_files required";
-    return bless { sqlite => $sqlite, report_files => $report_files }, $class;
+    my $auth         = $args{auth};
+    return bless { sqlite => $sqlite, report_files => $report_files, auth => $auth }, $class;
 }
 
 sub post_report ($self, $raw) {
