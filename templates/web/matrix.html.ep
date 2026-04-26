@@ -20,11 +20,12 @@
   <noscript><button class="btn btn-secondary btn-sm" type="submit">Apply</button></noscript>
 </form>
 
+% use Mojo::Util 'xml_escape';
 % if (!@$perl_versions) {
   %= include 'components/empty_state', title => 'No reports yet', desc => 'Once smoke results are ingested, the failure matrix will appear here.', icon => '&hellip;'
 % } else {
 %   my @headers = ('Test');
-%   push @headers, qq(<code class="code-inline">$_</code>) for @$perl_versions;
+%   push @headers, qq(<code class="code-inline">) . xml_escape($_) . qq(</code>) for @$perl_versions;
   %= include 'components/data_table', extra_class => 'matrix-table', headers => \@headers, body => begin
 % for my $row (@$rows) {
     <tr>

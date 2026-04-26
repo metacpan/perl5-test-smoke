@@ -1,4 +1,5 @@
 % layout 'default';
+% use Mojo::Util 'xml_escape';
 % title "Smoke report #$report->{id}";
 % my $rid          = $report->{id};
 % my $matrix_rows  = $report->{matrix_rows} // [];
@@ -57,7 +58,7 @@
     %= include 'components/empty_state', title => 'No configurations recorded', icon => '&empty;'
 %   } else {
 %     my @headers = ('Build args', 'Debug');
-%     push @headers, $_ for @$io_labels;
+%     push @headers, xml_escape($_) for @$io_labels;
 %     push @headers, 'Duration';
 %     my $rows = begin
 %       for my $row (@$matrix_rows) {

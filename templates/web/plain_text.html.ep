@@ -1,12 +1,14 @@
 % layout 'default';
+% use Mojo::Util 'xml_escape';
 % title $title;
 % my $rid = stash 'rid';
 % my @crumbs = ({ label => 'Home', href => '/' }, { label => 'Reports', href => '/latest' });
 % push @crumbs, { label => "#$rid", href => "/report/$rid" } if $rid;
 % push @crumbs, { label => $title };
+% my $safe_title = xml_escape($title // '');
 % stash page_header => {
 %   crumbs => \@crumbs,
-%   title  => qq(<code class="code-inline">$title</code>),
+%   title  => qq(<code class="code-inline">$safe_title</code>),
 %   actions => begin
 % if ($rid) {
 %= btn_link 'Back to report', "/report/$rid", 'ghost', 'sm'
